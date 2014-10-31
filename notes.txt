@@ -1,0 +1,44 @@
+
+Modelisation of request and response.
+For simplicity, they do not use streams to read/write to the socket
+but readall/writeall to a stringstream.
+
+request:
+  virtual std::string body() = 0;
+  virtual void get_header(std::string key) = 0;
+
+response:
+  virtual void set_body(const std::string& body) = 0;
+  virtual void set_header(std::string key, std::string value) = 0;
+  virtual void send();
+
+backend_server
+
+=========================================
+
+name of the framework:
+
+qwt
+cwt
+granite (already exist)
+carbon
+silicon
+
+c++ accelerated real time web on native
+
+iod::apply(fun, tuple_args);
+iod::apply(fun, iod_args);
+
+
+A new name for iod_object ? -> sio
+
+static symbol map
+static hash map
+custom objects
+
+map<symbol, values>
+
+dynamic, static, object, struct, map, symbol, hash map, fast,
+static introspection, meta programming, c++, 
+
+staticaly introspectable object: sio
