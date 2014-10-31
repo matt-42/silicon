@@ -62,12 +62,12 @@ int main(int argc, char* argv[])
   sl::server s(argc, argv);
 
   // Create the Hello world procedure.
-  s["hello_world"] | std::string("Hello world!");
+  s["hello_world"] = std::string("Hello world!");
   // ^^^^^^^^^^^ -> This will be the name of the procedure in the client libraries
   //                (see below the javascript example).
 
   // Generate the javascript client libraries and serve it on a specific route.
-  s["/bindings.js"] | generate_javascript_bindings(s, sl::module = "hello_world_api");
+  s["/bindings.js"] = generate_javascript_bindings(s, sl::module = "hello_world_api");
  
   s.serve();
 }
