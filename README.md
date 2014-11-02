@@ -26,8 +26,9 @@ Features
   - Compiled:
 
     Using a compiled language allows to validate the validity of the
-    server code before deploying it. Furthermore, json objects are deserialized
-    in plain C++ object, disallowing access to undefine members.
+    server code before deploying it. Furthermore, json objects are
+    deserialized in plain, type safe, C++ object (not hash tables),
+    disallowing access to undefine members.
 
   - Automatic validation, serialization and deserialization of json messages:
 
