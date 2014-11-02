@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
   iod::server s(argc, argv);
 
   // A simple hello world handler.
-  s["h1"] = std::string("Hello world!");
+  s["h1"] = "Hello world!";
 
   s["h2"] = D(_Message = "hello_world");
   
