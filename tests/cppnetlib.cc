@@ -1,5 +1,5 @@
 #include <iostream>
-#include <silicon/mimosa_backend.hh>
+#include <silicon/cppnetlib_backend.hh>
 #include <silicon/javascript_client.hh>
 #include <silicon/server.hh>
 

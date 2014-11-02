@@ -27,7 +27,9 @@ namespace iod
 
   struct handler_base
   {
+    handler_base(std::string n) : name_(n) {}
     virtual void operator()(request& request, response& response) = 0;
+    std::string name_;
   };
 
   struct server;
@@ -35,7 +37,7 @@ namespace iod
   template <typename C>
   struct handler : public handler_base
   {
-    handler(std::string n, C c) : name_(n), content_(c) {}
+    handler(std::string n, C c) : handler_base(n), content_(c) {}
 
     virtual void operator()(request& request, response& response)
     {
@@ -49,7 +51,6 @@ namespace iod
       }
     }
 
-    std::string name_;
     C content_;
   };
   
@@ -83,7 +84,7 @@ namespace iod
     }
 
     void handle(request& request,
-                response& response)
+                response& response) const
     {
       // read body.
       
@@ -109,6 +110,8 @@ namespace iod
     {
       //backend_.serve_one(*this);
     }
+
+    const std::vector<handler_base*>& get_handlers() const { return handlers; }
 
   private:
     backend backend_;
