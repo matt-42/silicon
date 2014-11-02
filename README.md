@@ -88,21 +88,21 @@ Silicon also takes procedures as functions:
 ```c++
 
   // A lambda function returning the string to send.
-  s["lambda1"] | [] () { return "Hello from lambda"; };
+  s["lambda1"] = [] () { return "Hello from lambda"; };
 
   // Or an staticaly introspectable object from the iod library (see the doc)
   // The serialization to json is automatic.
-  s["lambda2"] | [] () { return iod::D(name = "Paul", city = "Paris"); };
+  s["lambda2"] = [] () { return iod::D(name = "Paul", city = "Paris"); };
 
   // A procedure taking parameters.
   // The type of the parameter must be specified with iod::D.
-  s["lambda3"] | [] (decltype(D(name = std::string())) params)
+  s["lambda3"] = [] (decltype(D(name = std::string())) params)
   { 
     return "Hello" + params.name; 
   };
 
   // A function taking the response object, for example to set the response headers.
-  s["lambda2"] | [] () {
+  s["lambda2"] = [] () {
      return iod::D(name = "Paul", city = "Paris");
   };
 

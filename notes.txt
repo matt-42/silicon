@@ -10,6 +10,7 @@ request:
 response:
   virtual void set_body(const std::string& body) = 0;
   virtual void set_header(std::string key, std::string value) = 0;
+  virtual void set_status(int);
   virtual void send();
 
 backend_server

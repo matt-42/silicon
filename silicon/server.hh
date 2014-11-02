@@ -4,6 +4,7 @@
 #include <vector>
 
 #include <iod/sio.hh>
+#include <iod/sio_utils.hh>
 #include <iod/json.hh>
 
 iod_define_symbol(handler_id, _Handler_id);
@@ -13,10 +14,6 @@ namespace iod
 
   template <typename C>
   struct handler;
-
-  void
-  run_handler(const handler<std::string>& handler,
-              request& request, response& response);
 
   struct http_error
   {
@@ -33,6 +30,8 @@ namespace iod
     virtual void operator()(request& request, response& response) = 0;
   };
 
+  struct server;
+  
   template <typename C>
   struct handler : public handler_base
   {
@@ -86,16 +85,14 @@ namespace iod
     void handle(request& request,
                 response& response)
     {
-      std::string body = std::string(std::istreambuf_iterator<char>(request),
-                                    std::istreambuf_iterator<char>());
+      // read body.
+      
+      std::istringstream& body_stream = request.get_body_stream();
 
       // get rq metadata.
       auto md = iod::D(s::_Handler_id = int());
-      int position;
-      iod::json_decode(md, body, position); // Fixme implement json decode on stream.
+      iod::json_decode(md, body_stream); // Fixme implement json decode on stream.
 
-      request.seekg(position);
-      body = std::string(body.begin() + position, body.end());
       if (md.handler_id < handlers.size() and md.handler_id >= 0)
         (*handlers[md.handler_id])(request, response); // run the handler.
       else
@@ -105,12 +102,12 @@ namespace iod
 
     void serve()
     {
-      backend_.serve(*this);
+      backend_.serve([this] (auto& req, auto& res) { this->handle(req, res); });
     }
 
     void serve_one()
     {
-      backend_.serve_one(*this);
+      //backend_.serve_one(*this);
     }
 
   private:

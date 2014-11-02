@@ -12,9 +12,10 @@ namespace iod
   template <typename C>
   struct handler;
 
-  // Simple string handler.
-  void
-  run_handler(const handler<std::string>& handler,
+  // Simple object handler.
+  template <typename F>
+  std::enable_if_t<not iod::is_callable<F>::value>
+  run_handler(const handler<F>& handler,
               request& request, response& response)
   {
     response << handler.content_;
@@ -40,9 +41,7 @@ namespace iod
                                             request& request, response& response)
   {
     sio<ARGS...> res;
-    std::string body(request.str());
-    std::string str(body.begin() + request.tellg(), body.end());
-    iod::json_decode(res, str);
+    iod::json_decode(res, request.get_body_stream());
     return res;
   }
 

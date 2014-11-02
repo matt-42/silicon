@@ -31,9 +31,14 @@ int main(int argc, char* argv[])
   };
 
 
-  std::istringstream request(R"json({"handler_id":2}{"mydata":123})json");
-  std::ostringstream response;
-  s.handle(request, response);
 
-  std::cout << response.str() << std::endl;
+  for (int i = 0; i < 100000; i++)
+  {
+    iod::request request(R"json({"handler_id":3}{"mydata":123})json");
+    iod::response response;
+    //request.get_body_stream().seekg(0);
+    s.handle(request, response);
+  }
+
+  //std::cout << response.get_body_string() << std::endl;
 }
