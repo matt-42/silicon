@@ -47,7 +47,7 @@ Features
 
   - Dependency Injection and Middlewares:
 
-    Procedures only takes the middleware they need as argument.
+    Procedures only take the middleware they need as argument.
 
 Getting Started
 =========================
