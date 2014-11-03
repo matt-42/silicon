@@ -29,6 +29,9 @@ namespace iod
   {
     handler_base(std::string n) : name_(n) {}
     virtual void operator()(request& request, response& response) = 0;
+
+    //virtual artumentargument_tree(F f);
+
     std::string name_;
   };
 
@@ -87,7 +90,6 @@ namespace iod
                 response& response) const
     {
       // read body.
-      
       std::istringstream& body_stream = request.get_body_stream();
 
       // get rq metadata.

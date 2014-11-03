@@ -18,7 +18,7 @@ namespace iod
       int n;
       char buf[1024];
       while ((n = rr_.read(buf, 1024))) { body_string.append(buf, n); }
-      std::cout << body_string << std::endl;
+      // std::cout << body_string << std::endl;
       body_stream.str(body_string);
       body_stream.seekg(0);
       body_stream.clear();
@@ -71,13 +71,13 @@ namespace iod
     {
       request request(request_);
       response response(response_);
-      std::cout << "before" << std::endl;
-      std::cout << &request_ << std::endl;
-      std::cout << &response_ << std::endl;
+      // std::cout << "before" << std::endl;
+      // std::cout << &request_ << std::endl;
+      // std::cout << &response_ << std::endl;
       fun_(request, response);
-      std::cout << "after" << std::endl;
+      // std::cout << "after" << std::endl;
       response.rw_.setContentLength(response.get_body_string().size());
-      std::cout << response.get_body_string().size() << std::endl;
+      // std::cout << response.get_body_string().size() << std::endl;
       response.write_body();
     }
     F fun_;

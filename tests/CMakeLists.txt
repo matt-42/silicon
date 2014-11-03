@@ -20,7 +20,10 @@ find_package( Boost 1.54.0
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)
 include_directories($ENV{HOME}/projects/iod
-                    ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/include)
+                    ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/mimosa/
+                    ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/include
+                    )
+                       
 
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib
         ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib64)
@@ -43,3 +46,7 @@ set(BOOST_SERVER_LIBS
 add_executable(test_cppnet cppnetlib.cc)
 target_link_libraries(test_cppnet ${BOOST_SERVER_LIBS} ${CMAKE_THREAD_LIBS_INIT} pthread
                                   cppnetlib-uri cppnetlib-client-connections cppnetlib-server-parsers ${OPENSSL_LIBRARIES})
+
+
+add_executable(test_mdh mdh.cc)
+target_link_libraries(test_mdh gnutls gcrypt pthread microhttpd)
