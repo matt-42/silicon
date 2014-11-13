@@ -9,8 +9,9 @@
 using namespace s;
 using namespace iod;
 
+// Model
 typedef decltype(iod::D(_Id(_Primarykey) = int(),
-                        _Email = std::string(),
+                        _Email(_Unique) = std::string(),
                         _Password = std::string()
                    )) User;
 
@@ -20,12 +21,16 @@ typedef decltype(iod::D(_Id(_Primarykey) = int(),
                    )) Song;
 
 
+// ==================================================
+// Session
 struct session_data : public decltype(D(_User_id = int()))
 {
   session_data() { user_id = -1; }
   bool is_authenticated() const { return user_id != -1; }
 };
 
+// ==================================================
+// Authentication.
 struct authenticator
 {
   bool login(const std::string& email, const std::string& password)
@@ -55,6 +60,8 @@ struct authenticator
   sqlite_connection& con;
 };
 
+// ==================================================
+// Current user.
 struct current_user : public User
 {
   static auto instantiate(session& sess, sqlite_orm& orm)
@@ -79,12 +86,15 @@ int main(int argc, char* argv[])
     std::cout << "Usage: " << argv[0] << " sqlite_database_path server_port" << std::endl;
     return 1;
   }
-  
+
+  // Build the server with its stateful middlewares.
   auto server = silicon(sqlite_middleware(argv[1]),
                         sqlite_session_storage("user_sessions"),
                         sqlite_orm(Song(), "songs",
                                    User(), "users"));
 
+  
+  // Setup CRUD procedures of objects Song and User.
   setup_CRUD<Song>(server,
                    _Namespace = "song",
                    _Write_access = [] (current_user& user, Song& song) { return song.user_id == user.id });
@@ -93,11 +103,15 @@ int main(int argc, char* argv[])
                    _Namespace = "user",
                    _Write_access = [] (current_user& cuser, User& user) { return cuser.id == user.id });
 
-  server["upload"] = [] (decltype(D(_Id = int(), _File = binary_blob())) params,
-                         current_user& user) {
+
+  // Upload procedure to attach a given file to the song of the given id.
+  server["upload"](_Id = int(), _File = binary_blob()) =
+    [] (auto& params,
+        sqlite_orm& orm
+        current_user& user) {
 
     Song song;
-    if (!db.select_by_id<Song>("songs", params.id) >> song)
+    if (!orm.find_by_id(params.id, song))
       throw error::bad_request("This song's metadata does not exist. Save them before uploading the file.");
     
     if (song.user_id != user.id)
@@ -108,9 +122,10 @@ int main(int argc, char* argv[])
     f.close();      
   };
 
-  server["stream"] = [] (decltype(D(_Id = int())) params,
-                         sqlite_orm& orm,
-                         response& resp)
+  // Access to the song of the given id.
+  server["stream"](_Id = int()) = [] (auto params,
+                                      sqlite_orm& orm,
+                                      response& resp)
   {
     Song song;
     if (!orm.find_by_id(params.id, song))
@@ -118,7 +133,7 @@ int main(int argc, char* argv[])
 
     resp.set_header("Content-Type", mime_type(song.filename));
 
-    std::ofstream f(song_path(song), std::ios::binary);
+    std::ifstream f(song_path(song), std::ios::binary);
     char buf[1024];
     int s;
     while (s = f.read(buf, sizeof(buf)))
@@ -126,5 +141,5 @@ int main(int argc, char* argv[])
     f.close();      
   };
 
-  server.serve(atoi(argv[2]);
+  server.serve(atoi(argv[2]));
 }
