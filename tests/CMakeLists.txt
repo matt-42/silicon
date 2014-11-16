@@ -27,13 +27,23 @@ include_directories($ENV{HOME}/projects/iod
 
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib
         ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib64)
-add_definitions(-std=c++14 -O3 -march=native)
-
+#add_definitions(-std=c++14 -O3 -march=native)
+add_definitions(-std=c++14 -O3 -Wall -g)
 add_executable(test_backend test_backend.cc)
+add_executable(sqlite sqlite.cc)
+add_executable(middlewares middlewares.cc)
+
+target_link_libraries(sqlite sqlite3 mimosa-http mimosa-uri mimosa gnutls z pthread lzma gnutls gcrypt pthread microhttpd)
+
+target_link_libraries(middlewares sqlite3 mimosa-http mimosa-uri mimosa gnutls z pthread lzma gnutls gcrypt pthread microhttpd)
+
 #add_test(test_backend test_backend)
 
 add_executable(test_mimosa mimosa.cc)
 target_link_libraries(test_mimosa mimosa-http mimosa-uri mimosa gnutls z pthread lzma)
+
+add_executable(session session.cc)
+target_link_libraries(session sqlite3 mimosa-http mimosa-uri mimosa gnutls z pthread lzma)
 
 set(BOOST_SERVER_LIBS
     ${Boost_THREAD_LIBRARY}

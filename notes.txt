@@ -1,3 +1,22 @@
+Langage:
+
+Table User
+  email: string
+  password: string
+
+
+find_user(int id) uses user_session
+{
+  return [SELECT FROM User where id = 1].first
+}
+
+authenticate(string username, string password) uses authentication
+{
+  u = [SELECT FROM User where username = username].first;
+  if (u.password == password)
+    authentication.signin();
+}
+
 
 Modelisation of request and response.
 For simplicity, they do not use streams to read/write to the socket

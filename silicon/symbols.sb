@@ -1,0 +1,8 @@
+#pragma once
+
+#include <iod/symbol.hh>
+
+secure
+http_only
+expires
+path

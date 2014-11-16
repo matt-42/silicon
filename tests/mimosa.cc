@@ -18,7 +18,7 @@ int main(int argc, char* argv[])
   using s::_Mydata;
   using s::_Handler_id;
 
-  iod::server s(argc, argv);
+  auto s = silicon();
 
   // A simple hello world handler.
   s["h1"] = "Hello world!";

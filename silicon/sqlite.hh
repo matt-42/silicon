@@ -2,6 +2,8 @@
 
 #include <memory>
 #include <cstring>
+#include <boost/lockfree/queue.hpp>
+
 #include <sqlite3.h>
 #include <iod/sio.hh>
 #include <iod/callable_traits.hh>
@@ -48,12 +50,17 @@ namespace iod
   
     template <typename... A>
     int operator>>(iod::sio<A...>& o) {
-      int code = sqlite3_step(stmt_);
 
-      if (code != SQLITE_ROW)
-        throw std::runtime_error("sqlite3_step did not return SQLITE_ROW.");
+      if (sqlite3_step(stmt_) != SQLITE_ROW)
+        return false;
 
       row_to_sio(o);
+      return true;
+    }
+
+    int exec() {
+      int ret = sqlite3_step(stmt_);
+      return ret == SQLITE_ROW or ret == SQLITE_DONE;
     }
 
     template <typename F>
@@ -108,11 +115,14 @@ namespace iod
     sqlite3_close_v2((sqlite3*) db);
   }
 
-  struct sqlite_database
+  struct sqlite_middleware;
+  struct sqlite_connection
   {
+    typedef sqlite_middleware middleware_type;
+
     typedef std::shared_ptr<sqlite3> db_sptr;
 
-    sqlite_database() : db_(nullptr)
+    sqlite_connection() : db_(nullptr)
     {
     }
 
@@ -155,6 +165,39 @@ namespace iod
   
     sqlite3* db_;
     db_sptr db_sptr_;
+  };
+
+  struct sqlite_database
+  {
+    sqlite_database() {}
+
+    sqlite_connection& get_connection() {
+      return con_;
+    }
+
+    void init(const std::string& path)
+    {
+      path_ = path;
+      con_.connect(path,  SQLITE_OPEN_FULLMUTEX | SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
+    }
+
+    sqlite_connection con_;
+    std::string path_;
+  };
+
+  struct sqlite_middleware
+  {
+    sqlite_middleware(const std::string& database_path)
+    {
+      db_.init(database_path);
+    }
+
+    sqlite_connection& instantiate()
+    {
+      return db_.get_connection();
+    }
+
+    sqlite_database db_;
   };
 
 }

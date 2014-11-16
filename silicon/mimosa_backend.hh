@@ -5,6 +5,7 @@
 #include <mimosa/http/server.hh>
 #include <mimosa/http/response-writer.hh>
 #include <mimosa/http/request-reader.hh>
+#include <silicon/symbols.hh>
 
 #include <iod/json.hh>
 
@@ -12,6 +13,11 @@ namespace iod
 {
   namespace mh = mimosa::http;
 
+  using s::_Secure;
+  using s::_Path;
+  using s::_Http_only;
+  using s::_Expires;
+  
   struct request
   {
     request(mh::RequestReader& rr) : rr_(rr) {
@@ -24,12 +30,30 @@ namespace iod
       body_stream.clear();
     }
 
-    
     auto get_body_string() const { return body_stream.str(); }
     auto& get_body_stream() { return body_stream; }
 
+    auto& get_params_string() { return params_string; }
+
+    bool get_cookie(const std::string& key, std::string& value)
+    {
+      auto it = rr_.cookies().find(key);
+      if (it != rr_.cookies().end())
+      {
+        value = it->second;
+        return true;
+      }
+      else return false;
+    }
+    
+    void set_params_position(int pos) {
+      params_string.str = body_string.c_str() + pos;
+      params_string.len = body_string.size() - pos;
+    }
+    
     std::istringstream body_stream;
     std::string body_string;
+    stringview params_string;
     mh::RequestReader& rr_;
   };
 
@@ -57,6 +81,22 @@ namespace iod
       rw_.write(s.c_str(), s.size());
     }
 
+    template <typename... O>
+    void set_cookie(const std::string& key, const std::string& value, O&&... _options)
+    {
+      auto options = D(_options...);
+      auto* cookie = new mimosa::http::Cookie;
+      cookie->setKey(key);
+      cookie->setKey(value);
+      cookie->setSecure(options.has(_Secure));
+      cookie->setHttpOnly(options.has(_Http_only));
+      if (options.has(_Expires)) cookie->setExpires(options.get(_Expires, ""));
+      cookie->setPath(options.get(_Path, "/"));
+      rw_.addCookie(cookie);
+    }
+    
+    void set_status(int s) { rw_.setStatus(s); }
+    
     std::ostringstream body_stream_;
     mh::ResponseWriter& rw_;
   };
@@ -79,6 +119,7 @@ namespace iod
       response.rw_.setContentLength(response.get_body_string().size());
       // std::cout << response.get_body_string().size() << std::endl;
       response.write_body();
+      return true;
     }
     F fun_;
   };

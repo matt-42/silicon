@@ -6,8 +6,8 @@ iod_define_symbol(module, _Module);
 namespace iod
 {
 
-  template <typename... T>
-  std::string generate_javascript_client(const server& s, T... _options)
+  template <typename S, typename... T>
+  std::string generate_javascript_client(const S& s, T... _options)
   {
 //     std::string prolog = R"json(
 
