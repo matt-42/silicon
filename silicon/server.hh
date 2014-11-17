@@ -102,6 +102,25 @@ namespace iod
     C content_;
   };
 
+  template <typename S, typename... T>
+  struct pre_typed_handler_creator
+  {
+    pre_typed_handler_creator(S* s, std::string name) : s_(s), name_(name) {}
+
+    template <typename C, typename... U>
+    void run(C content, std::tuple<U...>*);
+
+    template <typename C>
+    void operator=(C content)
+    {
+      typedef decltype(D(std::declval<T>()...)) params_type;
+      run(content, (callable_arguments_tuple_t<decltype(&C::template operator()<params_type>)>*)0);
+    }
+
+    S* s_;
+    std::string name_;
+  };
+  
   template <typename S>
   struct handler_creator
   {
@@ -110,6 +129,12 @@ namespace iod
     template <typename C>
     void operator=(C content);
 
+    template <typename... T>
+    auto operator()(T...)
+    {
+      return pre_typed_handler_creator<S, T...>(s_, name_);
+    }
+    
     S* s_;
     std::string name_;
   };
@@ -187,6 +212,20 @@ namespace iod
   {
     s_->add_procedure(name_, content);
   }
+
+
+  template <typename S, typename... T>
+  template <typename C, typename... U>
+  void
+  pre_typed_handler_creator<S, T...>::run(C content, std::tuple<U...>* a)
+  {
+    //void* x = *a;
+    s_->add_procedure(name_,
+                      [&content] (U... tail)
+                      {
+                        return content(tail...);
+                      });
+  };
 
 }
 

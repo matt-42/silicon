@@ -30,20 +30,22 @@ namespace iod
     {
       int ncols = sqlite3_column_count(stmt_);
       int filled[sizeof...(A)];
-      memset(filled, 0, sizeof(filled));
+      for (unsigned i = 0; i < sizeof...(A); i++) filled[i] = 0;
 
       for (int i = 0; i < ncols; i++)
       {
         const char* cname = sqlite3_column_name(stmt_, i);
         bool found = false;
+        int j = 0;
         foreach(o) | [&] (auto& m)
         {
-          if (!found and !filled[i] and !strcmp(cname, m.symbol().name()))
+          if (!found and !filled[j] and !strcmp(cname, m.symbol().name()))
           {
             this->read_column(i, m.value());
             found = true;
-            filled[i] = 1;
+            filled[j] = 1;
           }
+          j++;
         };
       }
     }
@@ -58,9 +60,23 @@ namespace iod
       return true;
     }
 
+    template <typename T>
+    int operator>>(T& o) {
+
+      if (sqlite3_step(stmt_) != SQLITE_ROW)
+        return false;
+
+      this->read_column(0, o);
+      return true;
+    }
+    
     int exec() {
       int ret = sqlite3_step(stmt_);
       return ret == SQLITE_ROW or ret == SQLITE_DONE;
+    }
+
+    int exists() {
+      return sqlite3_step(stmt_) == SQLITE_ROW;
     }
 
     template <typename F>
@@ -102,7 +118,7 @@ namespace iod
     void read_column(int pos, std::string& v) {
       auto str = sqlite3_column_text(stmt_, pos);
       auto n = sqlite3_column_bytes(stmt_, pos);
-      v = std::string((const char*) str, n);
+      v = std::move(std::string((const char*) str, n));
     }
 
     sqlite3_stmt* stmt_;
@@ -141,7 +157,17 @@ namespace iod
     //void bind(sqlite3_stmt* stmt, int pos, null_t) { sqlite3_bind_null(stmt, pos); }
     int bind(sqlite3_stmt* stmt, int pos, const std::string& s) const {
       return sqlite3_bind_text(stmt, pos, s.data(), s.size(), nullptr); }
-  
+
+    template <typename E>
+    inline void format_error(E& err) const {}
+
+    template <typename E, typename T1, typename... T>
+    inline void format_error(E& err, T1 a, T... args) const
+    {
+      err << a;
+      format_error(err, args...);
+    }
+    
     template <typename... A>
     sqlite_statement operator()(const std::string& req, A&&... args) const
     {
@@ -149,7 +175,7 @@ namespace iod
 
       int err = sqlite3_prepare_v2(db_, req.c_str(), req.size(), &stmt, nullptr);
       if (err != SQLITE_OK)
-        throw std::runtime_error(std::string("Sqlite error during prepare: ") + sqlite3_errstr(err));
+        throw std::runtime_error(std::string("Sqlite error during prepare: ") + sqlite3_errstr(err) + " statement was: " + req);
   
       int i = 1;
       foreach(std::forward_as_tuple(args...)) | [&] (auto& m)

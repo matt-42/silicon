@@ -87,7 +87,7 @@ namespace iod
       auto options = D(_options...);
       auto* cookie = new mimosa::http::Cookie;
       cookie->setKey(key);
-      cookie->setKey(value);
+      cookie->setValue(value);
       cookie->setSecure(options.has(_Secure));
       cookie->setHttpOnly(options.has(_Http_only));
       if (options.has(_Expires)) cookie->setExpires(options.get(_Expires, ""));

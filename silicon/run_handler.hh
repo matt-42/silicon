@@ -28,7 +28,7 @@ namespace iod
   // ===============================
 
   template <typename T, typename C>
-  inline auto& make_handler_argument(T*, C& ctx)
+  inline decltype(auto) make_handler_argument(T*, C& ctx)
   {
     return tuple_get_by_type<T>(ctx);
   }
@@ -50,13 +50,13 @@ namespace iod
   }
 
   template <typename M, typename C, typename... T>
-  auto call_middleware_instantiate(M& factory, C& ctx, std::tuple<T...>*)
+  auto call_middleware_instantiate(M& factory, C&& ctx, std::tuple<T...>*)
   {
     return factory.instantiate(tuple_get_by_type<T>(ctx)...);
   }
 
   template <typename E, typename C, typename... T>
-  auto call_middleware_instantiate_static(C& ctx, std::tuple<T...>*)
+  auto call_middleware_instantiate_static(C&& ctx, std::tuple<T...>*)
   {
     return E::instantiate(tuple_get_by_type<T>(ctx)...);
   }
@@ -211,36 +211,36 @@ namespace iod
   {
     return static_if<has_instantiate_static_method<E>::value>(
       // If the argument type provide a static instantiate method, use it.
-      [&] (auto& deps, auto* e) -> auto {
+      [&] (auto&& deps, auto* e) -> auto {
         typedef std::remove_pointer_t<decltype(e)> E2;
         typedef iod::callable_arguments_tuple_t<decltype(&E2::instantiate)> ARGS;
-        return (call_middleware_instantiate_static<E>(deps, (ARGS*)0));
+        return (call_middleware_instantiate_static<E>(std::forward<D>(deps), (ARGS*)0));
       },
       // Otherwise, use the matching factory to instantiate it.
-      [&] (auto& deps, auto* e) -> auto {
+      [&] (auto&& deps, auto* e) -> auto {
         typedef std::remove_pointer_t<decltype(e)> E2;
         typedef typename E2::middleware_type M;
         typedef iod::callable_arguments_tuple_t<decltype(&M::instantiate)> ARGS;
-        return call_middleware_instantiate(tuple_get_by_type<M>(factories), deps, (ARGS*)0);
+        return call_middleware_instantiate(tuple_get_by_type<M>(factories), std::forward<D>(deps), (ARGS*)0);
       },
-      deps, (E*)0);
+      std::forward<D>(deps), (E*)0);
   }
   
   template <typename F, typename... T, typename... U>
-  auto create_handler_ctx(std::enable_if_t<(sizeof...(T) > sizeof...(U))>*,
-                          std::tuple<T...>* x, F& factories, U&&... args)
+  decltype(auto) create_handler_ctx(std::enable_if_t<(sizeof...(T) > sizeof...(U))>*,
+                          std::tuple<T...>* ctx, F& factories, U&&... args)
   {
-    return create_handler_ctx(0, x, factories, args...,
-                              instantiate_middleware_with_deps<std::tuple_element_t<sizeof...(U), std::tuple<T...>>>
-                                        (factories, std::forward_as_tuple(args...))
+    return create_handler_ctx(0, ctx, factories, args...,
+                              std::move(instantiate_middleware_with_deps<std::tuple_element_t<sizeof...(U), std::tuple<T...>>>
+                                        (factories, std::forward_as_tuple(args...)))
       );
   };
   
   template <typename F, typename... T, typename... U>
-  auto create_handler_ctx(std::enable_if_t<sizeof...(T) == sizeof...(U)>*,
+  decltype(auto) create_handler_ctx(std::enable_if_t<sizeof...(T) == sizeof...(U)>*,
                           std::tuple<T...>*, F& factories, U&&... args)
   {
-    return std::tuple<T...>(args...);
+    return std::tuple<T...>(std::forward<U>(args)...);
   };
 
   template <typename... T, typename M, typename F>
@@ -253,9 +253,7 @@ namespace iod
     ctx2_type ctx2 = create_handler_ctx(0, (ctx2_type*)0, middleware_factories, request_, response_);
 
     return f(make_handler_argument((std::remove_reference_t<T>*)0, ctx2)...);
-    //return f(tuple_get_by_type<T>(ctx2)...);
   }
-
 
   // Callable handlers.
   template <typename M, typename F>

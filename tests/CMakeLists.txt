@@ -28,7 +28,7 @@ include_directories($ENV{HOME}/projects/iod
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib
         ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib64)
 #add_definitions(-std=c++14 -O3 -march=native)
-add_definitions(-std=c++14 -O3 -Wall -g)
+add_definitions(-std=c++14 -Wall)
 add_executable(test_backend test_backend.cc)
 add_executable(sqlite sqlite.cc)
 add_executable(middlewares middlewares.cc)

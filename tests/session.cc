@@ -48,6 +48,8 @@ typedef sqlite_session<session_data> session;
 // Current user.
 struct current_user : public User
 {
+  User& user_data() { return *static_cast<User*>(this); }
+
   static auto instantiate(session& sess, sqlite_connection& con)
   {
     if (!sess.authenticated())
@@ -55,37 +57,40 @@ struct current_user : public User
 
     current_user u;
     
-    if (!(con("SELECT * from user where id = ?", sess.user_id) >> *static_cast<User*>(&u)))
+    if (!(con("SELECT * from user where id = ?", sess.user_id) >> u.user_data()))
       throw error::internal_server_error("Session user_id not in user table.");
 
     return u;
   }
 };
 
-// 1/ check if the user is valid (user_is_valid function).
-// 2/ store data in the session (session.store(user)).
-
 struct authenticator
 {
+  authenticator(session& _sess, sqlite_connection& _con) : sess(_sess), con(_con) {}
+
   bool authenticate(int id)
   {
-    User u;
-    if (con("SELECT id from user where id == ?", id) >> u)
+    int count = 0;
+    // 1/ check if the user is valid (user_is_valid function).
+    con("SELECT count(*) from user where id = ?", id) >> count;
+    if (count)
     {
+      // 2/ store data in the session (session.store(user)).
       sess.user_id = id;
+      sess.save();
       return true;
     }
     else
-      return false;
+    return false;
   };
       
-  static auto instantiate(session& sess, sqlite_connection& con)
+  static decltype(auto) instantiate(session& sess, sqlite_connection& con)
   {
-    return authenticator{sess, con};
+    return authenticator(sess, con);
   }
 
-  session& sess;
-  sqlite_connection& con;
+  session sess;
+  sqlite_connection con;
 };
 
 int main(int argc, char* argv[])
@@ -95,31 +100,24 @@ int main(int argc, char* argv[])
   auto server = silicon(sqlite_middleware("./db.sqlite"),
                         sqlite_session_storage<session_data>("sessions"));
 
-  server["current_username"] = [] (sqlite_connection& db, current_user& user)
+  server["current_username"] = [] (current_user& user)
   {
     return user.name;
   };
 
-  server["signin"] = [] (decltype(D(_Id = int())) params,
-                         authenticator& auth)
+  server["signin"](_Id = int()) = [] (auto params, authenticator& auth)
   {
     if (auth.authenticate(params.id))
       return "success";
     else
-      return "Invalid name or password";
+      return "Invalid user id";
   };
 
-
-  // Maybe better?
-  // server["signin"](_Username = std::string(),
-  //                  _Password = std::string()) =
-  //   [] (auto& params, authenticator& auth)
-  //   {
-  //     if (auth.authenticate(params.name, params.password))
-  //       return "success";
-  //     else
-  //       return "Invalid name or password";
-  //   };
+  server["logout"] = [] (session& sess)
+  {
+    sess.destroy();
+    return "success";
+  };
 
   server.serve();
 }
