@@ -89,14 +89,13 @@ int main(int argc, char* argv[])
 
   static_if<has_instantiate_static_method<t1>::value>(
     [] (auto x) { return x + decltype(x)::instantiate(); },
-    //[] (auto& x) { return 32; },
     [] (auto x) { return t1::middleware_type().instantiate(); },
     t1(42));
+
   
-  server["h0"] = [] (t1& i1
-                     , decltype(D(_Id = int())) params
-    ) {
-    //std::cout << i1.x << " " << i2.x <<  " " << i3.x << std::endl;
+  server["h0"] = [] (t1& i1,
+                     decltype(D(_Id = int())) params)
+  {
     return D(_Id = i1.x);
   };
 
@@ -108,5 +107,17 @@ int main(int argc, char* argv[])
     return D(_Id = i1.x);
   };
 
+  auto sub_handler = [] (t2& i2, std::string& s) { std::cout << i2.x <<  " -> " << s << std::endl; };
+ 
+
+  server["h2"] = [&] (t1& i1,
+                     dependencies_of<decltype(sub_handler)>& sub_deps)
+  {
+    t2 i2(22);
+    std::string s = "test";
+    apply(sub_handler, i2, s, call_with_di);
+    return D(_Id = i1.x);
+  };
+  
   server.serve();
 }

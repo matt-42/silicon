@@ -60,7 +60,7 @@ namespace iod
   {
     return E::instantiate(tuple_get_by_type<T>(ctx)...);
   }
-  
+
   template <typename M>
   struct is_middleware_instance
   {
@@ -84,7 +84,43 @@ namespace iod
 
     static const int value = (sizeof(test<std::remove_reference_t<M>>(0)) == sizeof(char));
   };
+
+
+  template <typename F, typename B>
+  struct dependencies_of_;
   
+  template <typename F, typename... D>
+  struct dependencies_of_<F, std::tuple<D...>>
+  {
+    dependencies_of_(D... d) : deps(d...) {}
+
+    static auto instantiate(D&&... deps)
+    {
+      return dependencies_of_<F, std::tuple<D...>>(deps...);
+    };
+
+    std::tuple<std::remove_reference_t<D>...> deps;
+  };
+
+  template <typename... T>
+  auto filter_middleware_deps(std::tuple<T...> t)
+  {
+    return foreach(t) | [] (auto& m) -> decltype(auto) {
+      typedef decltype(m) U;
+      typedef std::remove_reference_t<decltype(m)> _U;
+      return static_if<is_middleware_instance<_U>::value or
+                       has_instantiate_static_method<_U>::value>(
+                         []() -> U { return *(std::remove_reference_t<U>*)0; },
+                         []() {});
+    };
+  }
+
+  template <typename F>
+  using dependencies_of =
+                dependencies_of_<F,
+                                 decltype(filter_middleware_deps(std::declval<callable_arguments_tuple_t<F>>()))
+                                 >;
+    
   template <typename E, typename F, typename C>
   auto instantiate_middleware(F& factories, C&& ctx);
 
@@ -255,6 +291,23 @@ namespace iod
     return f(make_handler_argument((std::remove_reference_t<T>*)0, ctx2)...);
   }
 
+
+  template <typename F, typename... A, typename... B>
+  auto call_with_di2(F fun, std::tuple<A...>*, B&&... args)
+  {
+    auto ctx = std::forward_as_tuple(args...);
+    return fun(tuple_get_by_type<A>(ctx)...);
+  }
+
+  struct
+  {
+    template <typename F, typename... A>
+    auto operator()(F fun, A&&... args) const
+    {
+      return call_with_di2(fun, (callable_arguments_tuple_t<F>*)0, std::forward<A>(args)...);
+    }
+  } call_with_di;
+  
   // Callable handlers.
   template <typename M, typename F>
   std::enable_if_t<iod::is_callable<F>::value>
