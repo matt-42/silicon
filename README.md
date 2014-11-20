@@ -2,6 +2,7 @@
 The Silicon Web Framework
 =================================
 
+Note: This project is a work in progress.
 
 Silicon is a easy to use, fast, safe, modern C++ json remote procedure call framework
 based on the C++14 standard. It relies the powerful new
