@@ -98,7 +98,7 @@ int main(int argc, char* argv[])
   using namespace iod;
   
   auto server = silicon(sqlite_middleware("./db.sqlite"),
-                        sqlite_session_storage<session_data>("sessions"));
+                        sqlite_session_middleware<session_data>("sessions"));
 
   server["current_username"] = [] (current_user& user)
   {
