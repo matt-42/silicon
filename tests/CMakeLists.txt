@@ -60,3 +60,16 @@ target_link_libraries(test_cppnet ${BOOST_SERVER_LIBS} ${CMAKE_THREAD_LIBS_INIT}
 
 add_executable(test_mdh mdh.cc)
 target_link_libraries(test_mdh gnutls gcrypt pthread microhttpd)
+
+
+add_executable(sqlite_orm sqlite_orm.cc)
+target_link_libraries(sqlite_orm sqlite3 mimosa-http mimosa-uri mimosa gnutls z pthread lzma gnutls gcrypt pthread microhttpd)
+
+add_executable(crud crud.cc)
+target_link_libraries(crud sqlite3 mimosa-http mimosa-uri mimosa gnutls z pthread lzma gnutls gcrypt pthread microhttpd)
+
+add_executable(mysoundcloud mysoundcloud.cc)
+target_link_libraries(mysoundcloud sqlite3 mimosa-http mimosa-uri mimosa gnutls z pthread lzma gnutls gcrypt pthread microhttpd)
+
+add_executable(upload upload.cc)
+target_link_libraries(upload sqlite3 mimosa-http mimosa-uri mimosa gnutls z pthread lzma gnutls gcrypt pthread microhttpd)
