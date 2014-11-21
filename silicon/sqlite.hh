@@ -20,7 +20,7 @@ namespace iod
   {
     typedef std::shared_ptr<sqlite3_stmt> stmt_sptr;
     
-    sqlite_statement(sqlite3_stmt* s) : stmt_(s),
+    sqlite_statement(sqlite3* db, sqlite3_stmt* s) : db_(db), stmt_(s),
                                    stmt_sptr_(stmt_sptr(s, free_sqlite3_statement))
     {
     }
@@ -72,7 +72,15 @@ namespace iod
     
     int exec() {
       int ret = sqlite3_step(stmt_);
+      if (ret != SQLITE_ROW and ret != SQLITE_DONE)
+        throw std::runtime_error(sqlite3_errstr(ret));
+
       return ret == SQLITE_ROW or ret == SQLITE_DONE;
+    }
+
+    int last_insert_rowid()
+    {
+      return sqlite3_last_insert_rowid(db_);
     }
 
     int exists() {
@@ -121,6 +129,7 @@ namespace iod
       v = std::move(std::string((const char*) str, n));
     }
 
+    sqlite3* db_;
     sqlite3_stmt* stmt_;
     stmt_sptr stmt_sptr_;
   };
@@ -167,6 +176,11 @@ namespace iod
       err << a;
       format_error(err, args...);
     }
+
+    int last_insert_rowid()
+    {
+      return sqlite3_last_insert_rowid(db_);
+    }
     
     template <typename... A>
     sqlite_statement operator()(const std::string& req, A&&... args) const
@@ -186,7 +200,7 @@ namespace iod
         i++;
       };
 
-      return sqlite_statement(stmt);
+      return sqlite_statement(db_, stmt);
     }
   
     sqlite3* db_;
@@ -205,6 +219,7 @@ namespace iod
     {
       path_ = path;
       con_.connect(path,  SQLITE_OPEN_FULLMUTEX | SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
+      con_("PRAGMA synchronous=0").exec();
     }
 
     sqlite_connection con_;

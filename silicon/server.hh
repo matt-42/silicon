@@ -6,6 +6,7 @@
 #include <iod/sio.hh>
 #include <iod/sio_utils.hh>
 #include <iod/json.hh>
+#include <iod/tuple_utils.hh>
 
 iod_define_symbol(handler_id, _Handler_id);
 
@@ -199,6 +200,12 @@ namespace iod
     std::vector<handler_base<M>*> handlers;
   };
 
+  template <typename T, typename S>
+  T& get_middleware(S& server)
+  {
+    return tuple_get_by_type<T>(server.middlewares_);
+  }
+
   template <typename... M>
   auto silicon(M&&... middlewares)
   {
@@ -221,9 +228,9 @@ namespace iod
   {
     //void* x = *a;
     s_->add_procedure(name_,
-                      [&content] (U... tail)
+                      [&content] (U&&... tail)
                       {
-                        return content(tail...);
+                        return content(std::forward<U>(tail)...);
                       });
   };
 
