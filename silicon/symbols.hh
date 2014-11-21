@@ -18,3 +18,36 @@
 #define IOD_SYMBOL__Path
     iod_define_symbol(path, _Path)
 #endif
+
+#ifndef IOD_SYMBOL__Primary_key
+#define IOD_SYMBOL__Primary_key
+    iod_define_symbol(primary_key, _Primary_key)
+#endif
+#ifndef IOD_SYMBOL__Read_access
+#define IOD_SYMBOL__Read_access
+    iod_define_symbol(read_access, _Read_access)
+#endif
+#ifndef IOD_SYMBOL__Validate
+#define IOD_SYMBOL__Validate
+    iod_define_symbol(validate, _Validate)
+#endif
+#ifndef IOD_SYMBOL__On_create_success
+#define IOD_SYMBOL__On_create_success
+    iod_define_symbol(on_create_success, _On_create_success)
+#endif
+#ifndef IOD_SYMBOL__On_destroy_success
+#define IOD_SYMBOL__On_destroy_success
+    iod_define_symbol(on_destroy_success, _On_destroy_success)
+#endif
+#ifndef IOD_SYMBOL__On_update_success
+#define IOD_SYMBOL__On_update_success
+    iod_define_symbol(on_update_success, _On_update_success)
+#endif
+#ifndef IOD_SYMBOL__Id
+#define IOD_SYMBOL__Id
+    iod_define_symbol(id, _Id)
+#endif
+#ifndef IOD_SYMBOL__Prefix
+#define IOD_SYMBOL__Prefix
+    iod_define_symbol(prefix, _Prefix)
+#endif

@@ -6,3 +6,12 @@ secure
 http_only
 expires
 path
+
+primary_key
+read_access
+validate
+on_create_success
+on_destroy_success
+on_update_success
+id
+prefix
