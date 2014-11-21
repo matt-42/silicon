@@ -5,13 +5,13 @@
 namespace iod
 {
   template <typename D>
-  struct sqlite_session_storage;
+  struct sqlite_session_middleware;
 
   template <typename T>
   struct sqlite_session : public T
   {
     typedef T data_type;
-    typedef sqlite_session_storage<data_type> middleware_type;
+    typedef sqlite_session_middleware<data_type> middleware_type;
 
     sqlite_session(const std::string& key, const std::string& table_name,
                    sqlite_connection& con)
@@ -63,9 +63,9 @@ namespace iod
 
   // Session middleware.
   template <typename D>
-  struct sqlite_session_storage
+  struct sqlite_session_middleware
   {
-    sqlite_session_storage(const std::string& table_name)
+    sqlite_session_middleware(const std::string& table_name)
       : table_name_(table_name)
     {
     }
