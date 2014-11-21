@@ -24,7 +24,7 @@ namespace iod
       int n;
       char buf[1024];
       while ((n = rr_.read(buf, 1024))) { body_string.append(buf, n); }
-      // std::cout << body_string << std::endl;
+
       body_stream.str(body_string);
       body_stream.seekg(0);
       body_stream.clear();
@@ -34,6 +34,7 @@ namespace iod
     auto& get_body_stream() { return body_stream; }
 
     auto& get_params_string() { return params_string; }
+    auto& get_tail_string() { return tail_string; }
 
     bool get_cookie(const std::string& key, std::string& value)
     {
@@ -49,11 +50,18 @@ namespace iod
     void set_params_position(int pos) {
       params_string.str = body_string.c_str() + pos;
       params_string.len = body_string.size() - pos;
+      tail_string = params_string;
+    }
+
+    void set_tail_position(int pos) {
+      tail_string.str = params_string.data() + pos;
+      tail_string.len = params_string.size() - pos;
     }
     
     std::istringstream body_stream;
     std::string body_string;
     stringview params_string;
+    stringview tail_string;
     mh::RequestReader& rr_;
   };
 
@@ -75,6 +83,10 @@ namespace iod
     {
       json_encode(t, body_stream_);
     }
+
+    void write(const char* str, int len) {
+      rw_.write(str, len);
+    }
     
     void write_body() {
       std::string s = body_stream_.str();
@@ -94,6 +106,8 @@ namespace iod
       cookie->setPath(options.get(_Path, "/"));
       rw_.addCookie(cookie);
     }
+
+    void set_header(const std::string& key, const std::string& value) { rw_.addHeader(key, value); }
     
     void set_status(int s) { rw_.setStatus(s); }
     

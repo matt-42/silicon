@@ -1,5 +1,6 @@
 #pragma once
 
+#include <type_traits>
 #include <iod/sio.hh>
 #include <iod/callable_traits.hh>
 #include <iod/tuple_utils.hh>
@@ -40,7 +41,9 @@ namespace iod
     sio<ARGS...> res;
     try
     {
-      iod::json_decode(res, tuple_get_by_type<request>(ctx).get_params_string());
+      int tail_pos = 0;
+      iod::json_decode(res, tuple_get_by_type<request>(ctx).get_params_string(), tail_pos);
+      tuple_get_by_type<request>(ctx).set_tail_position(tail_pos);
     }
     catch (const std::runtime_error& e)
     {
@@ -87,7 +90,15 @@ namespace iod
 
 
   template <typename F, typename B>
-  struct dependencies_of_;
+  struct dependencies_of_
+  {
+    static auto instantiate()
+    {
+      return dependencies_of_<F, B>();
+    }
+     
+    std::tuple<> deps;
+  };
   
   template <typename F, typename... D>
   struct dependencies_of_<F, std::tuple<D...>>
@@ -291,7 +302,6 @@ namespace iod
     return f(make_handler_argument((std::remove_reference_t<T>*)0, ctx2)...);
   }
 
-
   template <typename F, typename... A, typename... B>
   auto call_with_di2(F fun, std::tuple<A...>*, B&&... args)
   {
@@ -332,9 +342,15 @@ namespace iod
             apply_handler_arguments(middlewares, request_, response_, handler.content_, (T*)0);
           },
 
-          // handlers not taking response as argument return the response.
+          // automatic serialization of return values of handlers not taking response as argument.
           [&] (auto& handler, auto& request_, auto& response_) {
-            response_ << apply_handler_arguments(middlewares, request_, response_, handler.content_, (T*)0);
+            static_if<std::is_same<callable_return_type_t<F>, void>::value>(
+              [&] (auto& response_) {
+                apply_handler_arguments(middlewares, request_, response_, handler.content_, (T*)0);
+              },
+              [&] (auto& response_) {
+                response_ << apply_handler_arguments(middlewares, request_, response_, handler.content_, (T*)0);
+              }, response_);
           },
           handler, request_, response_);
       }, handler
