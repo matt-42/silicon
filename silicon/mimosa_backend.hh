@@ -57,6 +57,8 @@ namespace iod
       tail_string.str = params_string.data() + pos;
       tail_string.len = params_string.size() - pos;
     }
+
+    const std::string& location() { return rr_.location(); }
     
     std::istringstream body_stream;
     std::string body_string;
@@ -144,7 +146,7 @@ namespace iod
     mimosa_backend() { mimosa::deinit(); }
     
     template <typename F>
-    void serve(F f);
+    void serve(int port, F f);
   };
 
   typedef mimosa_backend backend;
