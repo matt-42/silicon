@@ -7,6 +7,7 @@
 #include <iod/sio_utils.hh>
 #include <iod/json.hh>
 #include <iod/tuple_utils.hh>
+#include <silicon/procedure_desc.hh>
 
 iod_define_symbol(handler_id, _Handler_id);
 
@@ -70,7 +71,7 @@ namespace iod
     handler_base(std::string n) : name_(n) {}
     virtual void operator()(M& middlewares, request& request, response& response) = 0;
 
-    //virtual artumentargument_tree(F f);
+    virtual procedure_desc description() = 0;
 
     std::string name_;
   };
@@ -78,6 +79,7 @@ namespace iod
   template <typename M, typename C>
   struct handler : public handler_base<M>
   {
+    typedef C content_type;
     handler(std::string n, C c) : handler_base<M>(n), content_(c) {}
 
     virtual void operator()(M& middlewares, request& request, response& response)
@@ -100,6 +102,11 @@ namespace iod
 
     }
 
+    virtual procedure_desc description()
+    {
+      return std::move(procedure_desc(*this));
+    }
+    
     C content_;
   };
 
@@ -149,6 +156,18 @@ namespace iod
     std::string name_;
   };
 
+  template <typename S>
+  struct route_handler_creator
+  {
+    route_handler_creator(S* s, std::string route) : s_(s), route_(route) {}
+
+    template <typename C>
+    void operator=(C content);
+    
+    S* s_;
+    std::string route_;
+  };
+  
   template <typename M>
   struct server
   {
@@ -157,11 +176,17 @@ namespace iod
     server(M&& middlewares) : middlewares_(middlewares)
     {}
 
-    auto operator[](std::string route_path)
+    auto operator[](std::string procedure_name)
     {
-      return handler_creator<self_type>(this, route_path);
+      return handler_creator<self_type>(this, procedure_name);
     }
 
+
+    auto route(std::string route_path)
+    {
+      return route_handler_creator<self_type>(this, route_path);
+    }
+    
     template <typename F>
     auto add_procedure(std::string name, F f)
     {
@@ -169,21 +194,42 @@ namespace iod
       return *this;
     }
 
+    template <typename F>
+    auto add_route(std::string name, F f)
+    {
+      routes[name] = new handler<M, F>(name, f);
+      return *this;
+    }
+    
     void handle(request& request,
                 response& response)
       try
       {
-        // get rq metadata.
-        auto md = iod::D(s::_Handler_id = int());
-        int pos;
-        iod::json_decode(md, request.get_body_string(), pos);
-        request.set_params_position(pos);
+        handler_base<M>* h = nullptr;
+        
+        if (request.location() == "/") // Routing with handler_id
+        {
+          // get rq metadata.
+          auto md = iod::D(s::_Handler_id = int());
+          int pos;
+          iod::json_decode(md, request.get_body_string(), pos);
+          request.set_params_position(pos);
 
-        if (md.handler_id < int(handlers.size()) and md.handler_id >= 0)
-          (*handlers[md.handler_id])(middlewares_, request, response); // run the handler.
-        else
-          throw error::not_found("Procedure id = ", md.handler_id, " does not exist.");
-        //throw new http_not_found();
+          if (md.handler_id < int(handlers.size()) and md.handler_id >= 0)
+            h = handlers[md.handler_id];
+          else
+            throw error::not_found("Procedure id = ", md.handler_id, " does not exist.");
+        }
+        else // Classing routing
+        {
+          auto r = routes.find(request.location());
+          if (r != routes.end())
+            h = r->second;
+          else
+            throw error::not_found("Route ", request.location(), " does not exist.");
+        }
+
+        (*h)(middlewares_, request, response);
       }
       catch(const error::error& e)
       {
@@ -191,9 +237,9 @@ namespace iod
         response << e.what();
       }
 
-    void serve()
+    void serve(int port)
     {
-      backend_.serve([this] (auto& req, auto& res) { this->handle(req, res); });
+      backend_.serve(port, [this] (auto& req, auto& res) { this->handle(req, res); });
     }
 
     void serve_one()
@@ -207,6 +253,7 @@ namespace iod
     M middlewares_;
     backend backend_;
     std::vector<handler_base<M>*> handlers;
+    std::map<std::string, handler_base<M>*> routes;
   };
 
   template <typename T, typename S>
@@ -229,6 +276,12 @@ namespace iod
     s_->add_procedure(name_, content);
   }
 
+  template <typename S>
+  template <typename C>
+  void route_handler_creator<S>::operator=(C content)
+  {
+    s_->add_route(route_, content);
+  }
 
   template <typename S, typename... T>
   template <typename C, typename... U>
