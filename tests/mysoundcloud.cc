@@ -7,6 +7,7 @@
 #include <silicon/server.hh>
 #include <silicon/crud.hh>
 #include <silicon/hash.hh>
+#include <silicon/javascript_client.hh>
 
 #include "symbols.hh"
 
@@ -47,7 +48,10 @@ struct authenticator
   bool login(const std::string& email, const std::string& password)
   {
     User u;
-    if (con("SELECT * from user where email == ? and password == ?", email, password) >> u)
+    std::cout << email << std::endl;
+    std::cout << password << std::endl;
+    blob hash = password;
+    if (con("SELECT * from msc_users where email == ? and password == ?", email, hash) >> u)
     {
       sess.user_id = u.id;
       sess.save();
@@ -68,8 +72,8 @@ struct authenticator
     return authenticator{sess, con};
   }
 
-  sqlite_session<session_data>& sess;
-  sqlite_connection& con;
+  sqlite_session<session_data> sess;
+  sqlite_connection con;
 };
 
 // ==================================================
@@ -93,7 +97,7 @@ int main(int argc, char* argv[])
 {
   using namespace iod;
 
-  if (!argc)
+  if (argc != 3)
   {
     std::cout << "Usage: " << argv[0] << " sqlite_database_path server_port" << std::endl;
     return 1;
@@ -113,13 +117,13 @@ int main(int argc, char* argv[])
 
   // Build the server with its attached middlewares.
   auto server = silicon(sqlite_middleware(argv[1]),
-                        sqlite_session_middleware<session_data>("user_sessions"),
-                        sqlite_orm_middleware<Song>("songs"),
-                        sqlite_orm_middleware<User>("users"));
+                        sqlite_session_middleware<session_data>("msc_sessions"),
+                        sqlite_orm_middleware<Song>("msc_songs"),
+                        sqlite_orm_middleware<User>("msc_users"));
 
   // =========================================================
   // User signup, signout, login, logout.
-  server["login"](_Email, _Password) = [] (auto params, authenticator& auth) {
+  server["login"](_Email = std::string(), _Password = std::string()) = [] (auto params, authenticator& auth) {
     if (!auth.login(params.email, hash_sha3_512(params.password)))
       throw error::bad_request("Invalid login or password");
   };
@@ -133,14 +137,16 @@ int main(int argc, char* argv[])
   };
 
   server["signout"](_Password) = [] (auto params, sqlite_orm<User>& users,
-                                     current_user& user, session& sess) {
+                                     current_user& user, session& sess, sqlite_connection& db) {
     if (user.password != hash_sha3_512(params.password)) throw error::bad_request("Invalid password");
+
+    db("DELETE from song where user_id = ", user.id).exec();
     users.destroy(user);
     sess.destroy();
   };
 
   // =========================================================
-  // Setup CRUD procedures of objects Song.
+  // Setup CRUD procedures of object Song.
   setup_crud(server,
              get_middleware<sqlite_orm_middleware<Song>>(server),
              _Prefix = "song",
@@ -189,5 +195,24 @@ int main(int argc, char* argv[])
     f.close();      
   };
 
-  server.serve();
+  std::string javascript_client_source_code = generate_javascript_client(server, _Module = "msc");
+  server.route("/bindings.js") = [&] (response& resp)
+  {
+    resp.set_header("Content-Type", "text/javascript");
+    resp.write(javascript_client_source_code.data(), javascript_client_source_code.size());
+  };
+
+  int port = atoi(argv[2]);
+  std::cout << "----------------------------------------------------" << std::endl;
+  std::cout << "Welcome to MySoundCloud, a tiny soundcloud-like API." << std::endl;
+  std::cout << "  Note: he server is running on port " << port << std::endl;
+  std::cout << "----------------------------------------------------" << std::endl << std::endl;
+
+  std::cout << "  Call one of the following procedures via the javacript bindings at /bindings.js " << std::endl;
+  std::cout << "----------------------------------------------------" << std::endl << std::endl;
+
+  print_server_api(server);
+
+  // std::cout << generate_javascript_client(server, _Module = "msc") << std::endl;
+  server.serve(atoi(argv[2]));
 }
