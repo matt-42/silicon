@@ -11,6 +11,11 @@
 namespace iod
 {
 
+  struct blob : public std::string
+  {
+    blob(const std::string& s) : std::string(s) {}
+  };
+
   void free_sqlite3_statement(void* s)
   {
     sqlite3_finalize((sqlite3_stmt*) s);
@@ -166,6 +171,8 @@ namespace iod
     //void bind(sqlite3_stmt* stmt, int pos, null_t) { sqlite3_bind_null(stmt, pos); }
     int bind(sqlite3_stmt* stmt, int pos, const std::string& s) const {
       return sqlite3_bind_text(stmt, pos, s.data(), s.size(), nullptr); }
+    int bind(sqlite3_stmt* stmt, int pos, const blob& b) const {
+      return sqlite3_bind_blob(stmt, pos, b.data(), b.size(), nullptr); }
 
     template <typename E>
     inline void format_error(E& err) const {}
@@ -189,14 +196,14 @@ namespace iod
 
       int err = sqlite3_prepare_v2(db_, req.c_str(), req.size(), &stmt, nullptr);
       if (err != SQLITE_OK)
-        throw std::runtime_error(std::string("Sqlite error during prepare: ") + sqlite3_errstr(err) + " statement was: " + req);
+        throw std::runtime_error(std::string("Sqlite error during prepare: ") + sqlite3_errmsg(db_) + " statement was: " + req);
   
       int i = 1;
       foreach(std::forward_as_tuple(args...)) | [&] (auto& m)
       {
         int err;
         if ((err = this->bind(stmt, i, m)) != SQLITE_OK)
-          throw std::runtime_error(std::string("Sqlite error during binding: ") + sqlite3_errstr(err));
+          throw std::runtime_error(std::string("Sqlite error during binding: ") + sqlite3_errmsg(db_));
         i++;
       };
 
