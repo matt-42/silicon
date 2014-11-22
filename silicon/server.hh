@@ -133,7 +133,16 @@ namespace iod
     template <typename... T>
     auto operator()(T...)
     {
-      return pre_typed_handler_creator<S, T...>(s_, name_);
+      auto add_missing_string_value_types = [] (auto u)
+      {
+        typedef decltype(u) U;
+        return static_if<std::is_base_of<symbol<U>, U>::value>(
+          [&] (auto& u) { return u = std::string(); },
+          [&] (auto& u) { return u; }, u);
+      };
+
+      return pre_typed_handler_creator<S, decltype(add_missing_string_value_types(std::declval<T>()))...>
+                                                   (s_, name_);
     }
     
     S* s_;

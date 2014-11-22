@@ -6,6 +6,7 @@
 #include <silicon/sqlite_session.hh>
 #include <silicon/server.hh>
 #include <silicon/crud.hh>
+#include <silicon/hash.hh>
 
 #include "symbols.hh"
 
@@ -98,82 +99,55 @@ int main(int argc, char* argv[])
     return 1;
   }
 
-  // silicon.middlewares(sqlite_middleware(argv[1]),
-  //                     sqlite_session_storage("user_sessions"),
-  //                     sqlite_orm_middleware<Song>("songs"),
-  //                     sqlite_orm_middleware<User>("users"))
-  //   .api(
-
-  //     _Song = crud<sqlite_orm_middleware<Song>>(),
-      
-  //     _User = crud<sqlite_orm_middleware<User>>(),
-      
-  //     _Upload(_Id = int(), _File = binary_blob()) = [] (auto params, sqlite_orm& orm, current_user& user)
-  //     {
-  //       Song song;
-  //       if (!orm.find_by_id(params.id, song))
-  //         throw error::bad_request("This song's metadata does not exist. Save them before uploading the file.");
-    
-  //       if (song.user_id != user.id)
-  //         throw error::unauthorized("This song belongs to another user.");
-
-  //       std::ofstream f(song_path(song), std::ios::binary);
-  //       f.write(params.file.data, params.file.len);
-  //       f.close();      
-  //     }
-
-  //     _Stream(_Id = int()) = [] (auto params, sqlite_orm& orm, response& resp)
-  //     {
-  //       Song song;
-  //       if (!orm.find_by_id(params.id, song))
-  //         throw error::not_found("This song does not exist.");
-
-  //       resp.set_header("Content-Type", mime_type(song.filename));
-
-  //       std::ifstream f(song_path(song), std::ios::binary);
-  //       char buf[1024];
-  //       int s;
-  //       while (s = f.read(buf, sizeof(buf)))
-  //         resp.write(buf, s);
-  //       f.close();      
-  //     }
-            
-  //     )
-
-  //   .serve(atoi(argv[2]));
-  
-
-  // Was:
-
   auto song_path = [&] (const Song& s)
   {
     std::ostringstream ss;
-    ss << argv[2] << s.id << "_" << s.title;
+    ss << argv[2] << s.id;
     return ss.str();
   };
 
   auto mime_type = [&] (const std::string& s)
   {
-    return "audio/mp3";
+    return "audio/mp3"; // Fixme handle more types.
   };
 
-  // Build the server with its stateful middlewares.
+  // Build the server with its attached middlewares.
   auto server = silicon(sqlite_middleware(argv[1]),
                         sqlite_session_middleware<session_data>("user_sessions"),
                         sqlite_orm_middleware<Song>("songs"),
                         sqlite_orm_middleware<User>("users"));
-  
-  // Setup CRUD procedures of objects Song and User.
+
+  // =========================================================
+  // User signup, signout, login, logout.
+  server["login"](_Email, _Password) = [] (auto params, authenticator& auth) {
+    if (!auth.login(params.email, hash_sha3_512(params.password)))
+      throw error::bad_request("Invalid login or password");
+  };
+
+  server["logout"] = [] (session& sess) { sess.destroy(); };
+
+  server["signup"](_Email, _Password) = [] (auto params, sqlite_orm<User>& users) {
+    params.password = hash_sha3_512(params.password);
+    if (!users.insert(params))
+      throw error::bad_request("Cannot create user account");
+  };
+
+  server["signout"](_Password) = [] (auto params, sqlite_orm<User>& users,
+                                     current_user& user, session& sess) {
+    if (user.password != hash_sha3_512(params.password)) throw error::bad_request("Invalid password");
+    users.destroy(user);
+    sess.destroy();
+  };
+
+  // =========================================================
+  // Setup CRUD procedures of objects Song.
   setup_crud(server,
              get_middleware<sqlite_orm_middleware<Song>>(server),
              _Prefix = "song",
-             _Validate = [] (current_user& user, Song& song) { return song.user_id == user.id; });
-
-  setup_crud(server,
-             get_middleware<sqlite_orm_middleware<User>>(server),
-             _Prefix = "user",
-             _Validate = [] (current_user& cuser, User& user) { return cuser.id == user.id; });
-
+             _Write_access = [] (current_user& user, Song& song) { return song.user_id == user.id; }
+    );
+  
+  // =========================================================
   // Upload procedure to attach a given file to the song of the given id.
   server["upload"](_Id = int()) =
     [&] (auto params, sqlite_orm<Song>& orm, current_user& user, request& req) {
@@ -186,10 +160,12 @@ int main(int argc, char* argv[])
       throw error::unauthorized("This song belongs to another user.");
 
     std::ofstream f(song_path(song), std::ios::binary);
-    f.write(params.file.data(), params.file.size());
+    stringview file_content = req.get_tail_string();
+    f.write(file_content.data(), file_content.size());
     f.close();      
   };
 
+  // =========================================================
   // Access to the song of the given id.
   server["stream"](_Id = int()) = [&] (auto params,
                                        sqlite_orm<Song>& orm,

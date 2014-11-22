@@ -27,6 +27,10 @@
 #define IOD_SYMBOL__Read_access
     iod_define_symbol(read_access, _Read_access)
 #endif
+#ifndef IOD_SYMBOL__Write_access
+#define IOD_SYMBOL__Write_access
+    iod_define_symbol(write_access, _Write_access)
+#endif
 #ifndef IOD_SYMBOL__Validate
 #define IOD_SYMBOL__Validate
     iod_define_symbol(validate, _Validate)
@@ -42,6 +46,18 @@
 #ifndef IOD_SYMBOL__On_update_success
 #define IOD_SYMBOL__On_update_success
     iod_define_symbol(on_update_success, _On_update_success)
+#endif
+#ifndef IOD_SYMBOL__Before_create
+#define IOD_SYMBOL__Before_create
+    iod_define_symbol(before_create, _Before_create)
+#endif
+#ifndef IOD_SYMBOL__Before_destroy
+#define IOD_SYMBOL__Before_destroy
+    iod_define_symbol(before_destroy, _Before_destroy)
+#endif
+#ifndef IOD_SYMBOL__Before_update
+#define IOD_SYMBOL__Before_update
+    iod_define_symbol(before_update, _Before_update)
 #endif
 #ifndef IOD_SYMBOL__Id
 #define IOD_SYMBOL__Id

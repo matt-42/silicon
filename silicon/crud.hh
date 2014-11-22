@@ -21,11 +21,12 @@ namespace iod
 
     auto opts = D(_opts...);
     auto read_access = opts.get(_Read_access, [] () { return true; });
+    auto write_access = opts.get(_Write_access, [] () { return true; });
     auto validate = opts.get(_Validate, [] () { return true; });
     auto on_create_success = opts.get(_On_create_success, [] () {});
     auto on_destroy_success = opts.get(_On_destroy_success, [] () {});
     auto on_update_success = opts.get(_On_update_success, [] () {});
-
+    
     std::string prefix = opts.prefix;
     
     server[prefix + "_get_by_id"](_Id = int()) = [&] (auto params, ORMI& orm,
@@ -57,10 +58,12 @@ namespace iod
     };
 
     server[prefix + "/update"] = [&] (O obj, ORMI& orm,
-                                     dependencies_of<decltype(validate)>& v_deps,
-                                     dependencies_of<decltype(on_update_success)>& ou_deps)
+                                      dependencies_of<decltype(validate)>& v_deps,
+                                      dependencies_of<decltype(on_update_success)>& ou_deps,
+                                      dependencies_of<decltype(write_access)>& wa_deps)
     {
-      if (call_callback(validate, obj, v_deps))
+      if (call_callback(write_access, obj, wa_deps) and
+          call_callback(validate, obj, v_deps))
       {
         orm.update(obj);
         call_callback(on_update_success, obj, ou_deps);
@@ -70,13 +73,15 @@ namespace iod
     };
 
     server[prefix + "/delete"] = [&] (PKS params,
-                                     ORMI& orm,
-                                     dependencies_of<decltype(validate)>& v_deps,
-                                     dependencies_of<decltype(on_destroy_success)>& od_deps)
+                                      ORMI& orm,
+                                      dependencies_of<decltype(validate)>& v_deps,
+                                      dependencies_of<decltype(on_destroy_success)>& od_deps,
+                                      dependencies_of<decltype(write_access)>& wa_deps)
     {
       O o;
       o = params;
-      if (call_callback(validate, o, v_deps))
+      if (call_callback(write_access, o, wa_deps) and
+          call_callback(validate, o, v_deps))
       {
         orm.destroy(params);
         call_callback(on_destroy_success, o, od_deps);

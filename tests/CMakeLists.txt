@@ -69,7 +69,7 @@ add_executable(crud crud.cc)
 target_link_libraries(crud sqlite3 mimosa-http mimosa-uri mimosa gnutls z pthread lzma gnutls gcrypt pthread microhttpd)
 
 add_executable(mysoundcloud mysoundcloud.cc)
-target_link_libraries(mysoundcloud sqlite3 mimosa-http mimosa-uri mimosa gnutls z pthread lzma gnutls gcrypt pthread microhttpd)
+target_link_libraries(mysoundcloud sqlite3 mimosa-http mimosa-uri mimosa gnutls z pthread lzma gnutls gcrypt pthread microhttpd nettle)
 
 add_executable(upload upload.cc)
 target_link_libraries(upload sqlite3 mimosa-http mimosa-uri mimosa gnutls z pthread lzma gnutls gcrypt pthread microhttpd)

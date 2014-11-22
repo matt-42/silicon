@@ -9,9 +9,13 @@ path
 
 primary_key
 read_access
+write_access
 validate
 on_create_success
 on_destroy_success
 on_update_success
+before_create
+before_destroy
+before_update
 id
 prefix
