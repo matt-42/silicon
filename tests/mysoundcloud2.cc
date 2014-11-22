@@ -150,7 +150,7 @@ int main(int argc, char* argv[])
       
       // =========================================================
       // Upload procedure to attach a given file to the song of the given id.
-      _Upload(_Id = int(), _File = binary_blob()) =
+      _Upload(_Id = int()) =
 
       [&] (auto params, sqlite_orm<Song>& orm, current_user& user, request& req) {
 
@@ -165,7 +165,7 @@ int main(int argc, char* argv[])
         stringview file_content = req.get_tail_string();
         f.write(file_content.data(), file_content.size());
         f.close();      
-      }
+      },
 
       // =========================================================
       // Access to the song of the given id.
