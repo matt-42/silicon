@@ -41,13 +41,15 @@ namespace iod
         throw error::unauthorized("Not enough priviledges to edit this object");
     };
     
-    server[prefix + "/create"] = [&] (O2 obj, ORMI& orm,
-                                     dependencies_of<decltype(validate)>& v_deps,
-                                     dependencies_of<decltype(on_create_success)>& oc_deps)
+    server[prefix + "_create"] = [&] (O2 obj, ORMI& orm,
+                                      dependencies_of<decltype(validate)>& v_deps,
+                                      dependencies_of<decltype(on_create_success)>& oc_deps,
+                                      dependencies_of<decltype(write_access)>& wa_deps)
     {
       O o;
       o = obj;
-      if (call_callback(validate, o, v_deps))
+      if (call_callback(write_access, o, wa_deps) and
+          call_callback(validate, o, v_deps))
       {
         int new_id = orm.insert(o);
         call_callback(on_create_success, o, oc_deps);
@@ -57,7 +59,7 @@ namespace iod
         throw error::unauthorized("Not enough priviledges to edit this object");
     };
 
-    server[prefix + "/update"] = [&] (O obj, ORMI& orm,
+    server[prefix + "_update"] = [&] (O obj, ORMI& orm,
                                       dependencies_of<decltype(validate)>& v_deps,
                                       dependencies_of<decltype(on_update_success)>& ou_deps,
                                       dependencies_of<decltype(write_access)>& wa_deps)
@@ -72,7 +74,7 @@ namespace iod
         throw error::unauthorized("Not enough priviledges to edit this object");
     };
 
-    server[prefix + "/delete"] = [&] (PKS params,
+    server[prefix + "_delete"] = [&] (PKS params,
                                       ORMI& orm,
                                       dependencies_of<decltype(validate)>& v_deps,
                                       dependencies_of<decltype(on_destroy_success)>& od_deps,
