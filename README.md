@@ -1,35 +1,52 @@
 
-The Silicon Web Framework
+The Silicon Web Framework.
 =================================
 
 Note: This project is a work in progress.
 
-Silicon is a easy to use, fast, safe, modern C++ json remote procedure call framework
-based on the C++14 standard. It relies the powerful new
-features of C++ and imitate the flexibility of other languages like
-Ruby, Python, Go or Javascript using meta programming.
+Silicon is a high performance, middleware oriented C++14 http web
+framework. It brings to C++ the high expressive power of other web
+frameworks based on dynamic languages, without compromising on
+performances.
+
+Here is a example of simple hello server:
+
+```c++
+int main(int argc, char* argv[])
+{
+  auto server = silicon();
+  server.route("/hello")(_Name) = [] (auto p) { return "Hello " + p.name; };
+  server.serve(8888);
+}
+```
 
 Features
 =========================
 
   - Ease of use:
 
-    The framework is designed so that the user only writes the body of
-    the procedures, the framework take care of the rest
-    (serialization, deserialization, generation of client libraries, routing, multithreading, ...)
+    The framework is designed such that the developper only writes the core of
+    the server, the framework takes care of the rest
+    (serialization, deserialization, generation of client libraries,
+    routing, multithreading, ...)
 
   - Fast:
-    
-    C++ has no overhead such as other web programming languages: No interpreter,
-    no garbage collection, no virtual machine, and no just in time compiler.
-    C++ multithreaded http server with the mimosa framework.
 
-  - Compiled:
+    Finally, C++ has no overhead such as other web programming languages: No
+    interpreter, no garbage collection, no virtual machine, and no
+    just in time compiler. It relies on a thread based mimosa http server.
 
-    Using a compiled language allows to validate the validity of the
-    server code before deploying it. Furthermore, json objects are
-    deserialized in plain, type safe, C++ object (not hash tables),
-    disallowing access to undefine members.
+  - Verified:
+
+    Thanks to the static programming paradigm of the framework, lots
+    of the common errors will be detected and reported by the
+    compiler.
+
+  - Dependency injection:
+
+    The framework implement a dependency injection patern running at
+    compile time. It traverses the dependency graph of the middlewares
+    required by each handler, instantiante them to finally call the handler.
 
   - Automatic validation, serialization and deserialization of json messages:
 
@@ -42,24 +59,20 @@ Features
 
   - Automatic generation of the client libraries:
 
-    Again, thanks to static introspection, the framework generates at
-    compile time the client libraries. As of today, only javascript is
-    supported.
-
-  - Dependency Injection and Middlewares:
-
-    Procedures only take the middleware they need as argument.
+    Again, thanks to static introspection, the framework generates the
+    client libraries. As of today, only javascript is supported.
 
 Getting Started
 =========================
 
-The most basic procedure is an object to write in the http response body:
+Procedures bodies can have different forms, the simplest procedure is a string:
 
 ```c++
 namespace sl = silicon
 int main(int argc, char* argv[])
 {
-  sl::server s(argc, argv);
+  // Instantiate a server.
+  auto s = silicon();
 
   // Create the Hello world procedure.
   s["hello_world"] = "Hello world!";
@@ -67,9 +80,9 @@ int main(int argc, char* argv[])
   //                (see below the javascript example).
 
   // Generate the javascript client libraries and serve it on a specific route.
-  s["/bindings.js"] = generate_javascript_bindings(s, sl::module = "hello_world_api");
+  s.route("/bindings.js") = generate_javascript_bindings(s, _Module = "my_api");
  
-  s.serve();
+  s.serve(8888);
 }
 ```
 
@@ -79,7 +92,7 @@ The javascript client would be:
 <script type="text/javascript" src="http://my_server_path/bindings.js" />
 
 <script>
-        hello_world_api.hello_world().then(function(r){ document.write(r); });
+        my_api.hello_world().then(function(r){ document.write(r); });
 </script>
 ```
 
@@ -93,13 +106,12 @@ Silicon procedures can have different types:
   // A lambda function returning a string.
   s["lambda1"] = [] () { return "Hello from lambda"; };
 
-  // Or an staticaly introspectable object.
-  // The serialization to json is automatic.
+  // Or a iod object to be serialized in json.
   s["lambda2"] = [] () { return D(_Name = "Paul", _City = "Paris"); };
 
   // A procedure taking parameters.
   // The type of the parameter must be specified with the function D.
-  s["lambda3"] = [] (decltype(D(_Name = std::string())) params)
+  s["lambda3"](_Name) = [] (auto params)
   { 
     return "Hello" + params.name; 
   };
@@ -109,40 +121,31 @@ Silicon procedures can have different types:
      response << iod::D(_Message = "Hello World");
   };
 
-  // Procedures also take middleware as argument.
-  s["session"] = [] (my_session_middleware session) {
-     return iod::D(_Message = "Hello " + session.username);
-  };
-
-```
-
-A procedure can also be a classic C++ function:
-
-```c++
+  // A raw C++ function:
   auto my_function() { return D(_Message = "Hello world"); }
 
   [...]
 
-  // A session middleware
   s["classic_function"] = my_function;
+
+
 ```
 
-
-DI and Middlewares
+Procedures arguments, DI and Middlewares
 =========================
 
 At compile time, Silicon analyses the arguments of the procedures and
 generates via meta programmation the argument list
 construction. Hence, there is not restriction on the arguments order
 and procedures instantiate only the middleware they need. For example,
-even if a user own a session, not all the procedures actually need to
+even if a user owns a session, not all the procedures actually need to
 read data from this session. Some cpu cycles are then saved if
 only the minimum set of procedures instantiate the session.
 
 
 ```c++
-  // Instantiates a session middleware
-  s["session"] = [] (my_session_middleware& session) {
+  // Instantiates a middleware
+  s["session"] = [] (my_middleware& session) {
      return D(_Message = "Hello " + session.username);
   };
 ```
