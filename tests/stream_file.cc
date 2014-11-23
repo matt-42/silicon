@@ -1,14 +1,5 @@
-#include <iostream>
-#include <fstream>
-
-#include <iod/sio_utils.hh>
-
 #include <silicon/mimosa_backend.hh>
 #include <silicon/server.hh>
-
-#include "symbols.hh"
-
-using namespace s;
 
 int main(int argc, char* argv[])
 {
