@@ -1,51 +1,54 @@
 
 #include <silicon/server.hh>
 
-iod_define_symbol(module, _Module);
-
 namespace iod
 {
-  std::string javascript_call_procedure();
+  std::string javascript_api_base();
 
   template <typename S, typename... T>
   std::string generate_javascript_client(const S& s, T... _options)
   {
+    auto opts = D(_options...);
+    std::string module = opts.get(_Module, "sl");
+
     auto desc = server_api_description(s);
 
-
-    auto opts = D(_options...);
 
     std::ostringstream calls;
 
     auto handlers = s.get_handlers();
     for (int i = 0; i < desc.size(); i++)
     {
-      //visit(h)
+      std::string ret = desc[i].return_type;
+      if (ret[0] == '{') ret = "json";
+
       calls << "  // ";
       print_procedure_desc(calls, desc[i]);
       calls << std::endl;
-      calls << "  this." << desc[i].name << " = function(params) { return this.call_procedure(" << i << ", params); }" << std::endl;
+      calls << "  " << module << ".prototype." << desc[i].name << " = function(params) { return this.call_procedure(" << i << ", params, '" << ret << "'); }" << std::endl;
       calls << std::endl;
     }
 
-    std::string module = opts.get(_Module, "sl");
 
     std::ostringstream src;
 
-    src << "function " << module << "() {" << std::endl;
-    src << javascript_call_procedure();
+    src << javascript_api_base();
+    src << "var " << module << " = new silicon_api_base();" << std::endl;
     src << calls.str();
     src << "}" << std::endl;
 
     return src.str();
   }
   
-  std::string javascript_call_procedure()
+  std::string javascript_api_base()
   {
     return R"javascript(
-  var server_url = "/";
-  this.set_server = function(url) { server_url = url; }
-  this.call_procedure = function(id, params)
+
+function silicon_api_base()
+{
+  this.server_url = "/";
+  this.set_server = function(url) { this.server_url = url; }
+  this.call_procedure = function(id, params, return_type)
   {
     // Return a new promise.
     var _this = this;
@@ -59,12 +62,15 @@ namespace iod
         // so check the status
         if (req.status == 200) {
           // Resolve the promise with the response text
-          resolve(req.response);
+          switch (return_type) {
+          case "int":    resolve(parseInt(req.response)); break;
+          case "float":  resolve(parseFloat(req.response)); break;
+          case "json":   resolve(JSON.parse(req.response)); break;
+          default: resolve(req.response); break;
         }
         else {
-          // Otherwise reject with the status text
-          // which will hopefully be a meaningful error
-          reject(Error(req.statusText));
+          // Otherwise reject with the request object.
+          reject(req);
         }
       };
 
@@ -79,6 +85,8 @@ namespace iod
     });
   }
 
+
+}
 
 )javascript";
     
