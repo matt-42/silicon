@@ -17,7 +17,7 @@ using namespace iod;
 // Model
 typedef decltype(iod::D(_Id(_Primary_key) = int(),
                         _Email = std::string(),
-                        _Password = std::string()
+                        _Password = blob()
                    )) User;
 
 typedef decltype(iod::D(_Id(_Primary_key) = int(),
@@ -123,9 +123,13 @@ int main(int argc, char* argv[])
   server["logout"] = [] (session& sess) { sess.destroy(); };
 
   server["signup"](_Email, _Password) = [] (auto params, sqlite_orm<User>& users) {
-    params.password = hash_sha3_512(params.password);
-    if (!users.insert(params))
+    User u;
+    u.email = params.email;
+    u.password = hash_sha3_512(params.password);
+    int id = 0;
+    if (!(id = users.insert(u)))
       throw error::bad_request("Cannot create user account");
+    return D(_Id = id);
   };
 
   server["signout"](_Password) = [] (auto params, sqlite_orm<User>& users,
