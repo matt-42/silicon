@@ -50,17 +50,15 @@ Features
 
   - Automatic validation, serialization and deserialization of json messages:
 
-    Thanks to static introspection and meta programming, a pair json
-    parser and encoder is generated for each message type. No hash
-    table and other dynamic structures as in all other json
-    frameworks. Since the json parser knows the structure of each
-    message, it throw exeption when a required field is missing, or
-    when the type of a value is incorect.
+    Relying on static introspection, a pair fast json parser and
+    encoder is generated for each message type. Since the json parser
+    knows about the structure of each message, it throws an exeption
+    when a field is missing, or when the type of a value is incorect.
 
   - Automatic generation of the client libraries:
 
-    Again, thanks to static introspection, the framework generates the
-    client libraries. As of today, only javascript is supported.
+    The framework generates the client libraries. As of today, only
+    javascript is supported.
 
 Getting Started
 =========================
