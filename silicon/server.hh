@@ -147,18 +147,6 @@ namespace iod
     template <typename... T>
     auto operator()(T...)
     {
-      
-      // auto add_missing_string_value_types = [] (auto u)
-      // {
-      //   typedef decltype(u) U;
-      //   return static_if<std::is_base_of<symbol<U>, U>::value>(
-      //     [&] (auto& u) { return u = std::string(); },
-      //     [&] (auto& u) { return u; }, u);
-      // };
-      // auto
-      // return pre_typed_handler_creator<S, decltype(add_missing_string_value_types(std::declval<T>()))...>
-      //                                              (s_, name_);
-
       return pre_typed_handler_creator<S, typename add_missing_string_value_types<T, std::is_base_of<symbol<T>, T>::value>::type...>
                                                    (s_, name_);
     }
@@ -253,14 +241,8 @@ namespace iod
       backend_.serve(port, [this] (auto& req, auto& res) { this->handle(req, res); });
     }
 
-    void serve_one()
-    {
-      //backend_.serve_one(*this);
-    }
-
     const std::vector<handler_base<M>*>& get_handlers() const { return handlers; }
 
-    //private:
     M middlewares_;
     backend backend_;
     std::vector<handler_base<M>*> handlers;
@@ -299,7 +281,6 @@ namespace iod
   void
   pre_typed_handler_creator<S, T...>::run(C content, std::tuple<U...>* a)
   {
-    //void* x = *a;
     s_->add_procedure(name_,
                       [&content] (U&&... tail)
                       {
