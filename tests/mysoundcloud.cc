@@ -48,10 +48,7 @@ struct authenticator
   bool login(const std::string& email, const std::string& password)
   {
     User u;
-    std::cout << email << std::endl;
-    std::cout << password << std::endl;
-    blob hash = password;
-    if (con("SELECT * from msc_users where email == ? and password == ?", email, hash) >> u)
+    if (con("SELECT * from msc_users where email == ? and password == ?", email, blob(password)) >> u)
     {
       sess.user_id = u.id;
       sess.save();
@@ -108,11 +105,6 @@ int main(int argc, char* argv[])
     std::ostringstream ss;
     ss << argv[2] << s.id;
     return ss.str();
-  };
-
-  auto mime_type = [&] (const std::string& s)
-  {
-    return "audio/mp3"; // Fixme handle more types.
   };
 
   // Build the server with its attached middlewares.
@@ -181,18 +173,19 @@ int main(int argc, char* argv[])
     if (!orm.find_by_id(params.id, song))
       throw error::not_found("This song does not exist.");
 
-    resp.set_header("Content-Type", mime_type(song.filename));
+    return file(song_path(song));
+    // resp.set_header("Content-Type", mime_type(song.filename));
 
-    std::ifstream f(song_path(song), std::ios::binary);
-    char buf[1024];
-    do
-    {
-      f.read(buf, sizeof(buf));
-      int s = f.gcount();
-      resp.write(buf, s);
-    } while (!f.eof());
+    // std::ifstream f(song_path(song), std::ios::binary);
+    // char buf[1024];
+    // do
+    // {
+    //   f.read(buf, sizeof(buf));
+    //   int s = f.gcount();
+    //   resp.write(buf, s);
+    // } while (!f.eof());
 
-    f.close();      
+    // f.close();      
   };
 
   std::string javascript_client_source_code = generate_javascript_client(server, _Module = "msc");

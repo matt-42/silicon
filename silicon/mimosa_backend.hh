@@ -5,7 +5,9 @@
 #include <mimosa/http/server.hh>
 #include <mimosa/http/response-writer.hh>
 #include <mimosa/http/request-reader.hh>
+#include <mimosa/http/fs-handler.hh>
 #include <silicon/symbols.hh>
+#include <silicon/file.hh>
 
 #include <iod/json.hh>
 
@@ -69,30 +71,48 @@ namespace iod
 
   struct response
   {
-    response(mh::ResponseWriter& rw) : rw_(rw) {}
+    response(mh::RequestReader& rq, mh::ResponseWriter& rw) : req_(rq), resp_(rw) {}
 
     auto get_body_string() const { return body_stream_.str(); }
     auto& get_body_stream() { return body_stream_; }
 
-    template <typename T>
-    auto operator<<(const T& t)
+    
+    void write(const char* str, int len) {
+      resp_.write(str, len);
+    }
+    
+    void write(const std::string& s)
     {
-      body_stream_ << t;
+      write(s.data(), s.size());
     }
 
     template <typename... T>
-    auto operator<<(const iod::sio<T...>& t)
+    auto write(const iod::sio<T...>& t)
     {
-      json_encode(t, body_stream_);
+      write(json_encode(t));
     }
 
-    void write(const char* str, int len) {
-      rw_.write(str, len);
+    template <typename... T>
+    void write(const file& t)
+    {
+      mh::FsHandler fs("/", 0);
+      fs.streamFile(req_, resp_, t.path());
     }
+    
+    template <typename T>
+    void write(const T& t)
+    {
+      std::stringstream ss;
+      ss << t;
+      write(ss.str());
+    }
+    
+    template <typename T>
+    auto& operator<<(const T& t) { write(t); return *this; }
     
     void write_body() {
       std::string s = body_stream_.str();
-      rw_.write(s.c_str(), s.size());
+      resp_.write(s.c_str(), s.size());
     }
 
     template <typename... O>
@@ -106,15 +126,16 @@ namespace iod
       cookie->setHttpOnly(options.has(_Http_only));
       if (options.has(_Expires)) cookie->setExpires(options.get(_Expires, ""));
       cookie->setPath(options.get(_Path, "/"));
-      rw_.addCookie(cookie);
+      resp_.addCookie(cookie);
     }
 
-    void set_header(const std::string& key, const std::string& value) { rw_.addHeader(key, value); }
+    void set_header(const std::string& key, const std::string& value) { resp_.addHeader(key, value); }
     
-    void set_status(int s) { rw_.setStatus(s); }
+    void set_status(int s) { resp_.setStatus(s); }
     
     std::ostringstream body_stream_;
-    mh::ResponseWriter& rw_;
+    mh::RequestReader& req_;
+    mh::ResponseWriter& resp_;
   };
 
   template <typename F>
@@ -126,15 +147,8 @@ namespace iod
                 mh::ResponseWriter & response_) const
     {
       request request(request_);
-      response response(response_);
-      // std::cout << "before" << std::endl;
-      // std::cout << &request_ << std::endl;
-      // std::cout << &response_ << std::endl;
+      response response(request_, response_);
       fun_(request, response);
-      // std::cout << "after" << std::endl;
-      response.rw_.setContentLength(response.get_body_string().size());
-      // std::cout << response.get_body_string().size() << std::endl;
-      response.write_body();
       return true;
     }
     F fun_;

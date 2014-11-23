@@ -73,3 +73,7 @@ target_link_libraries(mysoundcloud sqlite3 mimosa-http mimosa-uri mimosa gnutls 
 
 add_executable(upload upload.cc)
 target_link_libraries(upload sqlite3 mimosa-http mimosa-uri mimosa gnutls z pthread lzma gnutls gcrypt pthread microhttpd)
+
+
+add_executable(stream_file stream_file.cc)
+target_link_libraries(stream_file mimosa-http mimosa-uri mimosa mimosa-json mimosa-fs gnutls z pthread lzma gnutls gcrypt pthread)
