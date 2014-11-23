@@ -108,10 +108,10 @@ namespace iod
     C content_;
   };
 
-  template <typename S, typename... T>
+  template <typename F, typename... T>
   struct pre_typed_handler_creator
   {
-    pre_typed_handler_creator(S* s, std::string name) : s_(s), name_(name) {}
+    pre_typed_handler_creator(F f) : f_(f) {}
 
     template <typename C, typename... U>
     void run(C content, std::tuple<U...>*);
@@ -123,14 +123,13 @@ namespace iod
       run(content, (callable_arguments_tuple_t<decltype(&C::template operator()<params_type>)>*)0);
     }
 
-    S* s_;
-    std::string name_;
+    F f_;
   };
   
-  template <typename S>
+  template <typename F>
   struct handler_creator
   {
-    handler_creator(S* s, std::string name) : s_(s), name_(name) {}
+    handler_creator(F f) : f_(f) {}
 
     template <typename C>
     void operator=(C content);
@@ -145,24 +144,11 @@ namespace iod
     template <typename... T>
     auto operator()(T...)
     {
-      return pre_typed_handler_creator<S, typename add_missing_string_value_types<T, std::is_base_of<symbol<T>, T>::value>::type...>
-                                                   (s_, name_);
+      return pre_typed_handler_creator<F, typename add_missing_string_value_types<T, std::is_base_of<symbol<T>, T>::value>::type...>
+                                                   (f_);
     }
     
-    S* s_;
-    std::string name_;
-  };
-
-  template <typename S>
-  struct route_handler_creator
-  {
-    route_handler_creator(S* s, std::string route) : s_(s), route_(route) {}
-
-    template <typename C>
-    void operator=(C content);
-    
-    S* s_;
-    std::string route_;
+    F f_;
   };
   
   template <typename M>
@@ -175,13 +161,14 @@ namespace iod
 
     auto operator[](std::string procedure_name)
     {
-      return handler_creator<self_type>(this, procedure_name);
+      auto f = [this,procedure_name] (auto&& f) { this->add_procedure(procedure_name, f); };
+      return handler_creator<decltype(f)>(f);
     }
-
 
     auto route(std::string route_path)
     {
-      return route_handler_creator<self_type>(this, route_path);
+      auto f = [this,route_path] (auto&& f) { this->add_route(route_path, f); };
+      return handler_creator<decltype(f)>(f);
     }
     
     template <typename F>
@@ -203,21 +190,25 @@ namespace iod
       try
       {
         handler_base<M>* h = nullptr;
-        
-        if (request.location() == "/") // Routing with handler_id
+        const std::string& location = request.location();
+        if (location.size() > 3 and
+            location[0] == '/' and
+            location[1] == '_' and
+            location[2] == '_') // Routing with /__handler_id
         {
-          // get rq metadata.
-          auto md = iod::D(s::_Handler_id = int());
-          int pos;
-          iod::json_decode(md, request.get_body_string(), pos);
-          request.set_params_position(pos);
+          int hid = 0;
+          unsigned i = 3;
+          while (i < location.size() and location[i] >= '0' and location[i] <= '9')
+            hid = hid * 10 + location[i++] - '0';
+          
+          request.set_params_position(0);
 
-          if (md.handler_id < int(handlers.size()) and md.handler_id >= 0)
-            h = handlers[md.handler_id];
+          if (hid < int(handlers.size()) and hid >= 0)
+            h = handlers[hid];
           else
-            throw error::not_found("Procedure id = ", md.handler_id, " does not exist.");
+            throw error::not_found("Procedure id = ", hid, " does not exist.");
         }
-        else // Classing routing
+        else // Classic routing
         {
           auto r = routes.find(request.location());
           if (r != routes.end())
@@ -264,14 +255,7 @@ namespace iod
   template <typename C>
   void handler_creator<S>::operator=(C content)
   {
-    s_->add_procedure(name_, content);
-  }
-
-  template <typename S>
-  template <typename C>
-  void route_handler_creator<S>::operator=(C content)
-  {
-    s_->add_route(route_, content);
+    f_(content);
   }
 
   template <typename S, typename... T>
@@ -279,13 +263,12 @@ namespace iod
   void
   pre_typed_handler_creator<S, T...>::run(C content, std::tuple<U...>*)
   {
-    s_->add_procedure(name_,
-                      [&content] (U&&... tail)
-                      {
-                        return content(std::forward<U>(tail)...);
-                      });
+    f_([&content] (U&&... tail)
+       {
+         return content(std::forward<U>(tail)...);
+       });
   };
-
+  
 }
 
 #include <silicon/run_handler.hh>
