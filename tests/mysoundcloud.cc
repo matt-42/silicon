@@ -174,18 +174,6 @@ int main(int argc, char* argv[])
       throw error::not_found("This song does not exist.");
 
     return file(song_path(song));
-    // resp.set_header("Content-Type", mime_type(song.filename));
-
-    // std::ifstream f(song_path(song), std::ios::binary);
-    // char buf[1024];
-    // do
-    // {
-    //   f.read(buf, sizeof(buf));
-    //   int s = f.gcount();
-    //   resp.write(buf, s);
-    // } while (!f.eof());
-
-    // f.close();      
   };
 
   std::string javascript_client_source_code = generate_javascript_client(server, _Module = "msc");
@@ -206,6 +194,5 @@ int main(int argc, char* argv[])
 
   print_server_api(server);
 
-  // std::cout << generate_javascript_client(server, _Module = "msc") << std::endl;
   server.serve(atoi(argv[2]));
 }
