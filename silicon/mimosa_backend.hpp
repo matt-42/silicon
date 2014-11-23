@@ -15,7 +15,7 @@ namespace iod
       std::cerr << "Error: Failed to listen on the port " << port << " " << ::strerror(errno) << std::endl;
       return;
     }
-
+    
     while(true)
       server->serveOne(0, true);
   }

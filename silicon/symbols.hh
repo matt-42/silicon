@@ -2,6 +2,11 @@
 
 #include <iod/symbol.hh>
 
+#ifndef IOD_SYMBOL__Module
+#define IOD_SYMBOL__Module
+    iod_define_symbol(module, _Module)
+#endif
+
 #ifndef IOD_SYMBOL__Secure
 #define IOD_SYMBOL__Secure
     iod_define_symbol(secure, _Secure)

@@ -3,6 +3,7 @@
 namespace iod
 {
   
+  const char* type_string(const file*) { return "file"; }
   const char* type_string(const void*) { return "void"; }
   const char* type_string(const std::string*) { return "string"; }
   const char* type_string(const int*) { return "int"; }
@@ -33,22 +34,23 @@ namespace iod
       typedef callable_arguments_tuple_t<typename H::content_type> args_type;
 
       // Extract the sio argument.
-      typedef decltype(foreach(*(args_type*)0) | [&] (auto& a)
+      foreach(*(args_type*)0) | [&, this] (auto& a)
                        {
-                         return static_if<is_sio<decltype(a)>::value>(
-                           [&] () { return &a; },
-                           [&] () { });
-                       }) args2_type;
+                         static_if<is_sio<decltype(a)>::value>(
+                           [this] (auto& a) { this->fill_args(&a); },
+                           [] (auto& a) { }, a);
+                       };
 
-      fill_args((args2_type*)0);
+      //typedef decltype(a) args2_type;
+      //fill_args((args2_type*)0);
+
       return_type = type_string((ret_type*)0);
     }
 
     template <typename T>
     void fill_args(T*)
     {
-      typedef std::tuple_element_t<0, T> arg_sio;
-      foreach(*(arg_sio)0) | [&] (auto& a)
+      foreach(*(T*)0) | [&] (auto& a)
       {
         args.push_back(std::make_pair(a.symbol().name(), type_string(&a.value())));
       };

@@ -24,13 +24,9 @@ int main(int argc, char* argv[])
   using namespace iod;
   using namespace s;
   
-  sqlite_connection db;
-  db.connect("./db.sqlite");
-
-  //auto sql = sqlite_middleware("./db.sqlite");
   auto server = silicon(sqlite_middleware("./db.sqlite"),
                         sqlite_orm_middleware<User>("user"));
-
+  
   setup_crud(server, get_middleware<sqlite_orm_middleware<User>>(server), _Prefix = "user");
-  server.serve();
+  server.serve(1234);
 }

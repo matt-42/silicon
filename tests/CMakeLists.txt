@@ -27,8 +27,8 @@ include_directories($ENV{HOME}/projects/iod
 
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib
         ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib64)
-#add_definitions(-std=c++14 -O3 -march=native)
-add_definitions(-std=c++14 -Wall)
+add_definitions(-std=c++14 -O3 -march=native)
+#add_definitions(-std=c++14 -Wall)
 add_executable(test_backend test_backend.cc)
 add_executable(sqlite sqlite.cc)
 add_executable(middlewares middlewares.cc)
@@ -73,6 +73,10 @@ target_link_libraries(mysoundcloud sqlite3 mimosa-http mimosa-uri mimosa gnutls 
 
 add_executable(upload upload.cc)
 target_link_libraries(upload sqlite3 mimosa-http mimosa-uri mimosa gnutls z pthread lzma gnutls gcrypt pthread microhttpd)
+
+
+add_executable(pre_typed_handlers pre_typed_handlers.cc)
+target_link_libraries(pre_typed_handlers mimosa-http mimosa-uri mimosa gnutls z pthread lzma gnutls gcrypt pthread sqlite3)
 
 
 add_executable(stream_file stream_file.cc)

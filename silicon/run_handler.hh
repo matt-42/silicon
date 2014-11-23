@@ -89,25 +89,25 @@ namespace iod
   };
 
 
-  template <typename F, typename B>
+  template <typename B>
   struct dependencies_of_
   {
     static auto instantiate()
     {
-      return dependencies_of_<F, B>();
+      return dependencies_of_<B>();
     }
      
     std::tuple<> deps;
   };
   
-  template <typename F, typename... D>
-  struct dependencies_of_<F, std::tuple<D...>>
+  template <typename... D>
+  struct dependencies_of_<std::tuple<D...>>
   {
     dependencies_of_(D... d) : deps(d...) {}
 
     static auto instantiate(D&&... deps)
     {
-      return dependencies_of_<F, std::tuple<D...>>(deps...);
+      return dependencies_of_<std::tuple<D...>>(deps...);
     };
 
     std::tuple<std::remove_reference_t<D>...> deps;
@@ -128,9 +128,7 @@ namespace iod
 
   template <typename F>
   using dependencies_of =
-                dependencies_of_<F,
-                                 decltype(filter_middleware_deps(std::declval<callable_arguments_tuple_t<F>>()))
-                                 >;
+    dependencies_of_<decltype(filter_middleware_deps(std::declval<callable_arguments_tuple_t<F>>()))>;
     
   template <typename E, typename F, typename C>
   auto instantiate_middleware(F& factories, C&& ctx);

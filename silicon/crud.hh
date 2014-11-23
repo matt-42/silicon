@@ -30,7 +30,7 @@ namespace iod
     std::string prefix = opts.prefix;
     
     server[prefix + "_get_by_id"](_Id = int()) = [&] (auto params, ORMI& orm,
-                                                     dependencies_of<decltype(read_access)>& ra_deps)
+                                                      dependencies_of<decltype(read_access)>& ra_deps)
     {
       O o;
       if (!orm.find_by_id(params.id, o))

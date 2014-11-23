@@ -137,18 +137,29 @@ namespace iod
     template <typename C>
     void operator=(C content);
 
+    template <typename U, bool>
+    struct add_missing_string_value_types { typedef U type; };
+    template <typename U>
+    struct add_missing_string_value_types<U, true> {
+      typedef typename U::template variable_type<std::string> type;
+    };
+    
     template <typename... T>
     auto operator()(T...)
     {
-      auto add_missing_string_value_types = [] (auto u)
-      {
-        typedef decltype(u) U;
-        return static_if<std::is_base_of<symbol<U>, U>::value>(
-          [&] (auto& u) { return u = std::string(); },
-          [&] (auto& u) { return u; }, u);
-      };
+      
+      // auto add_missing_string_value_types = [] (auto u)
+      // {
+      //   typedef decltype(u) U;
+      //   return static_if<std::is_base_of<symbol<U>, U>::value>(
+      //     [&] (auto& u) { return u = std::string(); },
+      //     [&] (auto& u) { return u; }, u);
+      // };
+      // auto
+      // return pre_typed_handler_creator<S, decltype(add_missing_string_value_types(std::declval<T>()))...>
+      //                                              (s_, name_);
 
-      return pre_typed_handler_creator<S, decltype(add_missing_string_value_types(std::declval<T>()))...>
+      return pre_typed_handler_creator<S, typename add_missing_string_value_types<T, std::is_base_of<symbol<T>, T>::value>::type...>
                                                    (s_, name_);
     }
     
