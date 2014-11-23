@@ -7,11 +7,7 @@
 #include <silicon/sqlite.hh>
 #include <silicon/server.hh>
 
-iod_define_symbol(id, _Id);
-iod_define_symbol(name, _Name);
-iod_define_symbol(age, _Age);
-iod_define_symbol(address, _Address);
-iod_define_symbol(salary, _Salary);
+#include "symbols.hh"
 
 #define silicon_params(...) decltype(iod::D(__VA_ARGS__))
 
@@ -24,7 +20,7 @@ typedef decltype(iod::D(_Id = int(),
                         _Salary = float()
                    )) User;
 
-int main(int argc, char* argv[])
+int main()
 {
   using namespace iod;
   
@@ -44,7 +40,6 @@ int main(int argc, char* argv[])
     std::cout << std::endl;
   };
 
-  //auto sql = sqlite_middleware("./db.sqlite");
   auto server = silicon(sqlite_middleware("./db.sqlite"));
 
   server["test1"] = "test";
@@ -57,17 +52,5 @@ int main(int argc, char* argv[])
     else
       return v[0];
   };
-  server.serve();
+  server.serve(8888);
 }
-
-// {
-//   s["login"](_Username = std::string(), _Password = std::string()) |
-//     [] (auto& params,
-//         session_storage session,
-//         must_authenticate)
-//   {
-//     session[""] = authenticate(params.name, params.password);
-//     int success = 
-//     return D(_Success = success);
-//   }
-// }

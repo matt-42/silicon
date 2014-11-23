@@ -17,15 +17,15 @@ namespace iod
     std::ostringstream calls;
 
     auto handlers = s.get_handlers();
-    for (int i = 0; i < desc.size(); i++)
+    for (unsigned i = 0; i < desc.size(); i++)
     {
       std::string ret = desc[i].return_type;
       if (ret[0] == '{') ret = "json";
 
-      calls << "  // ";
+      calls << "// ";
       print_procedure_desc(calls, desc[i]);
       calls << std::endl;
-      calls << "  " << module << ".prototype." << desc[i].name << " = function(params) { return this.call_procedure(" << i << ", params, '" << ret << "'); }" << std::endl;
+      calls << module << ".prototype." << desc[i].name << " = function(params) { return this.call_procedure(" << i << ", params, '" << ret << "'); }" << std::endl;
       calls << std::endl;
     }
 
@@ -35,7 +35,6 @@ namespace iod
     src << javascript_api_base();
     src << "var " << module << " = new silicon_api_base();" << std::endl;
     src << calls.str();
-    src << "}" << std::endl;
 
     return src.str();
   }
@@ -67,6 +66,7 @@ function silicon_api_base()
           case "float":  resolve(parseFloat(req.response)); break;
           case "json":   resolve(JSON.parse(req.response)); break;
           default: resolve(req.response); break;
+          }
         }
         else {
           // Otherwise reject with the request object.
@@ -80,11 +80,14 @@ function silicon_api_base()
       };
 
       // Make the request
-      body = JSON.stringify({ handler_id: id}) + JSON.stringify(params);
-      req.send(body);
+      if (typeof params == 'object')
+      {
+        body = JSON.stringify({ handler_id: id}) + JSON.stringify(params);
+        req.send(body);
+      }
+      else req.send(JSON.stringify({ handler_id: id}) + params);
     });
   }
-
 
 }
 

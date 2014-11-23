@@ -2,6 +2,7 @@
 
 #include <iod/symbol.hh>
 
+handler_id
 module
 
 secure

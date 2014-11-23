@@ -8,14 +8,7 @@
 #include <silicon/sqlite_session.hh>
 #include <silicon/server.hh>
 
-iod_define_symbol(user_id, _User_id);
-iod_define_symbol(id, _Id);
-iod_define_symbol(name, _Name);
-iod_define_symbol(age, _Age);
-iod_define_symbol(address, _Address);
-iod_define_symbol(salary, _Salary);
-
-#define silicon_params(...) decltype(iod::D(__VA_ARGS__))
+#include "symbols.hh"
 
 using namespace s;
 using namespace iod;
@@ -93,7 +86,7 @@ struct authenticator
   sqlite_connection con;
 };
 
-int main(int argc, char* argv[])
+int main()
 {
   using namespace iod;
   
@@ -119,5 +112,5 @@ int main(int argc, char* argv[])
     return "success";
   };
 
-  server.serve();
+  server.serve(8888);
 }

@@ -165,9 +165,7 @@ int main(int argc, char* argv[])
 
   // =========================================================
   // Access to the song of the given id.
-  server["stream"](_Id = int()) = [&] (auto params,
-                                       sqlite_orm<Song>& orm,
-                                       response& resp)
+  server["stream"](_Id = int()) = [&] (auto params, sqlite_orm<Song>& orm)
   {
     Song song;
     if (!orm.find_by_id(params.id, song))

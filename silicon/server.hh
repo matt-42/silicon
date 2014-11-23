@@ -9,8 +9,6 @@
 #include <iod/tuple_utils.hh>
 #include <silicon/procedure_desc.hh>
 
-iod_define_symbol(handler_id, _Handler_id);
-
 namespace iod
 {
 
@@ -34,7 +32,7 @@ namespace iod
 
 
     template <typename E>
-    inline void format_error_(E& err) {}
+    inline void format_error_(E&) {}
 
     template <typename E, typename T1, typename... T>
     inline void format_error_(E& err, T1 a, T... args)
@@ -279,7 +277,7 @@ namespace iod
   template <typename S, typename... T>
   template <typename C, typename... U>
   void
-  pre_typed_handler_creator<S, T...>::run(C content, std::tuple<U...>* a)
+  pre_typed_handler_creator<S, T...>::run(C content, std::tuple<U...>*)
   {
     s_->add_procedure(name_,
                       [&content] (U&&... tail)

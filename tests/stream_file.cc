@@ -1,7 +1,7 @@
 #include <silicon/mimosa_backend.hh>
 #include <silicon/server.hh>
 
-int main(int argc, char* argv[])
+int main()
 {
   using namespace iod;
 

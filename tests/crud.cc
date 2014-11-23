@@ -19,7 +19,7 @@ typedef decltype(iod::D(_Id(_Primary_key) = int(),
                         _Salary = float()
                    )) User;
 
-int main(int argc, char* argv[])
+int main()
 {
   using namespace iod;
   using namespace s;

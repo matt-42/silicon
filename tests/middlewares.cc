@@ -4,12 +4,7 @@
 #include <silicon/server.hh>
 #include <silicon/sqlite.hh>
 
-
-iod_define_symbol(id, _Id);
-iod_define_symbol(name, _Name);
-iod_define_symbol(age, _Age);
-iod_define_symbol(address, _Address);
-iod_define_symbol(salary, _Salary);
+#include "symbols.hh"
 
 struct t3
 {
@@ -34,14 +29,6 @@ MIDDLEWARE(6)
 MIDDLEWARE(7)
 MIDDLEWARE(8)
 MIDDLEWARE(9)
-
-// struct t3
-// {
-//   t3(int _x) : x(_x) { std::cout << "building t3" << std::endl; }
-//   // t3(const t3& t) : x(t.x) { std::cout << "copying t3" << std::endl; }
-//   static t3 instantiate() { return t3{42}; };
-//   int x;
-// };
 
 struct m1;
 struct t1
@@ -75,37 +62,24 @@ struct m2
   t2 instantiate(t1& t1) { return t2(21 + t1.x); };
 };
 
-int main(int argc, char* argv[])
+int main()
 {
   using namespace iod;
   auto server = silicon(m1(), m2());
-
-  std::cout << is_middleware_instance<int>::value << std::endl;
-  std::cout << is_middleware_instance<t1>::value << std::endl;
-  std::cout << is_middleware_instance<t4>::value << std::endl;
-  std::cout << has_instantiate_static_method<int>::value << std::endl;
-  std::cout << has_instantiate_static_method<t1>::value << std::endl;
-  std::cout << has_instantiate_static_method<t3>::value << std::endl;
-
-  static_if<has_instantiate_static_method<t1>::value>(
-    [] (auto x) { return x + decltype(x)::instantiate(); },
-    [] (auto x) { return t1::middleware_type().instantiate(); },
-    t1(42));
-
   
-  server["h0"] = [] (t1& i1,
-                     decltype(D(_Id = int())) params)
+  server["h0"](_Id = int()) = [] (t1& i1,
+                                  auto params)
   {
-    return D(_Id = i1.x);
+    return D(_Id = i1.x + params.id);
   };
 
-  server["h1"] = [] (t1& i1, t2& i2, t3& i3,
-                     t4& t4, t5& t5, t6& t6, t7& t7
-                     , decltype(D(_Id = int())) params
-    ) {
-    std::cout << i1.x << " " << i2.x <<  " " << i3.x << std::endl;
-    return D(_Id = i1.x);
-  };
+  server["h1"](_Id = int()) = [] (t1& i1, t2& i2, t3& i3,
+                                  t4&, t5&, t6&, t7&,
+                                  auto params)
+    {
+      std::cout << i1.x << " " << i2.x <<  " " << i3.x << std::endl;
+      return D(_Id = i1.x + params.id);
+    };
 
   auto sub_handler = [] (t2& i2, std::string& s) { std::cout << i2.x <<  " -> " << s << std::endl; };
  
@@ -115,9 +89,9 @@ int main(int argc, char* argv[])
   {
     t2 i2(22);
     std::string s = "test";
-    apply(sub_handler, i2, s, call_with_di);
+    apply(sub_handler, i2, s, sub_deps, call_with_di);
     return D(_Id = i1.x);
   };
   
-  server.serve();
+  server.serve(8888);
 }

@@ -12,7 +12,7 @@ std::string simple_function_handler()
   return "ok\n";
 }
 
-int main(int argc, char* argv[])
+int main()
 {
   using namespace iod;
   using s::_Mydata;
@@ -41,5 +41,5 @@ int main(int argc, char* argv[])
   s["h6"] = simple_function_handler;
 
   std::cout << generate_javascript_client(s) << std::endl;
-  s.serve();
+  s.serve(8888);
 }

@@ -6,7 +6,7 @@
 
 #include "symbols.hh"
 
-int main(int argc, char* argv[])
+int main()
 {
   using namespace iod;
   using namespace s;

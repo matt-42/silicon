@@ -18,14 +18,10 @@ typedef decltype(iod::D(_Id(_Primary_key) = int(),
                         _Salary = float()
                    )) User;
 
-int main(int argc, char* argv[])
+int main()
 {
   using namespace iod;
   
-  sqlite_connection db;
-  db.connect("./db.sqlite");
-
-  //auto sql = sqlite_middleware("./db.sqlite");
   auto server = silicon(sqlite_middleware("./db.sqlite"),
                         sqlite_orm_middleware<User>("user"));
 
@@ -48,5 +44,5 @@ int main(int argc, char* argv[])
     return u;
   };
 
-  server.serve();
+  server.serve(8888);
 }

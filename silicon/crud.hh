@@ -6,7 +6,7 @@ namespace iod
 {
 
   template <typename ORM, typename S, typename... T>
-  void setup_crud(S& server, ORM& orm, T&&... _opts)
+  void setup_crud(S& server, ORM&, T&&... _opts)
   {
     typedef typename ORM::instance_type ORMI;
     

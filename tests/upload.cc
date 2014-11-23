@@ -10,7 +10,7 @@
 
 using namespace s;
 
-int main(int argc, char* argv[])
+int main()
 {
   using namespace iod;
 
@@ -24,5 +24,5 @@ int main(int argc, char* argv[])
     of.close();
   };
 
-  server.serve();
+  server.serve(9999);
 }

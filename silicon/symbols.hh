@@ -2,6 +2,10 @@
 
 #include <iod/symbol.hh>
 
+#ifndef IOD_SYMBOL__Handler_id
+#define IOD_SYMBOL__Handler_id
+    iod_define_symbol(handler_id, _Handler_id)
+#endif
 #ifndef IOD_SYMBOL__Module
 #define IOD_SYMBOL__Module
     iod_define_symbol(module, _Module)

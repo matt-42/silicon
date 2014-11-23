@@ -17,8 +17,8 @@ namespace iod
   template <typename M, typename F>
   std::enable_if_t<not iod::is_callable<F>::value>
   run_handler(const handler<M, F>& handler,
-              M& middlewares,
-              request& request, response& response)
+              M&,
+              request&, response& response)
   {
     response << handler.content_;
   }
@@ -35,7 +35,7 @@ namespace iod
   }
 
   template <typename... ARGS, typename C>
-  inline sio<ARGS...> make_handler_argument(sio<ARGS...>* r,
+  inline sio<ARGS...> make_handler_argument(sio<ARGS...>*,
                                             C& ctx)
   {
     sio<ARGS...> res;
@@ -138,7 +138,7 @@ namespace iod
   template<unsigned N, unsigned SIZE, typename F, typename A, typename P>
   inline
   auto
-  tuple_iterate_loop(std::enable_if_t<N == SIZE>*, F f, A&& t, P&& prev)
+  tuple_iterate_loop(std::enable_if_t<N == SIZE>*, F, A&&, P&& prev)
   {
     return prev;
   }
@@ -187,7 +187,7 @@ namespace iod
         [&] (auto& factories, auto& prev) {
           return instantiate_middleware<E>(factories, prev); },
         // Otherwise, return the previous list of middleware.
-        [&] (auto& factories, auto& prev) { return prev; },
+        [&] (auto&, auto& prev) { return prev; },
         factories, prev);
     };
   }
@@ -200,13 +200,13 @@ namespace iod
 
     auto* args  = static_if<has_instantiate_static_method<E>::value>(
       // If the argument type provide a static instantiate method, use it.
-      [] (auto& ctx, auto* e) {
+      [] (auto&, auto* e) {
         typedef std::remove_pointer_t<decltype(e)> E2;
         typedef iod::callable_arguments_tuple_t<decltype(&E2::instantiate)> ARGS;
         return (ARGS*)0;
       },
       // Otherwise, use the matching factory to instantiate it.
-      [] (auto& ctx, auto* e) {
+      [] (auto&, auto* e) {
         typedef std::remove_pointer_t<decltype(e)> E2;
         typedef typename E2::middleware_type M;
         typedef iod::callable_arguments_tuple_t<decltype(&M::instantiate)> ARGS;
@@ -222,9 +222,9 @@ namespace iod
       
     return static_if<tuple_embeds<decltype(deps), E>::value or
                      tuple_embeds<decltype(deps), E&>::value>(// if middleware E already in ctx.
-      [&] (auto& factories, auto& ctx) { return deps; }, // return ctx (do not instantiate it twice).
+      [&] (auto&, auto&) { return deps; }, // return ctx (do not instantiate it twice).
       // Otherwise, first instantiate its dependencies and then instantiate E.
-      [&] (auto& factories, auto& ctx) {
+      [&] (auto&, auto&) {
 
         auto new_middleware = static_if<has_instantiate_static_method<E>::value>(
           // If the argument type provide a static instantiate method, use it.
@@ -283,7 +283,7 @@ namespace iod
   
   template <typename F, typename... T, typename... U>
   decltype(auto) create_handler_ctx(std::enable_if_t<sizeof...(T) == sizeof...(U)>*,
-                          std::tuple<T...>*, F& factories, U&&... args)
+                          std::tuple<T...>*, F&, U&&... args)
   {
     return std::tuple<T...>(std::forward<U>(args)...);
   };
@@ -303,12 +303,12 @@ namespace iod
   template <typename F, typename... A, typename... B>
   auto call_with_di2(F fun, std::tuple<A...>*, B&&... args)
   {
-    auto ctx = std::forward_as_tuple(args...);
-    return fun(tuple_get_by_type<A>(ctx)...);
+    return fun(tuple_get_by_type<A>(std::forward_as_tuple(args...))...);
   }
 
-  struct
+  static const struct call_with_di_t
   {
+    call_with_di_t() {}
     template <typename F, typename... A>
     auto operator()(F fun, A&&... args) const
     {

@@ -27,9 +27,8 @@ include_directories($ENV{HOME}/projects/iod
 
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib
         ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib64)
-add_definitions(-std=c++14 -O3 -march=native)
-#add_definitions(-std=c++14 -Wall)
-add_executable(test_backend test_backend.cc)
+#add_definitions(-O3 -march=native)
+add_definitions(-std=c++14 -Wall -Wextra)
 add_executable(sqlite sqlite.cc)
 add_executable(middlewares middlewares.cc)
 
@@ -53,13 +52,13 @@ set(BOOST_SERVER_LIBS
     ${Boost_FILESYSTEM_LIBRARY}
     ${Boost_CHRONO_LIBRARY})
 
-add_executable(test_cppnet cppnetlib.cc)
-target_link_libraries(test_cppnet ${BOOST_SERVER_LIBS} ${CMAKE_THREAD_LIBS_INIT} pthread
-                                  cppnetlib-uri cppnetlib-client-connections cppnetlib-server-parsers ${OPENSSL_LIBRARIES})
+#add_executable(test_cppnet cppnetlib.cc)
+#target_link_libraries(test_cppnet ${BOOST_SERVER_LIBS} ${CMAKE_THREAD_LIBS_INIT} pthread
+#                                  cppnetlib-uri cppnetlib-client-connections cppnetlib-server-parsers ${OPENSSL_LIBRARIES})
 
 
-add_executable(test_mdh mdh.cc)
-target_link_libraries(test_mdh gnutls gcrypt pthread microhttpd)
+#add_executable(test_mdh mdh.cc)
+#target_link_libraries(test_mdh gnutls gcrypt pthread microhttpd)
 
 
 add_executable(sqlite_orm sqlite_orm.cc)
@@ -69,7 +68,7 @@ add_executable(crud crud.cc)
 target_link_libraries(crud sqlite3 mimosa-http mimosa-uri mimosa gnutls z pthread lzma gnutls gcrypt pthread microhttpd)
 
 add_executable(mysoundcloud mysoundcloud.cc)
-target_link_libraries(mysoundcloud sqlite3 mimosa-http mimosa-uri mimosa gnutls z pthread lzma gnutls gcrypt pthread microhttpd nettle)
+target_link_libraries(mysoundcloud sqlite3 mimosa-http mimosa-uri mimosa-json mimosa-fs mimosa gnutls z pthread lzma gnutls gcrypt pthread microhttpd nettle)
 
 add_executable(upload upload.cc)
 target_link_libraries(upload sqlite3 mimosa-http mimosa-uri mimosa gnutls z pthread lzma gnutls gcrypt pthread microhttpd)

@@ -16,6 +16,8 @@ namespace iod
     blob(const std::string& s) : std::string(s) {}
   };
 
+  static const struct null_t { null_t() {} } null;
+
   void free_sqlite3_statement(void* s)
   {
     sqlite3_finalize((sqlite3_stmt*) s);
@@ -168,14 +170,14 @@ namespace iod
 
     int bind(sqlite3_stmt* stmt, int pos, double d) const { return sqlite3_bind_double(stmt, pos, d); }
     int bind(sqlite3_stmt* stmt, int pos, int d) const { return sqlite3_bind_int(stmt, pos, d); }
-    //void bind(sqlite3_stmt* stmt, int pos, null_t) { sqlite3_bind_null(stmt, pos); }
+    void bind(sqlite3_stmt* stmt, int pos, null_t) { sqlite3_bind_null(stmt, pos); }
     int bind(sqlite3_stmt* stmt, int pos, const std::string& s) const {
       return sqlite3_bind_text(stmt, pos, s.data(), s.size(), nullptr); }
     int bind(sqlite3_stmt* stmt, int pos, const blob& b) const {
       return sqlite3_bind_blob(stmt, pos, b.data(), b.size(), nullptr); }
 
     template <typename E>
-    inline void format_error(E& err) const {}
+    inline void format_error(E&) const {}
 
     template <typename E, typename T1, typename... T>
     inline void format_error(E& err, T1 a, T... args) const

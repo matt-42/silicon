@@ -1,5 +1,7 @@
 #pragma once
 
+# include <silicon/file.hh>
+
 namespace iod
 {
   
@@ -33,32 +35,34 @@ namespace iod
       typedef callable_return_type_t<typename H::content_type> ret_type;
       typedef callable_arguments_tuple_t<typename H::content_type> args_type;
 
-      // Extract the sio argument.
-      foreach(*(args_type*)0) | [&, this] (auto& a)
-                       {
-                         static_if<is_sio<decltype(a)>::value>(
-                           [this] (auto& a) { this->fill_args(&a); },
-                           [] (auto& a) { }, a);
-                       };
-
-      //typedef decltype(a) args2_type;
-      //fill_args((args2_type*)0);
-
+      fill_args((args_type*)0);
       return_type = type_string((ret_type*)0);
     }
+    
+    void fill_args(std::tuple<>*) {}
 
-    template <typename T>
-    void fill_args(T*)
+    template <typename... T, typename... Tail>
+    void fill_args(sio<T...>*)
     {
-      foreach(*(T*)0) | [&] (auto& a)
+      foreach(sio<T...>()) | [&] (auto& a)
       {
         args.push_back(std::make_pair(a.symbol().name(), type_string(&a.value())));
       };
     }
+    
+    template <typename... T, typename... Tail>
+    void fill_args(std::tuple<sio<T...>, Tail...>*) { fill_args((sio<T...>*)0); }
 
-    void fill_args(void*)
+    template <typename... T, typename... Tail>
+    void fill_args(std::tuple<sio<T...>&&, Tail...>*) { fill_args((sio<T...>*)0); }
+    
+    template <typename T, typename... Tail>
+    void fill_args(std::tuple<T, Tail...>*)
     {
+      return fill_args((std::tuple<Tail...>*)0);
     }
+    
+    void fill_args(void*) {}
     
     std::string name;
     std::vector<std::pair<std::string, std::string>> args;
@@ -70,7 +74,7 @@ namespace iod
   {
     auto handlers = server.get_handlers();
     std::vector<procedure_desc> res;
-    for (int i = 0; i < handlers.size(); i++)
+    for (unsigned i = 0; i < handlers.size(); i++)
       res.push_back(handlers[i]->description());
     return std::move(res);
   }
