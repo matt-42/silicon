@@ -30,6 +30,18 @@ namespace iod
           [&] () { return m; });
       };
     };
+
+    auto remove_computed_fields = [] (const auto& o)
+    {
+      return foreach(o) | [&] (auto& m)
+      {
+        typedef typename std::decay_t<decltype(m)>::attributes_type attrs;
+        return ::iod::static_if<!has_symbol<attrs, _Computed_t>::value>(
+          [&] () { return m; },
+          [&] () {});
+      };
+    };
+    
   }
 
   template <typename O>
@@ -44,6 +56,10 @@ namespace iod
 
     // O without primary keys for create procedure.
     typedef decltype(sqlite_orm_internals::remove_pks(std::declval<O>())) O_WO_PKS;
+
+    typedef decltype(sqlite_orm_internals::remove_computed_fields(std::declval<O>())) update_type;
+    typedef decltype(sqlite_orm_internals::remove_pks(std::declval<update_type>())) insert_type;
+    
     // Object with only the primary keys for the delete procedure.
     typedef decltype(sqlite_orm_internals::get_pks(std::declval<O>())) PKS;
 
@@ -54,7 +70,7 @@ namespace iod
       return con_("SELECT * from " + table_name_ + " where id = ?", id) >> o;
     }
 
-    int insert(O_WO_PKS& o)
+    int insert(O& o)
     {
       // save all fields except primary keys.
       // sqlite will automatically fill primary keys.

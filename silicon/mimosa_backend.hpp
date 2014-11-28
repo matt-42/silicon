@@ -1,5 +1,7 @@
 #pragma once
 
+#include <mimosa/cpu-foreach.hh>
+
 namespace iod
 {
   
@@ -15,9 +17,12 @@ namespace iod
       std::cerr << "Error: Failed to listen on the port " << port << " " << ::strerror(errno) << std::endl;
       return;
     }
+
+    mimosa::cpuForeach([server] {
+        while (true)
+          server->serveOne();
+      });
     
-    while(true)
-      server->serveOne(0, true);
   }
     
 }

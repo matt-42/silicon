@@ -230,6 +230,19 @@ namespace iod
       backend_.serve(port, [this] (auto& req, auto& res) { this->handle(req, res); });
     }
 
+    template <typename... T>
+    response call_procedure(sio<T...>& params)
+    {
+      // serialize to json.
+      std::string body = json_encode(params);
+
+      // Create a request object.
+      auto r = request::create_request(body);
+      // find the handler h.
+      h(middlewares_, request, response);
+      return response;
+    }
+
     const std::vector<handler_base<M>*>& get_handlers() const { return handlers; }
 
     M middlewares_;
@@ -263,7 +276,7 @@ namespace iod
   void
   pre_typed_handler_creator<S, T...>::run(C content, std::tuple<U...>*)
   {
-    f_([&content] (U&&... tail)
+    f_([content] (U&&... tail)
        {
          return content(std::forward<U>(tail)...);
        });

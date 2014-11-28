@@ -76,3 +76,7 @@
 #define IOD_SYMBOL__Prefix
     iod_define_symbol(prefix, _Prefix)
 #endif
+#ifndef IOD_SYMBOL__Computed
+#define IOD_SYMBOL__Computed
+    iod_define_symbol(computed, _Computed)
+#endif

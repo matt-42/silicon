@@ -25,7 +25,7 @@ namespace iod
       calls << "// ";
       print_procedure_desc(calls, desc[i]);
       calls << std::endl;
-      calls << module << ".prototype." << desc[i].name << " = function(params) { return this.call_procedure(" << i << ", params, '" << ret << "'); }" << std::endl;
+      calls << module << "." << desc[i].name << " = function(params) { return this.call_procedure(" << i << ", params, '" << ret << "'); }" << std::endl;
       calls << std::endl;
     }
 
@@ -54,7 +54,7 @@ function silicon_api_base()
     return new Promise(function(resolve, reject) {
       // Do the usual XHR stuff
       var req = new XMLHttpRequest();
-      req.open('POST', _this.server_url);
+      req.open('POST', _this.server_url + "__" + id);
 
       req.onload = function() {
         // This is called even on 404 etc
@@ -81,11 +81,8 @@ function silicon_api_base()
 
       // Make the request
       if (typeof params == 'object')
-      {
-        body = JSON.stringify({ handler_id: id}) + JSON.stringify(params);
-        req.send(body);
-      }
-      else req.send(JSON.stringify({ handler_id: id}) + params);
+        req.send(JSON.stringify(params));
+      else req.send(params);
     });
   }
 

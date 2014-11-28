@@ -1,3 +1,4 @@
+#include <cstdio>
 #include <iostream>
 #include <iod/sio_utils.hh>
 #include <silicon/mimosa_backend.hh>
@@ -14,14 +15,14 @@
 using namespace s;
 using namespace iod;
 
-// Model
+// Models
 typedef decltype(iod::D(_Id(_Primary_key) = int(),
                         _Email = std::string(),
                         _Password = blob()
                    )) User;
 
 typedef decltype(iod::D(_Id(_Primary_key) = int(),
-                        _User_id = int(),
+                        _User_id(_Computed) = int(),
                         _Title = std::string(),
                         _Filename = std::string()
                    )) Song;
@@ -94,19 +95,23 @@ int main(int argc, char* argv[])
 {
   using namespace iod;
 
-  if (argc != 3)
+  if (argc != 4)
   {
-    std::cout << "Usage: " << argv[0] << " sqlite_database_path server_port" << std::endl;
+    std::cout << "Usage: " << argv[0] << " sqlite_database_path server_port songs_path" << std::endl;
     return 1;
   }
 
+
+  std::string song_root = argv[3] + std::string("/");
+
   auto song_path = [&] (const Song& s)
   {
-    std::ostringstream ss;
-    ss << argv[2] << s.id;
+    std::stringstream ss;
+    ss << song_root << s.id;
     return ss.str();
   };
 
+  // =========================================================
   // Build the server with its attached middlewares.
   auto server = silicon(sqlite_middleware(argv[1]),
                         sqlite_session_middleware<session_data>("msc_sessions"),
@@ -115,14 +120,16 @@ int main(int argc, char* argv[])
 
   // =========================================================
   // User signup, signout, login, logout.
-  server["login"](_Email = std::string(), _Password = std::string()) = [] (auto params, authenticator& auth) {
+  server["login"](_Email, _Password) = [] (auto params, authenticator& auth) {
     if (!auth.login(params.email, hash_sha3_512(params.password)))
       throw error::bad_request("Invalid login or password");
   };
 
   server["logout"] = [] (session& sess) { sess.destroy(); };
 
-  server["signup"](_Email, _Password) = [] (auto params, sqlite_orm<User>& users) {
+  server["signup"](_Email, _Password) = [] (auto params, sqlite_orm<User>& users, sqlite_connection& con) {
+    if (con("SELECT * from msc_users where email == ?", params.email).exists())
+      throw error::bad_request("This user already exists");
     User u;
     u.email = params.email;
     u.password = hash_sha3_512(params.password);
@@ -136,7 +143,7 @@ int main(int argc, char* argv[])
                                      current_user& user, session& sess, sqlite_connection& db) {
     if (user.password != hash_sha3_512(params.password)) throw error::bad_request("Invalid password");
 
-    db("DELETE from song where user_id = ", user.id).exec();
+    db("DELETE from msc_songs where user_id = ?", user.id).exec();
     users.destroy(user);
     sess.destroy();
   };
@@ -146,7 +153,9 @@ int main(int argc, char* argv[])
   setup_crud(server,
              get_middleware<sqlite_orm_middleware<Song>>(server),
              _Prefix = "song",
-             _Write_access = [] (current_user& user, Song& song) { return song.user_id == user.id; }
+             _Write_access = [] (current_user& user, Song& song) { return song.user_id == user.id; },
+             _Before_create = [] (current_user& user, Song& song) { return song.user_id = user.id; },
+             _On_destroy_success = [=] (Song& song) { ::remove(song_path(song).c_str());}
     );
   
   // =========================================================
@@ -162,6 +171,8 @@ int main(int argc, char* argv[])
       throw error::unauthorized("This song belongs to another user.");
 
     std::ofstream f(song_path(song), std::ios::binary);
+    if (!f)
+      throw error::internal_server_error("Cannot open file ", song_path(song), " for writting.");
     stringview file_content = req.get_tail_string();
     f.write(file_content.data(), file_content.size());
     f.close();      
@@ -173,8 +184,11 @@ int main(int argc, char* argv[])
   {
     Song song;
     if (!orm.find_by_id(params.id, song))
-      throw error::not_found("This song does not exist.");
+      throw error::not_found("song with id ", params.id, " does not exist.");
 
+    if (!std::ifstream(song_path(song)))
+      throw error::not_found("This song has not been uploaded yet.");
+    
     return file(song_path(song));
   };
 
@@ -185,16 +199,19 @@ int main(int argc, char* argv[])
     resp.write(javascript_client_source_code.data(), javascript_client_source_code.size());
   };
 
+  server.route("/") = [] () { return file("../mysoundcloud_test.html"); };
+  server.route("/test") = [] () { return file("../test.js"); };
+
   int port = atoi(argv[2]);
   std::cout << "----------------------------------------------------" << std::endl;
   std::cout << "Welcome to MySoundCloud, a tiny soundcloud-like API." << std::endl;
-  std::cout << "  Note: he server is running on port " << port << std::endl;
+  std::cout << "  Note: the server is running on port " << port << std::endl;
   std::cout << "----------------------------------------------------" << std::endl << std::endl;
 
   std::cout << "  Call one of the following procedures via the javacript bindings at /bindings.js " << std::endl;
   std::cout << "----------------------------------------------------" << std::endl << std::endl;
 
   print_server_api(server);
-
+  
   server.serve(atoi(argv[2]));
 }

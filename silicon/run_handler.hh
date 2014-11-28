@@ -290,7 +290,7 @@ namespace iod
 
   template <typename... T, typename M, typename F>
   auto apply_handler_arguments(M& middleware_factories, request& request_, response& response_,
-                               F f, std::tuple<T...>* params)
+                               F& f, std::tuple<T...>* params)
   {
     auto ctx = std::forward_as_tuple(request_, response_);
 
