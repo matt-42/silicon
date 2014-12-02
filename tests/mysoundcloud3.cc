@@ -13,14 +13,14 @@ using namespace s;
 using namespace iod;
 
 // Model
-typedef decltype(D(:id(:primary_key) = int(),
-                   :email = std::string(),
-                   :password = std::string())) User;
+typedef decltype(D(@id(@primary_key) = int(),
+                   @email = std::string(),
+                   @password = std::string())) User;
 
-typedef decltype(D(:id(:primary_key) = int(),
-                   :user_id = int(),
-                   :title = std::string(),
-                   :filename = std::string()
+typedef decltype(D(@id(@primary_key) = int(),
+                   @user_id = int(),
+                   @title = std::string(),
+                   @filename = std::string()
                    )) Song;
 
 
@@ -31,7 +31,7 @@ struct session_data
   session_data() { user_id = -1; }
   bool is_authenticated() const { return user_id != -1; }
 
-  auto sio_info() { return D(:user_id = int()); }
+  auto sio_info() { return D(@user_id = int()); }
   
   int user_id;
 };
@@ -118,22 +118,22 @@ int main(int argc, char* argv[])
       // =========================================================
       // User signup, signout, login, logout.
       
-      :login(:email, :password) = [] (auto params, authenticator& auth)
+      @login(@email, @password) = [] (auto params, authenticator& auth)
       {
         if (!auth.login(params.email, hash_sha3_512(params.password)))
           throw error::bad_request("Invalid login or password");
       },
       
-      :logout = [] (session& sess) { sess.destroy(); },
+      @logout = [] (session& sess) { sess.destroy(); },
       
-      :signup(:email, :password) = [] (auto params, sqlite_orm<User>& users)
+      @signup(@email, @password) = [] (auto params, sqlite_orm<User>& users)
       {
         params.password = hash_sha3_512(params.password);
         if (!users.insert(params))
           throw error::bad_request("Cannot create user account");
       },
       
-      :signout(:password) = [] (auto params, sqlite_orm<User>& users,
+      @signout(@password) = [] (auto params, sqlite_orm<User>& users,
                                 current_user& user, session& sess)
       {
         if (user.password != hash_sha3_512(params.password)) throw error::bad_request("Invalid password");
@@ -143,13 +143,13 @@ int main(int argc, char* argv[])
 
       // =========================================================
       // Setup CRUD procedures of objects Song.
-      :song = crud<sqlite_orm_middleware<Song>>(
-        :write_access = [] (current_user& user, Song& song) { return song.user_id == user.id; }
+      @song = crud<sqlite_orm_middleware<Song>>(
+        @write_access = [] (current_user& user, Song& song) { return song.user_id == user.id; }
         ),
       
       // =========================================================
       // Upload procedure to attach a given file to the song of the given id.
-      :upload(:id = int()) =
+      @upload(@id = int()) =
 
       [&] (auto params, sqlite_orm<Song>& orm, current_user& user, request& req) {
 
@@ -168,7 +168,7 @@ int main(int argc, char* argv[])
 
       // =========================================================
       // Access to the song of the given id.
-      :stream(:id = int()) =
+      @stream(@id = int()) =
 
       [] (auto params, sqlite_orm& orm, response& resp)
       {
