@@ -2,8 +2,12 @@ cmake_minimum_required(VERSION 2.8)
 
 enable_testing()
 
+
 find_package( OpenSSL )
 find_package( Threads )
+find_package( Iod )
+
+include(${IOD_USE_FILE})
 
 if (OPENSSL_FOUND)
     add_definitions(-DBOOST_NETWORK_ENABLE_HTTPS)
@@ -19,9 +23,9 @@ find_package( Boost 1.54.0
     program_options chrono atomic )
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)
-include_directories($ENV{HOME}/projects/iod
-                    ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/mimosa/
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/mimosa/
                     ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/include
+                    ${IOD_INCLUDE_DIR}
                     )
                        
 
@@ -69,6 +73,9 @@ target_link_libraries(crud sqlite3 mimosa-http mimosa-uri mimosa gnutls z pthrea
 
 add_executable(mysoundcloud mysoundcloud.cc)
 target_link_libraries(mysoundcloud sqlite3 mimosa-http mimosa-uri mimosa-json mimosa-fs mimosa gnutls z pthread lzma nettle)
+
+add_iod_executable(mysoundcloud3 mysoundcloud3.cc)
+target_link_libraries(mysoundcloud3 sqlite3 mimosa-http mimosa-uri mimosa-json mimosa-fs mimosa gnutls z pthread lzma nettle)
 
 add_executable(upload upload.cc)
 target_link_libraries(upload sqlite3 mimosa-http mimosa-uri mimosa gnutls z pthread lzma gnutls gcrypt pthread microhttpd)

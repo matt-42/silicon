@@ -144,20 +144,50 @@ namespace iod
     template <typename... T>
     auto operator()(T...)
     {
-      return pre_typed_handler_creator<F, typename add_missing_string_value_types<T, std::is_base_of<symbol<T>, T>::value>::type...>
-                                                   (f_);
+      return static_if<sizeof...(T) == 0>(
+        [this] (auto) { return *this; },
+        [] (auto f) { 
+          return pre_typed_handler_creator<F, typename add_missing_string_value_types<T, std::is_base_of<symbol<T>, T>::value>::type...>
+                                                   (f);
+        }, f_);
     }
     
     F f_;
   };
-  
-  template <typename M>
+
+  template <typename M = std::tuple<>, typename API = iod::sio<> >
   struct server
   {
     typedef server<M> self_type;
 
+    server() {} // Builds an empty server.
+    
     server(M&& middlewares) : middlewares_(middlewares)
     {}
+
+    server(M middlewares, API api)
+      : middlewares_(middlewares),
+        api_(api)
+    {
+      index_api(api_);
+    }
+
+    template <typename O>
+    void index_api(O& o, std::string prefix = "")
+    {
+      foreach(o) | [this, prefix] (auto& f)
+      {
+        static_if<is_sio<decltype(f.value())>::value>(
+          [&] (auto _this) {
+            _this->index_api(f.value(), prefix + f.symbol().name() + std::string("_"));
+          },
+          [&] (auto _this) {
+            iod::apply_members(f.attributes(),
+                               (*_this)[prefix + f.symbol().name()])
+              = f.value();
+          }, this);
+      };
+    }
 
     auto operator[](std::string procedure_name)
     {
@@ -174,14 +204,14 @@ namespace iod
     template <typename F>
     auto add_procedure(std::string name, F f)
     {
-      handlers.push_back(new handler<M, F>(name, f));
+      handlers_.push_back(new handler<M, F>(name, f));
       return *this;
     }
 
     template <typename F>
     auto add_route(std::string name, F f)
     {
-      routes[name] = new handler<M, F>(name, f);
+      routes_[name] = new handler<M, F>(name, f);
       return *this;
     }
     
@@ -203,15 +233,15 @@ namespace iod
           
           request.set_params_position(0);
 
-          if (hid < int(handlers.size()) and hid >= 0)
-            h = handlers[hid];
+          if (hid < int(handlers_.size()) and hid >= 0)
+            h = handlers_[hid];
           else
             throw error::not_found("Procedure id = ", hid, " does not exist.");
         }
         else // Classic routing
         {
-          auto r = routes.find(request.location());
-          if (r != routes.end())
+          auto r = routes_.find(request.location());
+          if (r != routes_.end())
             h = r->second;
           else
             throw error::not_found("Route ", request.location(), " does not exist.");
@@ -230,38 +260,56 @@ namespace iod
       backend_.serve(port, [this] (auto& req, auto& res) { this->handle(req, res); });
     }
 
-    template <typename... T>
-    response call_procedure(sio<T...>& params)
-    {
-      // serialize to json.
-      std::string body = json_encode(params);
+    // template <typename... T>
+    // response call_procedure(sio<T...>& params)
+    // {
+    //   // serialize to json.
+    //   std::string body = json_encode(params);
 
-      // Create a request object.
-      auto r = request::create_request(body);
-      // find the handler h.
-      h(middlewares_, request, response);
-      return response;
+    //   // Create a request object.
+    //   auto r = request::create_request(body);
+    //   // find the handler h.
+    //   h(middlewares_, request, response);
+    //   return response;
+    // }
+
+    const std::vector<handler_base<M>*>& get_handlers() const { return handlers_; }
+
+    template <typename M2, typename API2>
+    auto augment_server(M2 middlewares, API2 api)
+    {
+      auto new_middlewares = std::tuple_cat(middlewares_, middlewares);
+      auto new_api = iod::cat(api_, api);
+
+      return server<decltype(new_middlewares), decltype(new_api)>
+        (new_middlewares, new_api);
+    }
+    
+    template <typename... T>
+    auto middlewares(T&&... middlewares)
+    {
+      return augment_server(std::make_tuple(middlewares...), iod::D());
     }
 
-    const std::vector<handler_base<M>*>& get_handlers() const { return handlers; }
-
+    template <typename... T>
+    auto api(T&&... api)
+    {
+      return augment_server(std::make_tuple(), iod::D(api...));
+    }
+    
     M middlewares_;
     backend backend_;
-    std::vector<handler_base<M>*> handlers;
-    std::map<std::string, handler_base<M>*> routes;
+    API api_;
+    std::vector<handler_base<M>*> handlers_;
+    std::map<std::string, handler_base<M>*> routes_;
   };
+
+  server<> silicon;
 
   template <typename T, typename S>
   T& get_middleware(S& server)
   {
     return tuple_get_by_type<T>(server.middlewares_);
-  }
-
-  template <typename... M>
-  auto silicon(M&&... middlewares)
-  {
-    return server<decltype(std::make_tuple(middlewares...))>
-      (std::make_tuple(middlewares...));
   }
   
   template <typename S>
@@ -281,7 +329,7 @@ namespace iod
          return content(std::forward<U>(tail)...);
        });
   };
-  
+
 }
 
 #include <silicon/run_handler.hh>

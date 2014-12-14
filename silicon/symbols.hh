@@ -80,3 +80,20 @@
 #define IOD_SYMBOL__Computed
     iod_define_symbol(computed, _Computed)
 #endif
+
+#ifndef IOD_SYMBOL__Get_by_id
+#define IOD_SYMBOL__Get_by_id
+    iod_define_symbol(get_by_id, _Get_by_id)
+#endif
+#ifndef IOD_SYMBOL__Create
+#define IOD_SYMBOL__Create
+    iod_define_symbol(create, _Create)
+#endif
+#ifndef IOD_SYMBOL__Update
+#define IOD_SYMBOL__Update
+    iod_define_symbol(update, _Update)
+#endif
+#ifndef IOD_SYMBOL__Destroy
+#define IOD_SYMBOL__Destroy
+    iod_define_symbol(destroy, _Destroy)
+#endif

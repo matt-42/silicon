@@ -23,3 +23,8 @@ before_update
 id
 prefix
 computed
+
+get_by_id
+create
+update
+destroy
