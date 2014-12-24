@@ -72,10 +72,11 @@ namespace iod
   template <typename S>
   std::vector<procedure_desc> server_api_description(const S& server)
   {
-    auto handlers = server.get_handlers();
+    auto procs = server.procedures();
     std::vector<procedure_desc> res;
-    for (unsigned i = 0; i < handlers.size(); i++)
-      res.push_back(handlers[i]->description());
+    for (auto p : procs)
+      //for (unsigned i = 0; i < handlers.size(); i++)
+      res.push_back(p.second->description());
     return std::move(res);
   }
 

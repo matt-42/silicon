@@ -161,6 +161,10 @@ namespace iod
     
     template <typename F>
     void serve(int port, F f);
+
+    void stop_after_next_request() { stopped_ = true; }
+
+    bool stopped_;
   };
 
   typedef mimosa_backend backend;

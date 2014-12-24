@@ -97,3 +97,12 @@
 #define IOD_SYMBOL__Destroy
     iod_define_symbol(destroy, _Destroy)
 #endif
+
+#ifndef IOD_SYMBOL__Status
+#define IOD_SYMBOL__Status
+    iod_define_symbol(status, _Status)
+#endif
+#ifndef IOD_SYMBOL__Response
+#define IOD_SYMBOL__Response
+    iod_define_symbol(response, _Response)
+#endif

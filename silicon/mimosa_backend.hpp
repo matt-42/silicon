@@ -8,6 +8,7 @@ namespace iod
   template <typename F>
   void mimosa_backend::serve(int port, F f)
   {
+    stopped_ = false;
     mimosa_handler<F> handler(f);
     mh::Server::Ptr server = new mh::Server;
     server->setHandler(&handler);
@@ -18,10 +19,10 @@ namespace iod
       return;
     }
 
-    mimosa::cpuForeach([server] {
-        while (true)
+    // mimosa::cpuForeach([server, this] {
+        while (!this->stopped_)
           server->serveOne();
-      });
+      // });
     
   }
     

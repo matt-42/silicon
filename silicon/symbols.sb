@@ -28,3 +28,6 @@ get_by_id
 create
 update
 destroy
+
+status
+response

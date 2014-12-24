@@ -32,7 +32,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/mimosa/
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib
         ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib64)
 add_definitions(-O3 -march=native)
-add_definitions(-std=c++14 -Wall -Wextra)
+add_definitions(-std=c++14 -Wall -Wextra -g)
 add_executable(sqlite sqlite.cc)
 add_executable(middlewares middlewares.cc)
 
@@ -76,6 +76,10 @@ target_link_libraries(mysoundcloud sqlite3 mimosa-http mimosa-uri mimosa-json mi
 
 add_iod_executable(mysoundcloud3 mysoundcloud3.cc)
 target_link_libraries(mysoundcloud3 sqlite3 mimosa-http mimosa-uri mimosa-json mimosa-fs mimosa gnutls z pthread lzma nettle)
+
+
+add_iod_executable(client client.cc)
+target_link_libraries(client sqlite3 mimosa-http mimosa-uri mimosa-json mimosa-fs mimosa gnutls z pthread lzma nettle)
 
 add_executable(upload upload.cc)
 target_link_libraries(upload sqlite3 mimosa-http mimosa-uri mimosa gnutls z pthread lzma gnutls gcrypt pthread microhttpd)
