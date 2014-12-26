@@ -1,3 +1,4 @@
+#include <thread>
 #include <iostream>
 #include <iod/sio_utils.hh>
 #include <silicon/mimosa_backend.hh>
@@ -5,6 +6,7 @@
 #include <silicon/sqlite_orm.hh>
 #include <silicon/sqlite_session.hh>
 #include <silicon/server.hh>
+#include <silicon/client.hh>
 #include <silicon/crud.hh>
 #include <silicon/hash.hh>
 #include <silicon/javascript_client.hh>
@@ -185,6 +187,43 @@ auto mysoundcloud_server(std::string sqlite_db_path, std::string song_root_)
 
 }
 
+void test(int port)
+{
+  auto c = silicon_client(mysoundcloud_server("","").get_api(), "0.0.0.0", port);
+
+  std::string email = "test@test.com"; 
+  std::string email2 = "test2@test.com"; 
+  std::string password = "password";
+  std::string song_title = "song_test";
+  std::string song_filename = "song_test.mp3";
+
+  // Cleanup.
+  c.login(email, password);
+  c.signout(password);
+
+  assert(c.login(email, password).status != 200);
+  assert(c.signup(email, password).status == 200);
+  assert(c.signup(email2, password).status == 200);
+
+  // Signup twice with the same email should fail.
+  assert(c.signup(email, password).status != 200);
+
+  assert(c.login(email, password).status == 200);
+
+  auto r1 = c.song.create(song_title, song_filename);
+  assert(r1.status == 200);
+
+  int song_id = r1.response.id;
+  auto r2 = c.song.get_by_id(r1.response.id);
+  auto s = r2.response;
+  assert(r2.status == 200 and
+         s.id == song_id and
+         s.title == song_title and
+         s.filename == song_filename);
+
+  assert(c.signout(password).status == 200);
+}
+
 int main(int argc, char* argv[])
 {
   using namespace iod;
@@ -222,6 +261,10 @@ int main(int argc, char* argv[])
   std::cout << "----------------------------------------------------" << std::endl << std::endl;
 
   print_server_api(server);
-  
-  server.serve(atoi(argv[2]));
+
+  std::thread t([&] () { server.serve(port); });
+
+  test(port);
+
+  t.join();
 }

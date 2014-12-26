@@ -18,7 +18,7 @@ namespace iod
       std::cerr << "Error: Failed to listen on the port " << port << " " << ::strerror(errno) << std::endl;
       return;
     }
-
+    listening_ = true;
     // mimosa::cpuForeach([server, this] {
         while (!this->stopped_)
           server->serveOne();

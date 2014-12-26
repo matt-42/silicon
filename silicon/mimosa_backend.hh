@@ -156,15 +156,17 @@ namespace iod
     
   struct mimosa_backend
   {
-    mimosa_backend(int argc, char* argv[]) { mimosa::init(argc, argv); }
-    mimosa_backend() { mimosa::deinit(); }
+    mimosa_backend(int argc, char* argv[]) : listening_(false) { mimosa::init(argc, argv); }
+    mimosa_backend() : listening_(false) { mimosa::deinit(); }
     
     template <typename F>
     void serve(int port, F f);
 
     void stop_after_next_request() { stopped_ = true; }
+    bool listening() const { return listening_; }
 
     bool stopped_;
+    bool listening_;
   };
 
   typedef mimosa_backend backend;

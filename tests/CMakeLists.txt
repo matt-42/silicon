@@ -30,9 +30,10 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/mimosa/
                        
 
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib
-        ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib64)
+                ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib64
+                $ENV{HOME}/local/lib)
 add_definitions(-O3 -march=native)
-add_definitions(-std=c++14 -Wall -Wextra -g)
+add_definitions(-std=c++14 -g)
 add_executable(sqlite sqlite.cc)
 add_executable(middlewares middlewares.cc)
 
@@ -84,8 +85,8 @@ target_link_libraries(client sqlite3 mimosa-http mimosa-uri mimosa-json mimosa-f
 add_executable(upload upload.cc)
 target_link_libraries(upload sqlite3 mimosa-http mimosa-uri mimosa gnutls z pthread lzma gnutls gcrypt pthread microhttpd)
 
-add_executable(closures closures.cc)
-target_link_libraries(closures sqlite3 mimosa-http mimosa-uri mimosa gnutls z pthread lzma gnutls gcrypt pthread microhttpd)
+#add_executable(closures closures.cc)
+#target_link_libraries(closures sqlite3 mimosa-http mimosa-uri mimosa gnutls z pthread lzma gnutls gcrypt pthread microhttpd)
 
 add_executable(pre_typed_handlers pre_typed_handlers.cc)
 target_link_libraries(pre_typed_handlers mimosa-http mimosa-uri mimosa gnutls z pthread lzma gnutls gcrypt pthread sqlite3)
@@ -94,5 +95,5 @@ add_executable(stream_file stream_file.cc)
 target_link_libraries(stream_file mimosa-http mimosa-uri mimosa mimosa-json mimosa-fs gnutls z pthread lzma gnutls gcrypt pthread)
 
 
-add_executable(simple simple.cc)
+add_iod_executable(simple simple.cc)
 target_link_libraries(simple mimosa-http mimosa-uri mimosa mimosa-json mimosa-fs gnutls z pthread lzma gnutls gcrypt pthread)

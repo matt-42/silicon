@@ -16,7 +16,6 @@ namespace iod
 
     std::ostringstream calls;
 
-    auto handlers = s.get_handlers();
     for (unsigned i = 0; i < desc.size(); i++)
     {
       std::string ret = desc[i].return_type;

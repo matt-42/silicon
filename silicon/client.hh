@@ -10,6 +10,37 @@
 namespace iod
 {
 
+  template <typename R>
+  struct response_parser
+  {
+    static auto run(mimosa::http::ResponseReader::Ptr rr)
+    {
+      return D(s::_Status = rr->status());
+    }
+  };
+
+  template <typename... T>
+  struct response_parser<sio<T...>>
+  {
+    static auto run(mimosa::http::ResponseReader::Ptr rr)
+    {
+      sio<T...> result;
+      std::string body;
+      char buf[1024];
+      int n;
+      while ((n = rr->read(buf, 1024))) { body.append(buf, n); }
+      
+      if (rr->status() == 200)
+        json_decode(result, body);
+      else
+        std::cout << body << std::endl;
+
+      return D(
+        s::_Status = rr->status(),
+        s::_Response = result);      
+    }
+  };
+
   struct http_client
   {
     http_client()
@@ -18,6 +49,8 @@ namespace iod
 
     bool connect(const std::string& host, int port, bool ssl)
     {
+      host_ = host;
+      port_ = port;
       return mimosa_client.connect(host, port, ssl);
     }
 
@@ -28,7 +61,7 @@ namespace iod
 
       // Generate url.
       std::stringstream ss;
-      ss << "http://0.0.0.0:12345/" << symbol.name();
+      ss << "http://" << host_ << ":" << port_ << "/" << symbol;
       uri::Url url(ss.str());
 
       // Send request.
@@ -51,20 +84,6 @@ namespace iod
       if (!rr)
         throw std::runtime_error("Error when sending request.");
 
-      // Decode result.
-      R result;
-      std::string body;
-      char buf[1024];
-      int n;
-      while ((n = rr->read(buf, 1024))) { body.append(buf, n); }
-      
-      if (rr->status() == 200)
-      {
-        json_decode(result, body);
-      }
-      else
-        std::cout << body << std::endl;
-
       // Decode cookies.
       auto new_cookies = rr->unparsedHeaders().equal_range("Set-Cookie");
       for (auto it = new_cookies.first; it != new_cookies.second; it++)
@@ -84,14 +103,15 @@ namespace iod
         
         cookies[std::string(key, key_end)] = std::string(value, value_end);
       }
-
-      return D(
-        s::_Status = rr->status(),
-        s::_Response = result);
+      
+      // Decode result.
+      return response_parser<R>::run(rr);
     }
 
     std::map<std::string, std::string> cookies;
     mimosa::http::ClientChannel mimosa_client;
+    std::string host_;
+    int port_;
   };
 
   struct D_caller
@@ -100,8 +120,8 @@ namespace iod
     auto operator() (X&&... t) const { return D(t...); }
   };
 
-  template <typename C, typename S, typename R>
-  auto create_client_call(C c, S symbol, sio<>, R)
+  template <typename R, typename C, typename S>
+  auto create_client_call(C c, S symbol, sio<>)
   {
     return [c, symbol] ()
     {
@@ -109,8 +129,8 @@ namespace iod
     };
   }
   
-  template <typename C, typename S, typename R, typename... T>
-  auto create_client_call(C c, S symbol, sio<T...> args, R)
+  template <typename R, typename C, typename S, typename... T>
+  auto create_client_call(C c, S symbol, sio<T...> args)
   {
     return [c, args, symbol] (std::remove_reference_t<decltype(std::declval<T>().value())>... args2)
     {
@@ -124,6 +144,27 @@ namespace iod
     };
   }
 
+  template <typename C, typename A>
+  auto generate_client_methods(C& c, A api, std::string prefix = "")
+  {
+    return foreach(api) | [c, prefix] (auto m) {
+
+      return static_if<is_sio<decltype(m.value())>::value>(
+        [c, prefix] (auto m) { // If sio, recursion.
+          return m.symbol() = generate_client_methods(c, m.value(), prefix + m.symbol().name() + "_");
+        },
+        [c, prefix] (auto m) { // Else, register the procedure.
+          typedef std::remove_reference_t<decltype(m.value())> V;
+          typedef typename V::function_type F;
+          typename V::arguments_type arguments;
+          
+          return m.symbol() = create_client_call<callable_return_type_t<F>>
+            (c, prefix + m.symbol().name(), arguments);
+            }, m);
+
+    };
+  }
+
   template <typename A>
   auto silicon_client(const A& api, std::string host, int port)
   {
@@ -131,13 +172,6 @@ namespace iod
     if (!c->connect(host, port, false))
       throw std::runtime_error("Cannot connect to the server");
 
-    auto calls = foreach(api) | [c] (auto m) {
-      typedef std::remove_reference_t<decltype(m.value())> V;
-      typedef typename V::function_type F;
-      typename V::arguments_type arguments;
-      return m.symbol() = create_client_call(c, m.symbol(), arguments, callable_return_type_t<F>());
-    };
-
-    return calls;
+    return generate_client_methods(c, api);
   }
 }

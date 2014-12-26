@@ -327,7 +327,10 @@ namespace iod
     iod::static_if<callable_traits<F>::arity == 0>(
       [&] (auto& handler) {
         // No argument. Send the result of the handler.
-        response_ << handler.content_();
+        static_if<std::is_same<callable_return_type_t<F>, void>::value>(
+          [&] (auto&) { handler.content_(); },
+          [&] (auto& response_) { response_ << handler.content_(); },
+          response_);          
       },
       [&] (auto& handler) {
         // make argument tuple.

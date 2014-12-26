@@ -75,7 +75,6 @@ namespace iod
     auto procs = server.procedures();
     std::vector<procedure_desc> res;
     for (auto p : procs)
-      //for (unsigned i = 0; i < handlers.size(); i++)
       res.push_back(p.second->description());
     return std::move(res);
   }

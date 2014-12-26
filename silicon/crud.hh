@@ -12,7 +12,7 @@ namespace iod
     typedef typename ORM::instance_type ORMI;
     
     typedef typename ORMI::object_type O; // O without primary keys for create procedure.
-    typedef typename ORMI::O_WO_PKS O_WO_PKS;
+    // typedef typename ORMI::O_WO_PKS O_WO_PKS;
     // typedef typename ORMI::insert_type insert_type; // O without primary keys for create procedure.
     // typedef typename ORMI::update_type update_type; // O without primary keys for create procedure.
     typedef typename ORMI::PKS PKS; // Object with only the primary keys for the delete procedure.
@@ -120,7 +120,7 @@ namespace iod
     typedef typename ORM::instance_type ORMI;
     
     typedef typename ORMI::object_type O; // O without primary keys for create procedure.
-    typedef typename ORMI::O_WO_PKS O_WO_PKS;
+    // typedef typename ORMI::O_WO_PKS O_WO_PKS;
     // typedef typename ORMI::insert_type insert_type; // O without primary keys for create procedure.
     // typedef typename ORMI::update_type update_type; // O without primary keys for create procedure.
     typedef typename ORMI::PKS PKS; // Object with only the primary keys for the delete procedure.

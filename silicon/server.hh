@@ -249,13 +249,6 @@ namespace iod
     return procedure<A, R, F>(fun);
   }
 
-  // template <typename M>
-  // auto make_procedure(M m, std::enable_if<!is_callable<decltype(m.value())> >* = 0) // If m is a value, wrap it in a lambda
-  // {
-  //   auto f = [v = m.value()] () { return v; };
-  //   return procedure<<sio<>, decltype(m.value()), decltype(f)>(f);
-  // }
-
   // If m.attributes not empty, bind procedure arguments.
   template <typename M>
   auto make_procedure(std::enable_if_t<!is_callable<decltype(std::declval<M>().value())>::value>*, M m)
@@ -327,7 +320,7 @@ namespace iod
             typedef decltype(f.value().function()) F;
             std::string name = std::string("/") + prefix + f.symbol().name();
             _this->procedures_[name] =
-              new handler<M, F>(f.symbol().name(), f.value().function());
+              new handler<M, F>(name, f.value().function());
           }, this, f);
       };
     }
@@ -414,6 +407,7 @@ namespace iod
 
     auto& procedures() { return procedures_; }
     const auto& procedures() const { return procedures_; }
+    bool listening() const { return backend_.listening(); }
 
     M middlewares_;
     backend backend_;
