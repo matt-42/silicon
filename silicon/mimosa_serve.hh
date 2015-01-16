@@ -7,7 +7,7 @@
 #include <iod/json.hh>
 
 #include <silicon/service.hh>
-#include <silicon/cookie_token.hh>
+#include <silicon/tracking_cookie.hh>
 #include <silicon/symbols.hh>
 
 namespace sl
@@ -38,7 +38,7 @@ namespace sl
       return os.str();
     }
     
-    cookie_token make(request_type* req, response_type* resp)
+    tracking_cookie make(request_type* req, response_type* resp)
     {
       std::string token;
       std::string key = "sl_token";
@@ -60,7 +60,7 @@ namespace sl
       else
         token = it->second;
 
-      return cookie_token(token);
+      return tracking_cookie(token);
     }
 
     sio<O...> options_;

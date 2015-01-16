@@ -33,7 +33,7 @@ namespace sl
   //     return os.str();
   //   }
     
-  //   cookie_token make(cppnet_request_type* req, cppnet_response_type* resp)
+  //   tracking_cookie make(cppnet_request_type* req, cppnet_response_type* resp)
   //   {
   //     std::string token;
   //     std::string key = "sl_token";
@@ -55,7 +55,7 @@ namespace sl
   //     else
   //       token = it->second;
 
-  //     return cookie_token(token);
+  //     return tracking_cookie(token);
   //   }
 
   //   sio<O...> options_;

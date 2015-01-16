@@ -1,7 +1,7 @@
 #pragma once
 
 #include <random>
-#include <silicon/cookie_token.hh>
+#include <silicon/tracking_cookie.hh>
 
 namespace iod
 {
@@ -72,7 +72,7 @@ namespace iod
     }
 
     typedef sqlite_session<D> session_type;
-    session_type make(cookie_token& token, sqlite_connection& con)
+    session_type make(tracking_cookie& token, sqlite_connection& con)
     {
       return session_type(token.token(), table_name_, con);
     }

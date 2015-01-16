@@ -1,11 +1,11 @@
 #include <thread>
 #include <iostream>
 #include <iod/sio_utils.hh>
-#include <silicon/mimosa_backend.hh>
 #include <silicon/sqlite.hh>
 #include <silicon/sqlite_orm.hh>
 #include <silicon/sqlite_session.hh>
-#include <silicon/server.hh>
+#include <silicon/api.hh>
+#include <silicon/mimosa_serve.hh>
 #include <silicon/client.hh>
 #include <silicon/crud.hh>
 #include <silicon/hash.hh>
@@ -103,13 +103,10 @@ auto mysoundcloud_server(std::string sqlite_db_path, std::string song_root_)
   
   // =========================================================
   // Build the server with its attached middlewares.
-  return silicon.middlewares(sqlite_middleware(sqlite_db_path),
-                                    sqlite_session_middleware<session_data>("msc_sessions"),
-                                    sqlite_orm_middleware<Song>("msc_songs"),
-                                    sqlite_orm_middleware<User>("msc_users"))
-    .api(
-      
+  return iod::make_api(
 
+    @test = [] () { return D(@message = "hello world."); },
+    
       // =========================================================
       // User signup, signout, login, logout.
       @login(@email, @password) = [] (auto params, authenticator& auth) {
@@ -151,8 +148,14 @@ auto mysoundcloud_server(std::string sqlite_db_path, std::string song_root_)
 
       // =========================================================
       // Upload procedure to attach a given file to the song of the given id.
-      @upload(@id = int()) =
-      [&] (auto params, sqlite_orm<Song>& orm, current_user& user, request& req) {
+      @upload =
+      [&] (auto params, sqlite_orm<Song>& orm, current_user& user, mimosa::http::RequestReader* req) {
+
+        // // Parse
+        // int id = 0;
+        // char id_str[9];
+        // req->read(&id_str, 9);
+        // for (int i = 0; i < 9; i++) id += id * 10 + id_str[i] - '0';
 
         Song song;
         if (!orm.find_by_id(params.id, song))
@@ -169,102 +172,101 @@ auto mysoundcloud_server(std::string sqlite_db_path, std::string song_root_)
         f.close();      
       },
 
-      // =========================================================
-      // Access to the song of the given id.
-      @stream(@id = int()) = [&] (auto params, sqlite_orm<Song>& orm)
-      {
-        Song song;
-        if (!orm.find_by_id(params.id, song))
-          throw error::not_found("song with id ", params.id, " does not exist.");
+      // // =========================================================
+      // // Access to the song of the given id.
+      // @stream(@id = int()) = [&] (auto params, sqlite_orm<Song>& orm)
+      // {
+      //   Song song;
+      //   if (!orm.find_by_id(params.id, song))
+      //     throw error::not_found("song with id ", params.id, " does not exist.");
 
-        if (!std::ifstream(song_path(song)))
-          throw error::not_found("This song has not been uploaded yet.");
+      //   if (!std::ifstream(song_path(song)))
+      //     throw error::not_found("This song has not been uploaded yet.");
     
-        return file(song_path(song));
-      }
+      //   return file(song_path(song));
+      // }
       
-      );
+    )
+    // .bind_middlewares(sqlite_middleware(sqlite_db_path),
+    //                   sqlite_session_middleware<session_data>("msc_sessions"),
+    //                   sqlite_orm_middleware<Song>("msc_songs"),
+    //                   sqlite_orm_middleware<User>("msc_users"));
 
 }
 
-void test(int port)
-{
-  auto c = silicon_client(mysoundcloud_server("","").get_api(), "0.0.0.0", port);
+// void test(int port)
+// {
+//   auto c = silicon_client(mysoundcloud_server("","").get_api(), "0.0.0.0", port);
 
-  std::string email = "test@test.com"; 
-  std::string email2 = "test2@test.com"; 
-  std::string password = "password";
-  std::string song_title = "song_test";
-  std::string song_filename = "song_test.mp3";
+//   std::string email = "test@test.com"; 
+//   std::string email2 = "test2@test.com"; 
+//   std::string password = "password";
+//   std::string song_title = "song_test";
+//   std::string song_filename = "song_test.mp3";
 
-  // Cleanup.
-  c.login(email, password);
-  c.signout(password);
+//   // Cleanup.
+//   c.login(email, password);
+//   c.signout(password);
 
-  assert(c.login(email, password).status != 200);
-  assert(c.signup(email, password).status == 200);
-  assert(c.signup(email2, password).status == 200);
+//   assert(c.login(email, password).status != 200);
+//   assert(c.signup(email, password).status == 200);
+//   assert(c.signup(email2, password).status == 200);
 
-  // Signup twice with the same email should fail.
-  assert(c.signup(email, password).status != 200);
+//   // Signup twice with the same email should fail.
+//   assert(c.signup(email, password).status != 200);
 
-  assert(c.login(email, password).status == 200);
+//   assert(c.login(email, password).status == 200);
 
-  auto r1 = c.song.create(song_title, song_filename);
-  assert(r1.status == 200);
+//   auto r1 = c.song.create(song_title, song_filename);
+//   assert(r1.status == 200);
 
-  int song_id = r1.response.id;
-  auto r2 = c.song.get_by_id(r1.response.id);
-  auto s = r2.response;
-  assert(r2.status == 200 and
-         s.id == song_id and
-         s.title == song_title and
-         s.filename == song_filename);
+//   int song_id = r1.response.id;
+//   auto r2 = c.song.get_by_id(r1.response.id);
+//   auto s = r2.response;
+//   assert(r2.status == 200 and
+//          s.id == song_id and
+//          s.title == song_title and
+//          s.filename == song_filename);
 
-  assert(c.signout(password).status == 200);
-}
+//   assert(c.signout(password).status == 200);
+// }
 
 int main(int argc, char* argv[])
 {
-  using namespace iod;
+  // using namespace iod;
 
-  if (argc != 4)
-  {
-    std::cout << "Usage: " << argv[0] << " sqlite_database_path server_port songs_path" << std::endl;
-    return 1;
-  }
+  // if (argc != 4)
+  // {
+  //   std::cout << "Usage: " << argv[0] << " sqlite_database_path server_port songs_path" << std::endl;
+  //   return 1;
+  // }
 
+  // // Instantiate the server.
+  // auto server = mysoundcloud_server(argv[1], argv[3]);
 
-  // Instantiate the server.
-  auto server = mysoundcloud_server(argv[1], argv[3]);
+  // // Serve the javascript client code at a specific route.
+  // // std::string javascript_client_source_code = generate_javascript_client(server, @module = "msc");
+  // // server.route("/bindings.js") = [&] (response& resp)
+  // // {
+  // //   resp.set_header("Content-Type", "text/javascript");
+  // //   resp.write(javascript_client_source_code.data(), javascript_client_source_code.size());
+  // // };
 
+  // int port = atoi(argv[2]);
+  // std::cout << "----------------------------------------------------" << std::endl;
+  // std::cout << "Welcome to MySoundCloud, a tiny soundcloud-like API." << std::endl;
+  // std::cout << "  Note: the server is running on port " << port << std::endl;
+  // std::cout << "----------------------------------------------------" << std::endl << std::endl;
 
-  // Serve the javascript client code at a specific route.
-  std::string javascript_client_source_code = generate_javascript_client(server, @module = "msc");
-  server.route("/bindings.js") = [&] (response& resp)
-  {
-    resp.set_header("Content-Type", "text/javascript");
-    resp.write(javascript_client_source_code.data(), javascript_client_source_code.size());
-  };
+  // std::cout << "  Call one of the following procedures via the javacript bindings at /bindings.js " << std::endl;
+  // std::cout << "----------------------------------------------------" << std::endl << std::endl;
 
-  // Testing.
-  server.route("/") = [] () { return file("../mysoundcloud_test.html"); };
-  server.route("/test") = [] () { return file("../test.js"); };
+  // //print_server_api(server);
+  // mimosa_json_serve(api, port);
+  
+  // // std::thread t([&] () { server.serve(port); });
 
-  int port = atoi(argv[2]);
-  std::cout << "----------------------------------------------------" << std::endl;
-  std::cout << "Welcome to MySoundCloud, a tiny soundcloud-like API." << std::endl;
-  std::cout << "  Note: the server is running on port " << port << std::endl;
-  std::cout << "----------------------------------------------------" << std::endl << std::endl;
+  // // test(port);
 
-  std::cout << "  Call one of the following procedures via the javacript bindings at /bindings.js " << std::endl;
-  std::cout << "----------------------------------------------------" << std::endl << std::endl;
-
-  print_server_api(server);
-
-  std::thread t([&] () { server.serve(port); });
-
-  test(port);
-
-  t.join();
+  // // t.join();
 }
