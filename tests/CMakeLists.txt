@@ -9,6 +9,7 @@ find_package( Iod )
 
 include(${IOD_USE_FILE})
 
+set(CMAKE_VERBOSE_MAKEFILE ON)
 if (OPENSSL_FOUND)
     add_definitions(-DBOOST_NETWORK_ENABLE_HTTPS)
     include_directories(${OPENSSL_INCLUDE_DIR})
@@ -33,7 +34,7 @@ link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib
                 ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib64
                 $ENV{HOME}/local/lib)
 add_definitions(-O3 -march=native)
-add_definitions(-std=c++14 -g)
+add_definitions(-std=c++14)
 add_executable(sqlite sqlite.cc)
 add_executable(middlewares middlewares.cc)
 
@@ -45,6 +46,9 @@ target_link_libraries(middlewares sqlite3 mimosa-http mimosa-uri mimosa gnutls z
 
 add_executable(test_mimosa mimosa.cc)
 target_link_libraries(test_mimosa mimosa-http mimosa-uri mimosa gnutls z pthread lzma)
+
+add_iod_executable(test_mimosa2 mimosa2.cc)
+target_link_libraries(test_mimosa2 mimosa-http mimosa-uri mimosa gnutls z pthread lzma)
 
 add_executable(session session.cc)
 target_link_libraries(session sqlite3 mimosa-http mimosa-uri mimosa gnutls z pthread lzma)
@@ -60,6 +64,10 @@ set(BOOST_SERVER_LIBS
 #add_executable(test_cppnet cppnetlib.cc)
 #target_link_libraries(test_cppnet ${BOOST_SERVER_LIBS} ${CMAKE_THREAD_LIBS_INIT} pthread
 #                                  cppnetlib-uri cppnetlib-client-connections cppnetlib-server-parsers ${OPENSSL_LIBRARIES})
+
+add_iod_executable(cppnet_hello_world cppnet_hello_world.cc)
+target_link_libraries(cppnet_hello_world ${BOOST_SERVER_LIBS} ${CMAKE_THREAD_LIBS_INIT} pthread
+                                  cppnetlib-uri cppnetlib-client-connections cppnetlib-server-parsers ${OPENSSL_LIBRARIES})
 
 
 #add_executable(test_mdh mdh.cc)
@@ -79,6 +87,10 @@ add_iod_executable(mysoundcloud3 mysoundcloud3.cc)
 target_link_libraries(mysoundcloud3 sqlite3 mimosa-http mimosa-uri mimosa-json mimosa-fs mimosa gnutls z pthread lzma nettle)
 
 
+add_iod_executable(mysoundcloud4 mysoundcloud4.cc)
+target_link_libraries(mysoundcloud4 sqlite3 mimosa-http mimosa-uri mimosa-json mimosa-fs mimosa gnutls z pthread lzma nettle)
+
+
 add_iod_executable(client client.cc)
 target_link_libraries(client sqlite3 mimosa-http mimosa-uri mimosa-json mimosa-fs mimosa gnutls z pthread lzma nettle)
 
@@ -96,4 +108,18 @@ target_link_libraries(stream_file mimosa-http mimosa-uri mimosa mimosa-json mimo
 
 
 add_iod_executable(simple simple.cc)
-target_link_libraries(simple mimosa-http mimosa-uri mimosa mimosa-json mimosa-fs gnutls z pthread lzma gnutls gcrypt pthread)
+target_link_libraries(simple  gnutls gcrypt pthread microhttpd)
+
+
+add_iod_executable(new_api new_api.cc)
+target_link_libraries(new_api mimosa-http mimosa-uri mimosa mimosa-json mimosa-fs gnutls z pthread lzma gnutls gcrypt pthread)
+
+
+add_iod_executable(mimosa_session mimosa_session.cc)
+target_link_libraries(mimosa_session mimosa-http mimosa-uri mimosa mimosa-json mimosa-fs gnutls z pthread lzma gnutls gcrypt pthread)
+
+add_iod_executable(mimosa_hello_world mimosa_hello_world.cc)
+target_link_libraries(mimosa_hello_world mimosa-http mimosa-uri mimosa mimosa-json mimosa-fs gnutls z pthread lzma gnutls gcrypt pthread)
+
+add_iod_executable(microhttpd_hello_world microhttpd_hello_world.cc)
+target_link_libraries(microhttpd_hello_world gnutls gcrypt pthread microhttpd)

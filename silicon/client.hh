@@ -3,12 +3,12 @@
 #include <map>
 #include <mimosa/http/client-channel.hh>
 #include <iod/json.hh>
-#include <silicon/mimosa_backend.hh>
+//#include <silicon/mimosa_backend.hh>
 #include <silicon/symbols.hh>
-#include <silicon/server.hh>
 
-namespace iod
+namespace sl
 {
+  using namespace iod;
 
   template <typename R>
   struct response_parser

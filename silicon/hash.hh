@@ -2,7 +2,7 @@
 
 #include <nettle/sha3.h>
 
-namespace iod
+namespace sl
 {
   inline std::string hash_sha3_512(const std::string& str)
   {

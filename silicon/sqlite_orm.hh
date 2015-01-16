@@ -1,10 +1,18 @@
 #pragma once
 
+#include <sstream>
 #include <iod/utils.hh>
+#include <silicon/symbols.hh>
 
 namespace iod
 {
 
+  using s::_Primary_key;
+  using s::_Primary_key_t;
+
+  using s::_Computed_t;
+  using s::_Computed;
+  
   namespace sqlite_orm_internals
   {
     template <typename M>
@@ -161,7 +169,7 @@ namespace iod
 
     sqlite_orm_middleware(const std::string& table_name) : table_name_(table_name) {}
 
-    auto instantiate(sqlite_connection& con) {
+    auto make(sqlite_connection& con) {
       return sqlite_orm<O>(table_name_, con);
     };
 

@@ -1,22 +1,21 @@
 #include <iostream>
 #include <fstream>
 
-#include <silicon/mimosa_backend.hh>
-#include <silicon/server.hh>
-
-auto fun()
-{
-  return std::string("hello world");
-}
+#include <silicon/api.hh>
+#include <silicon/microhttpd_serve.hh>
 
 int main()
 {
-  using namespace iod;
 
-  auto server = silicon.api(
-    @hello = [] () { return "hello world"; },
-    @hello2 = &fun
+  using namespace sl;
+
+  // Create an api
+  auto api = make_api(
+
+    @hello(@name) = [] (auto p) { return D(@message = "hello " + p.name); }
+
     );
-  //server["/"]= "simple";
-  server.serve(9999);
+
+  // Serve it using cppnetlib and the json protocol.
+  microhttpd_json_serve(api, 9999);
 }

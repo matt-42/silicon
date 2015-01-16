@@ -1,6 +1,7 @@
 #pragma once
 
 #include <random>
+#include <silicon/cookie_token.hh>
 
 namespace iod
 {
@@ -70,25 +71,10 @@ namespace iod
     {
     }
 
-    std::string generate_new_token()
-    {
-      std::ostringstream os;
-      std::random_device rd;
-      os << std::hex << rd() << rd() << rd() << rd();
-      return os.str();
-    }
-
     typedef sqlite_session<D> session_type;
-    session_type instantiate(request& req, response& resp, sqlite_connection& con)
+    session_type make(cookie_token& token, sqlite_connection& con)
     {
-      std::string token;
-      if (!req.get_cookie("token", token))
-      {
-        token = generate_new_token();
-        resp.set_cookie("token", token);
-      }
-
-      return session_type(token, table_name_, con);
+      return session_type(token.token(), table_name_, con);
     }
 
     std::string table_name_;

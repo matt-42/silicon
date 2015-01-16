@@ -8,7 +8,7 @@
 #include <iod/sio.hh>
 #include <iod/callable_traits.hh>
 
-namespace iod
+namespace sl
 {
 
   struct blob : public std::string

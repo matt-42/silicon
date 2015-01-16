@@ -1,8 +1,8 @@
 
-#include <silicon/server.hh>
-
-namespace iod
+namespace sl
 {
+  using namespace iod;
+
   std::string javascript_api_base();
 
   template <typename S, typename... T>

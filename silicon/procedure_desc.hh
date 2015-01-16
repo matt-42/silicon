@@ -2,9 +2,10 @@
 
 # include <silicon/file.hh>
 
-namespace iod
+namespace sl
 {
-  
+  using namespace iod;
+
   const char* type_string(const file*) { return "file"; }
   const char* type_string(const void*) { return "void"; }
   const char* type_string(const std::string*) { return "string"; }
