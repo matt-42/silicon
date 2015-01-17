@@ -74,6 +74,7 @@ namespace sl
       : api_(api)
     {
       index_api(api_.procedures());
+      api_.initialize_middlewares();
     }
 
     template <typename O>

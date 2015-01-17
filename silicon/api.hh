@@ -5,6 +5,9 @@
 #include <iod/sio_utils.hh>
 #include <iod/tuple_utils.hh>
 #include <iod/callable_traits.hh>
+#include <iod/di.hh>
+#include <iod/bind_method.hh>
+#include <silicon/di_middlewares.hh>
 
 namespace sl
 {
@@ -160,7 +163,7 @@ namespace sl
     {
     }
     
-    auto& procedures()
+    const auto& procedures() const
     {
       return procedures_;
     }
@@ -171,16 +174,54 @@ namespace sl
     }
 
     template <typename... X>
-    auto bind_middlewares(X... m)
+    auto bind_middlewares(X... m) const
     {
       auto nm = std::tuple_cat(middlewares_, std::make_tuple(m...));
       return api<P, decltype(nm)>(procedures_, nm);
     }
 
+    template <typename N>
+    struct has_initialize_method
+    {
+      template <typename X>
+      static char test(decltype(&X::initialize));
+
+      template <typename X>
+      static int test(...);
+
+      static const int value = (sizeof(test<std::remove_reference_t<N>>(0)) == sizeof(char));
+    };
+
+    template <typename T>
+    auto instantiate_middleware()
+    {
+      return di_middlewares([] (T t) { return t; }, middlewares_);
+    }
+
+    auto initialize_middlewares()
+    {
+      foreach(middlewares_) | [this] (auto& m)
+      {
+        typedef std::remove_reference_t<decltype(m)> X;
+        static_if<has_initialize_method<X>::value>(
+          [this] (auto& m) {
+            typedef std::remove_reference_t<decltype(m)> X_;
+            di_middlewares(bind_method(m, &X_::initialize), middlewares_);
+          },
+          [] (auto& m) {}, m);
+      };
+    }
+    
     P procedures_;
     M middlewares_;
   };
 
+  template <typename T, typename A>
+  auto instantiate_middleware(A& api)
+  {
+    return api.template instantiate_middleware<T>();
+  }
+  
   template <typename... P>
   auto make_api(P... procs)
   {
