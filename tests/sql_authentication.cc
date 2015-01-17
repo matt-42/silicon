@@ -39,7 +39,7 @@ struct current_user : public User
   User& user_data() { return *static_cast<User*>(this); }
 
   // Requires the session and a sqlite connection.
-  static auto make(session& sess, sqlite_orm<User> orm)
+  static auto instantiate(session& sess, sqlite_orm<User> orm)
   {
     if (!sess.authenticated())
       throw error::unauthorized("Access to this procedure is reserved to logged users.");
@@ -75,7 +75,7 @@ struct authenticator
   };
 
   // Requires the session and a sqlite connection.
-  static auto make(session& sess, sqlite_connection& con)
+  static auto instantiate(session& sess, sqlite_connection& con)
   {
     return authenticator(sess, con);
   }

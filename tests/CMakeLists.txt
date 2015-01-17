@@ -20,16 +20,10 @@ if (OPENSSL_FOUND)
   include_directories(${OPENSSL_INCLUDE_DIR})
 endif (OPENSSL_FOUND)
 
-find_package( Boost 1.54.0
-    REQUIRED unit_test_framework system regex date_time thread filesystem
-    program_options chrono atomic )
-
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/mimosa/
                     ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/include
-                    ${IOD_INCLUDE_DIR}
-                    )
-                       
+                    ${IOD_INCLUDE_DIR})
 
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib
                 ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib64
@@ -39,31 +33,37 @@ add_definitions(-std=c++14)
 
 set(CPPNET_LIBS
     ${Boost_LIBRARIES}
-    cppnetlib-uri cppnetlib-client-connections cppnetlib-server-parsers ${OPENSSL_LIBRARIES} pthread
-    )
+    cppnetlib-uri cppnetlib-client-connections
+    cppnetlib-server-parsers ${OPENSSL_LIBRARIES} pthread)
 
 set(MIMOSA_LIBS mimosa-http mimosa-uri mimosa gnutls z pthread lzma)
+
+set(MHD_LIBS gnutls gcrypt pthread microhttpd)
 
 add_iod_executable(cppnet_hello_world cppnet_hello_world.cc)
 target_link_libraries(cppnet_hello_world ${CPPNET_LIBS})
 
 add_iod_executable(sql_authentication sql_authentication.cc)
-target_link_libraries(sql_authentication sqlite3 mimosa-http mimosa-uri mimosa gnutls z pthread lzma)
+target_link_libraries(sql_authentication sqlite3 ${MIMOSA_LIBS})
 
 add_iod_executable(user_tracking user_tracking.cc)
-target_link_libraries(user_tracking sqlite3 mimosa-http mimosa-uri mimosa gnutls z pthread lzma)
+target_link_libraries(user_tracking  ${MIMOSA_LIBS})
+
+
+add_iod_executable(user_tracking_mhd user_tracking_mhd.cc)
+target_link_libraries(user_tracking_mhd  ${MHD_LIBS} ${MIMOSA_LIBS})
 
 add_iod_executable(crud crud.cc)
-target_link_libraries(crud sqlite3 mimosa-http mimosa-uri mimosa gnutls z pthread lzma gnutls gcrypt pthread microhttpd)
+target_link_libraries(crud sqlite3 ${MIMOSA_LIBS})
 
 add_iod_executable(client client.cc)
-target_link_libraries(client sqlite3 mimosa-http mimosa-uri mimosa-json mimosa-fs mimosa gnutls z pthread lzma nettle gnutls gcrypt pthread microhttpd)
+target_link_libraries(client sqlite3 ${MIMOSA_LIBS})
 
 add_iod_executable(mimosa_hello_world mimosa_hello_world.cc)
-target_link_libraries(mimosa_hello_world mimosa-http mimosa-uri mimosa mimosa-json mimosa-fs gnutls z pthread lzma gnutls gcrypt pthread)
+target_link_libraries(mimosa_hello_world ${MIMOSA_LIBS})
 
 add_iod_executable(microhttpd_hello_world microhttpd_hello_world.cc)
-target_link_libraries(microhttpd_hello_world gnutls gcrypt pthread microhttpd)
+target_link_libraries(microhttpd_hello_world ${MHD_LIBS})
 
 add_test(crud crud)
 add_test(client client)

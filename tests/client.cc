@@ -2,7 +2,6 @@
 #include <silicon/client.hh>
 #include <silicon/api.hh>
 #include <silicon/api_description.hh>
-#include <silicon/microhttpd_serve.hh>
 #include <silicon/mimosa_serve.hh>
 
 
