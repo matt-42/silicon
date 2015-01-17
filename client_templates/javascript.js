@@ -19,9 +19,7 @@ function silicon_api_base()
         if (req.status == 200) {
           // Resolve the promise with the response text
           switch (return_type) {
-          case "int":    resolve(parseInt(req.response)); break;
-          case "float":  resolve(parseFloat(req.response)); break;
-          case "json":   resolve(JSON.parse(req.response)); break;
+          case "object": resolve(JSON.parse(req.response)); break;
           default: resolve(req.response); break;
           }
         }
@@ -50,7 +48,8 @@ var {{root_scope}} = new silicon_api_base();
 {{scope}}
   if ( ! {{scope_path}} ) {{scope_path}} = {};
   {{procedure}}
-    {{procedure_path}} = function(params) { return this.call_procedure("{{procedure_url}}", params, 'void'); };
+    // {{procedure_description}}
+    {{procedure_path}} = function(params) { return this.call_procedure("{{procedure_url}}", params, '{{return_type}}'); };
   {{end_procedure}}
 
   {{child_scopes}}

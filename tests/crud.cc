@@ -29,7 +29,6 @@ int main()
       sqlite_orm_middleware<User>("users") // Orm middleware.
       );
 
-  
   // Start server.
   std::thread t([&] () { mimosa_json_serve(api, 12345); });
   usleep(.1e6);

@@ -23,5 +23,5 @@ int main()
 
   js_client = generate_javascript_client(hello_api);
 
-  //std::cout << generate_javascript_client(hello_api) << std::endl;
+  std::cout << generate_javascript_client(hello_api) << std::endl;
 }

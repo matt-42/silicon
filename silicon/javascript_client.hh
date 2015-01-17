@@ -3,6 +3,7 @@
 
 #include <iod/foreach.hh>
 #include <silicon/client_templates/javascript.hh>
+#include <silicon/api_description.hh>
 
 namespace sl
 {
@@ -104,18 +105,33 @@ namespace sl
       }
     }
 
+    inline std::string return_type_string(void*) { return "void"; }
+    inline std::string return_type_string(std::string*) { return "string"; }
+    template <typename... T>
+    std::string return_type_string(sio<T...>*) { return "object"; }
+
     template <typename P, typename W>
     void generate_procedure(P p, std::string tpl, W& write, path_generator path)
     {
+      typedef std::remove_reference_t<decltype(p.value().function())> F;
+      typedef std::remove_reference_t<std::remove_const_t<callable_return_type_t<F>>> R;
+
       tpl_generator(
         tpl, write,
 
         "procedure_path", [&] (const char*&) {
           write(path(p.symbol().name()));
         },
+        "procedure_description", [&] (const char*&) {
+          write(procedure_description(p));
+        },
         "procedure_url", [&] (const char*&) {
           write(path(p.symbol().name(), "/", true));
-        });
+        },
+        "return_type", [&] (const char*&) {
+          write(return_type_string((R*)0));
+        }
+        );
     }
     
     template <typename S, typename W>
@@ -174,8 +190,12 @@ namespace sl
         [&] (const char*& c) {
           std::string scope_tpl = read_until(c, "{{end_scope}}");
           generate_scope(api.procedures(), scope_tpl, write, path);
-        }
+        },
 
+        "root_scope", [&] (const char*&) {
+          write(path());
+        }
+        
         );      
     
     }
@@ -185,7 +205,7 @@ namespace sl
   template <typename A, typename... T>
   std::string generate_javascript_client(const A& api, T... _options)
   {
-    auto path = tpl::path_generator(".") + "root_scope";
+    auto path = tpl::path_generator(".") + "sl";
 
     std::stringstream ss;
     auto write = [&] (const auto& s) { ss << s; };
