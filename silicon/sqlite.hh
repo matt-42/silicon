@@ -7,19 +7,25 @@
 #include <sqlite3.h>
 #include <iod/sio.hh>
 #include <iod/callable_traits.hh>
+#include <silicon/symbols.hh>
+#include <silicon/blob.hh>
 
 namespace sl
 {
 
-  struct blob : public std::string
-  {
-    blob() : std::string() {}
-    blob(const std::string& s) : std::string(s) {}
-    blob(const blob& b) : std::string(b) {}
-  };
-
   static const struct null_t { null_t() {} } null;
 
+  
+  template <typename T>
+  inline std::string sqlite_type_string(T*, std::enable_if_t<std::is_integral<T>::value>* = 0) { return "INTEGER"; }
+  template <typename T>
+  inline std::string sqlite_type_string(T*, std::enable_if_t<std::is_floating_point<T>::value>* = 0) { return "REAL"; }
+  inline std::string sqlite_type_string(std::string*) { return "TEXT"; }
+  inline std::string sqlite_type_string(blob*) { return "BLOB"; }
+
+  template <typename T>
+  inline std::string sqlite_type_string(const T*) { return sqlite_type_string((T*)0); }
+  
   void free_sqlite3_statement(void* s)
   {
     sqlite3_finalize((sqlite3_stmt*) s);
@@ -226,11 +232,19 @@ namespace sl
       return con_;
     }
 
-    void init(const std::string& path)
+    template <typename... O>
+    void init(const std::string& path, O... options_)
     {
+      auto options = D(options_...);
+
       path_ = path;
       con_.connect(path,  SQLITE_OPEN_FULLMUTEX | SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
-      con_("PRAGMA synchronous=0").exec();
+      if (options.has(_Synchronous))
+      {
+        std::stringstream ss;
+        ss << "PRAGMA synchronous=" << options.get(_Synchronous, 2);
+        con_(ss.str()).exec();
+      }
     }
 
     sqlite_connection con_;
@@ -239,12 +253,13 @@ namespace sl
 
   struct sqlite_middleware
   {
-    sqlite_middleware(const std::string& database_path)
+    template <typename... O>
+    sqlite_middleware(const std::string& database_path, O... options)
     {
-      db_.init(database_path);
+      db_.init(database_path, options...);
     }
 
-    sqlite_connection& instantiate()
+    sqlite_connection& make()
     {
       return db_.get_connection();
     }
