@@ -191,7 +191,7 @@ namespace sl
       c(ss.str()).exec();
     }
     
-    auto make(sqlite_connection& con) {
+    auto instantiate(sqlite_connection& con) {
       return sqlite_orm<O>(table_name_, con);
     };
 

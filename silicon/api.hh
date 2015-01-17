@@ -12,6 +12,7 @@
 namespace sl
 {
   using namespace iod;
+  using iod::D;
 
   template <typename A, typename R, typename F>
   struct procedure

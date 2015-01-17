@@ -7,27 +7,31 @@
 
 #include <silicon/error.hh>
 #include <silicon/service.hh>
+#include <silicon/tracking_cookie.hh>
 #include <iod/json.hh>
 
 namespace sl
 {
 
-  struct microhttpd_request
+  struct mhd_request
   {
-    microhttpd_request(const std::string b) : body(b) {}
+    mhd_request(MHD_Connection* con, const std::string b) : connection(con), body(b) {}
+
+    MHD_Connection* connection;
     std::string body;
   };
 
-  struct microhttpd_response
+  struct mhd_response
   {
     int status;
     std::string body;
+    std::vector<std::pair<std::string, std::string>> cookies;
   };
     
-  struct microhttpd_json_service_utils
+  struct mhd_json_service_utils
   {
-    typedef microhttpd_request request_type;
-    typedef microhttpd_response response_type;
+    typedef mhd_request request_type;
+    typedef mhd_response response_type;
 
     template <typename T>
     auto deserialize(const request_type& r, T& res) const
@@ -53,6 +57,37 @@ namespace sl
 
   };
 
+  template <typename F>
+  int mdh_keyvalue_iterator(void *cls,
+                            enum MHD_ValueKind kind,
+                            const char *key, const char *value)
+  {
+    F& f = *(F*)cls;
+    f(key, value);
+  }
+
+  struct mhd_session_cookie
+  {
+    
+    inline tracking_cookie instantiate(mhd_request* req, mhd_response* resp)
+    {
+      std::string key = "sl_token";
+      std::string token;
+      const char* token_ = MHD_lookup_connection_value(req->connection, MHD_COOKIE_KIND, key.c_str());
+      
+      if (!token_)
+      {
+        token = generate_secret_tracking_id();
+        resp->cookies.push_back(std::make_pair(key, token));
+      }
+      else
+        token = token_;
+
+      return tracking_cookie(token);
+    }
+
+  };
+  
   template <typename S>
   int mhd_handler(void * cls,
                   struct MHD_Connection * connection,
@@ -64,7 +99,7 @@ namespace sl
                   void ** ptr)
   {
     static int dummy;
-    struct MHD_Response * response;
+    MHD_Response* response;
     int ret;
 
     std::string* pp = (std::string*)*ptr;
@@ -83,8 +118,8 @@ namespace sl
 
     auto& service = * (S*)cls;
 
-    microhttpd_request rq(*pp);
-    microhttpd_response resp;
+    mhd_request rq(connection, *pp);
+    mhd_response resp;
 
     try
     {
@@ -108,6 +143,16 @@ namespace sl
                                              (void*) str.c_str(),
                                              MHD_NO,
                                              MHD_YES);
+    // Set cookies.
+    for(auto kv : resp.cookies)
+    {
+      std::string set_cookie_string = kv.first + '=' + kv.second;
+      if (MHD_NO == MHD_add_response_header (response,
+                                             MHD_HTTP_HEADER_SET_COOKIE,
+                                             set_cookie_string.c_str()))
+        throw error::internal_server_error("Failed to set session cookie header");
+    }
+    
     ret = MHD_queue_response(connection,
                              resp.status,
                              response);
@@ -117,10 +162,10 @@ namespace sl
   }
 
   template <typename A>
-  void microhttpd_json_serve(const A& api, int port)
+  void mhd_json_serve(const A& api, int port)
   {
 
-    auto service = make_service<microhttpd_json_service_utils>(api);
+    auto service = make_service<mhd_json_service_utils>(api.bind_middlewares(mhd_session_cookie()));
     typedef decltype(service) S;
 
     struct MHD_Daemon * d;

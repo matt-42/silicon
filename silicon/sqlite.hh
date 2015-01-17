@@ -259,7 +259,7 @@ namespace sl
       db_.init(database_path, options...);
     }
 
-    sqlite_connection& make()
+    sqlite_connection& instantiate()
     {
       return db_.get_connection();
     }

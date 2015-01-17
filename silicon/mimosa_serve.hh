@@ -30,7 +30,7 @@ namespace sl
     {
     }
     
-    tracking_cookie make(request_type* req, response_type* resp)
+    tracking_cookie instantiate(request_type* req, response_type* resp)
     {
       std::string token;
       std::string key = "sl_token";

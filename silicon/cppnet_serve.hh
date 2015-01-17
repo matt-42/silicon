@@ -33,7 +33,7 @@ namespace sl
   //     return os.str();
   //   }
     
-  //   tracking_cookie make(cppnet_request_type* req, cppnet_response_type* resp)
+  //   tracking_cookie instantiate(cppnet_request_type* req, cppnet_response_type* resp)
   //   {
   //     std::string token;
   //     std::string key = "sl_token";

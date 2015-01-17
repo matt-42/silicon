@@ -90,7 +90,7 @@ namespace sl
     }
 
     typedef sqlite_session<D> session_type;
-    session_type make(tracking_cookie& token, sqlite_connection& con)
+    session_type instantiate(tracking_cookie& token, sqlite_connection& con)
     {
       return session_type(token.id(), table_name_, con);
     }
