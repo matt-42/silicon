@@ -2,8 +2,9 @@
 
 #include <random>
 #include <silicon/tracking_cookie.hh>
+#include <silicon/sqlite.hh>
 
-namespace iod
+namespace sl
 {
   template <typename D>
   struct sqlite_session_middleware;
@@ -71,10 +72,27 @@ namespace iod
     {
     }
 
+    void initialize(sqlite_connection& c)
+    {
+      std::stringstream ss;
+      ss << "CREATE TABLE if not exists " <<  table_name_ << " ("
+         << "key CHAR(32) PRIMARY KEY NOT NULL,";
+
+      bool first = true;
+      foreach(D().sio_info()) | [&] (auto& m)
+      {
+        if (!first) ss << ", ";
+        ss << m.symbol().name() << " " << sqlite_type_string(&m.value());
+        first = false;
+      };
+      ss << ");";
+      c(ss.str()).exec();
+    }
+
     typedef sqlite_session<D> session_type;
     session_type make(tracking_cookie& token, sqlite_connection& con)
     {
-      return session_type(token.token(), table_name_, con);
+      return session_type(token.id(), table_name_, con);
     }
 
     std::string table_name_;

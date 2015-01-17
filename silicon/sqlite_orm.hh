@@ -3,8 +3,9 @@
 #include <sstream>
 #include <iod/utils.hh>
 #include <silicon/symbols.hh>
+#include <silicon/sqlite.hh>
 
-namespace iod
+namespace sl
 {
 
   using s::_Primary_key;
@@ -75,10 +76,10 @@ namespace iod
 
     int find_by_id(int id, O& o)
     {
-      return con_("SELECT * from " + table_name_ + " where id = ?", id) >> o;
+      return con_("SELECT * from " + table_name_ + " where id == ?", id) >> o;
     }
 
-    int insert(O& o)
+    int insert(const O& o)
     {
       // save all fields except primary keys.
       // sqlite will automatically fill primary keys.
@@ -169,6 +170,27 @@ namespace iod
 
     sqlite_orm_middleware(const std::string& table_name) : table_name_(table_name) {}
 
+    void initialize(sqlite_connection& c)
+    {
+      std::stringstream ss;
+      ss << "CREATE TABLE if not exists " <<  table_name_ << " (";
+
+      bool first = true;
+      foreach(O()) | [&] (auto& m)
+      {
+        if (!first) ss << ", ";
+        ss << m.symbol().name() << " " << sqlite_type_string(&m.value());
+
+        if (m.attributes().has(_Primary_key))
+          ss << " PRIMARY KEY NOT NULL";
+
+        first = false;
+      };
+      ss << ");";
+      // std::cout << ss.str() << std::endl;
+      c(ss.str()).exec();
+    }
+    
     auto make(sqlite_connection& con) {
       return sqlite_orm<O>(table_name_, con);
     };
