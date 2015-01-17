@@ -88,6 +88,12 @@ namespace sl
     }
 
     template <typename T>
+    auto serialize(response_type& r, const std::string& str) const
+    {
+      r.write(str.data(), str.size());
+    }
+    
+    template <typename T>
     auto serialize(response_type& r, const T& res) const
     {
       std::string str = json_encode(res);

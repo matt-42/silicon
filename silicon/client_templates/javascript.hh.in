@@ -1,0 +1,5 @@
+
+namespace sl
+{
+  std::string javascript_client_template = R"jct(${JAVASCRIPT_CLIENT_TEMPLATE})jct";
+}
