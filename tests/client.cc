@@ -43,7 +43,6 @@ int main()
     std::cout << c.hello_world("John").response.message << std::endl;
     std::cout << c.scope.test("John").response.message << std::endl;
 
-    // Exit to avoid a segv.
     exit(0);
   }
   catch (std::runtime_error e)

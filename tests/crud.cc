@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include <silicon/api.hh>
+#include <silicon/api_description.hh>
 #include <silicon/mimosa_serve.hh>
 #include <silicon/sqlite.hh>
 #include <silicon/sqlite_orm.hh>
@@ -34,7 +35,12 @@ int main()
   usleep(.1e6);
 
   std::cout << api_description(api) << std::endl;
-  
+  // api_description print:
+  // user.get_by_id(id: int) -> {id: int, name: string, age: int, address: string}
+  // user.create(name: string, age: int, address: string) -> {id: int}
+  // user.update(id: int, name: string, age: int, address: string) -> void
+  // user.destroy(id: int) -> void
+
   // Test.
   auto c = json_client(api, "127.0.0.1", 12345);
 
