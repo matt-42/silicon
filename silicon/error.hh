@@ -5,7 +5,6 @@
 
 namespace sl
 {
-  using namespace iod;
 
   namespace error
   {

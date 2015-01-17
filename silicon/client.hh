@@ -29,15 +29,17 @@ namespace sl
       char buf[1024];
       int n;
       while ((n = rr->read(buf, 1024))) { body.append(buf, n); }
-      
+
+      std::string error_message;
       if (rr->status() == 200)
         json_decode(result, body);
       else
-        std::cout << body << std::endl;
+        error_message = body;
 
       return D(
         s::_Status = rr->status(),
-        s::_Response = result);      
+        s::_Response = result,
+        s::_Error = error_message);
     }
   };
 
@@ -70,6 +72,7 @@ namespace sl
       rw.setMethod(mimosa::http::kMethodPost);
       rw.setProto(1, 1);
       std::string rq_body = json_encode(args);
+
       rw.setContentLength(rq_body.size());
       for (auto c : cookies)
         rw.addCookie(c.first, c.second);
@@ -93,14 +96,12 @@ namespace sl
         char* key_end;
         while (std::isspace(*key) and *key) key++;
         key_end = key;
-        while (std::isalnum(*key_end) and *key_end) key_end++;
+        while (*key_end != '=' and *key_end) key_end++;
 
-        char* value = key_end;
-        while (*value != '=' and *value) value++;
-        while (std::isspace(*value) and *value) value++;
+        char* value = key_end + 1;
         char* value_end = value;
-        while (std::isalnum(*value_end) and *value_end) value_end++;
-        
+        while (*value_end != ';' and *value_end) value_end++;
+
         cookies[std::string(key, key_end)] = std::string(value, value_end);
       }
       
@@ -117,7 +118,7 @@ namespace sl
   struct D_caller
   {
     template <typename... X>
-    auto operator() (X&&... t) const { return D(t...); }
+    auto operator() (X... t) const { return D(t...); }
   };
 
   template <typename R, typename C, typename S>
@@ -135,10 +136,10 @@ namespace sl
     return [c, args, symbol] (std::remove_reference_t<decltype(std::declval<T>().value())>... args2)
     {
       auto o = foreach(args.symbols_as_tuple(),
-                       std::make_tuple(args2...)) | [] (auto& s, auto& v) {
+                       std::forward_as_tuple(args2...)) | [] (auto& s, auto&& v) {
         return s = v;
       };
-
+      
       auto o2 = apply(o, D_caller());
       return c->template remote_call<R>(symbol, o2);
     };
@@ -166,12 +167,12 @@ namespace sl
   }
 
   template <typename A>
-  auto silicon_client(const A& api, std::string host, int port)
+  auto json_client(const A& api, std::string host, int port)
   {
     std::shared_ptr<http_client> c(new http_client());
     if (!c->connect(host, port, false))
       throw std::runtime_error("Cannot connect to the server");
 
-    return generate_client_methods(c, api);
+    return generate_client_methods(c, api.procedures());
   }
 }

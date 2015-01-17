@@ -1,83 +1,81 @@
+#include <thread>
 #include <iostream>
 
-#include <iod/sio_utils.hh>
-
-//#include <silicon/microhttpd_backend.hh>
-#include <silicon/mimosa_backend.hh>
+#include <silicon/api.hh>
+#include <silicon/mimosa_serve.hh>
 #include <silicon/sqlite.hh>
 #include <silicon/sqlite_session.hh>
-#include <silicon/server.hh>
+#include <silicon/sqlite_orm.hh>
+#include <silicon/crud.hh>
+#include <silicon/client.hh>
 
-#include "symbols.hh"
+using namespace sl;
 
-using namespace s;
-using namespace iod;
-
-typedef decltype(iod::D(_Id = int(),
-                        _Name = std::string(),
-                        _Age = int(),
-                        _Address = std::string(),
-                        _Salary = float()
+// User database type
+typedef decltype(D(@id(@primary_key) = int(),
+                        @name = std::string()
                    )) User;
-
 
 // ==================================================
 // Session
+//   Simply store the user_id
 struct session_data
 {
   session_data() { user_id = -1; }
-
   bool authenticated() const { return user_id != -1; }
-
-  auto sio_info() { return D(_User_id = int()); }
-  
+  auto sio_info() { return D(@user_id = int()); }
   int user_id;
 };
 
+// Wrap the session data in a sqlite session middleware.
 typedef sqlite_session<session_data> session;
 
-// Create table sessions (key CHAR(32) PRIMARY KEY NOT NULL, user_id INT);
 // ==================================================
-// Current user.
+// Current user middleware.
+//  All procedures taking current_user as argument will
+//  throw error::unauthorized if the user is not authenticated.
 struct current_user : public User
 {
   User& user_data() { return *static_cast<User*>(this); }
 
-  static auto instantiate(session& sess, sqlite_connection& con)
+  // Requires the session and a sqlite connection.
+  static auto make(session& sess, sqlite_orm<User> orm)
   {
     if (!sess.authenticated())
       throw error::unauthorized("Access to this procedure is reserved to logged users.");
 
     current_user u;
-    
-    if (!(con("SELECT * from user where id = ?", sess.user_id) >> u.user_data()))
+
+    if (!orm.find_by_id(sess.user_id, u.user_data()))
       throw error::internal_server_error("Session user_id not in user table.");
 
     return u;
   }
 };
 
+// Authenticator middleware
 struct authenticator
 {
   authenticator(session& _sess, sqlite_connection& _con) : sess(_sess), con(_con) {}
 
-  bool authenticate(int id)
+  bool authenticate(std::string name)
   {
     int count = 0;
+    User u;
     // 1/ check if the user is valid (user_is_valid function).
-    con("SELECT count(*) from user where id = ?", id) >> count;
-    if (count)
+    if (con("SELECT * from users where name = ?", name) >> u)
     {
       // 2/ store data in the session (session.store(user)).
-      sess.user_id = id;
+      sess.user_id = u.id;
       sess.save();
       return true;
     }
     else
     return false;
   };
-      
-  static decltype(auto) instantiate(session& sess, sqlite_connection& con)
+
+  // Requires the session and a sqlite connection.
+  static auto make(session& sess, sqlite_connection& con)
   {
     return authenticator(sess, con);
   }
@@ -88,29 +86,56 @@ struct authenticator
 
 int main()
 {
-  using namespace iod;
+  using namespace sl;
+
+  auto api = make_api(
+    @who_am_I = [] (current_user& user)
+    {
+      return user.user_data();
+    },
+
+    @signin(@name) = [] (auto params, authenticator& auth)
+    {
+      if (!auth.authenticate(params.name))
+        throw error::bad_request("Invalid user name");
+    },
+
+    @logout = [] (session& sess)
+    {
+      sess.destroy();
+    }
+
+    )
+    .bind_middlewares(
+      sqlite_middleware("/tmp/sl_test_authentication.sqlite"), // sqlite middleware.
+      sqlite_orm_middleware<User>("users"), // Orm middleware for users.
+      sqlite_session_middleware<session_data>("sessions"),
+      mimosa_session_cookie_middleware()
+      );
+
   
-  auto server = silicon(sqlite_middleware("./db.sqlite"),
-                        sqlite_session_middleware<session_data>("sessions"));
+  // Start server.
+  std::thread t([&] () { mimosa_json_serve(api, 12345); });
+  usleep(.1e6);
+  
+  { // Setup database for testing.
+    auto orm = api.template instantiate_middleware<sqlite_orm<User>>();
+    orm.insert(User(0, "John Doe"));
+  }
 
-  server["current_username"] = [] (current_user& user)
-  {
-    return user.name;
-  };
+  // Test.
+  auto c = json_client(api, "127.0.0.1", 12345);
 
-  server["signin"](_Id = int()) = [] (auto params, authenticator& auth)
-  {
-    if (auth.authenticate(params.id))
-      return "success";
-    else
-      return "Invalid user id";
-  };
+  // Signin.
+  auto signin_r = c.signin("John Doe");
+  std::cout << json_encode(signin_r) << std::endl;
+  
+  assert(signin_r.status == 200);
 
-  server["logout"] = [] (session& sess)
-  {
-    sess.destroy();
-    return "success";
-  };
+  auto who_r = c.who_am_I();
+  std::cout << json_encode(who_r) << std::endl;
+  assert(who_r.status == 200);
+  assert(who_r.response.name == "John Doe");
 
-  server.serve(8888);
+  exit(0);
 }

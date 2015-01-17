@@ -1,19 +1,35 @@
+#include <thread>
 #include <iostream>
 #include <silicon/mimosa_serve.hh>
 #include <silicon/api.hh>
+#include <silicon/client.hh>
 
-// using namespace iod;
-
+using namespace sl;
 
 int main()
 {
-  auto api = iod::make_api(
+  auto api = make_api(
 
-  @test = [] (iod::cookie_token c) {
-    std::cout << c.token() << std::endl;
-  }
+    @my_tracking_id = [] (tracking_cookie c) {
+      return D(@id = c.id());
+    }
+    
+    );
 
-  ).bind_middlewares(iod::mimosa_session_cookie_middleware());
+  // Start server.
+  std::thread t([&] () { mimosa_json_serve(api, 12345); });
+  usleep(.1e6);
 
-  iod::mimosa_json_serve(api, 12345);
+  // Test.
+  auto c = json_client(api, "127.0.0.1", 12345);
+
+  auto r1 = c.my_tracking_id();
+  auto r2 = c.my_tracking_id();
+
+  std::cout << r1.response.id << std::endl;
+  std::cout << r2.response.id << std::endl;
+
+  assert(r1.response.id == r2.response.id);
+
+  exit(0);
 }

@@ -1,42 +1,53 @@
 #include <thread>
 #include <silicon/client.hh>
-#include <silicon/server.hh>
+#include <silicon/api.hh>
+#include <silicon/api_description.hh>
+#include <silicon/microhttpd_serve.hh>
+#include <silicon/mimosa_serve.hh>
 
-auto proc1(decltype(D(@name = std::string())) params)
-{
-  return D(@test = params.name);
-}
-
-auto fun()
-{
-  return D(@message = std::string("fun: hello world"));
-}
 
 int main()
-{
-  using namespace iod;
+  try
+  {
+    using namespace sl;
 
-  auto server = silicon.api(
-    @hello_world(@name) = [] (auto p)
-    {
-      return D(@message = std::string("hello ") + p.name);
-    }
-    ,
-    @test = &fun,
-    @test2 = &proc1,
-    @namespace1 = D(@test_in_nsp = &proc1),
-    @testX = [] () {}
-  );
+    auto api = make_api(
+      @hello_world(@name) = [] (auto p)
+      {
+        return D(@message = std::string("Hello ") + p.name);
+      },
+
+      @scope = D(
+
+        @test(@name) = [] (auto p)
+        {
+          return D(@message = std::string("Hello ") + p.name);
+        }
+        
+        )
+      );
  
-  print_server_api(server);
- 
-  std::thread t([&] () { server.serve(12345); });
+    std::cout << api_description(api) << std::endl;
 
-  auto c = silicon_client(server.get_api(), "0.0.0.0", 12345);
+    std::thread t([&] () { mimosa_json_serve(api, 12345); });
 
-  usleep(.1e6);
+    // Wait for the server to start.
+    usleep(.1e6);
 
-  std::cout << c.test().response.message << std::endl;
-  std::cout << c.test2("John").response.test << std::endl;
-  std::cout << c.namespace1.test_in_nsp("Doe").response.test << std::endl;
-}
+    auto c = json_client(api, "127.0.0.1", 12345);
+
+    auto r1 = c.hello_world("John");
+    assert(r1.response.message == "Hello John");
+    assert(r1.status == 200);
+    
+    std::cout << c.hello_world("John").response.message << std::endl;
+    std::cout << c.scope.test("John").response.message << std::endl;
+
+    // Exit to avoid a segv.
+    exit(0);
+  }
+  catch (std::runtime_error e)
+  {
+    std::cerr << e.what() << std::endl;
+    return 1;
+  }

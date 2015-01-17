@@ -31,3 +31,6 @@ destroy
 
 status
 response
+
+synchronous
+error

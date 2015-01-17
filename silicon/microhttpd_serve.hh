@@ -127,7 +127,7 @@ namespace sl
     d = MHD_start_daemon(
       //MHD_USE_THREAD_PER_CONNECTION,
       //MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY | MHD_USE_EPOLL_TURBO | MHD_USE_TCP_FASTOPEN,
-      MHD_USE_SELECT_INTERNALLY | MHD_USE_TCP_FASTOPEN,
+      MHD_USE_SELECT_INTERNALLY,
       port,
       NULL,
       NULL,
@@ -140,7 +140,6 @@ namespace sl
 
     while (getc (stdin) != 'q');
     MHD_stop_daemon(d);
-    return;
   }
   
 

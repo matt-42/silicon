@@ -29,14 +29,6 @@ namespace sl
       : options_(D(options...))
     {
     }
-
-    std::string generate_new_token()
-    {
-      std::ostringstream os;
-      std::random_device rd;
-      os << std::hex << rd() << rd() << rd() << rd();
-      return os.str();
-    }
     
     tracking_cookie make(request_type* req, response_type* resp)
     {
@@ -48,7 +40,7 @@ namespace sl
       auto it = cookies.find(key);
       if (it == cookies.end())
       {
-        token = generate_new_token();
+        token = generate_secret_tracking_id();
         cookie->setKey(key);
         cookie->setValue(token);
         cookie->setSecure(options_.has(_Secure));
@@ -65,7 +57,7 @@ namespace sl
 
     sio<O...> options_;
   };
-
+  
   template <typename... O>
   auto mimosa_session_cookie_middleware(O&&... opts)
   {
@@ -144,7 +136,7 @@ namespace sl
   template <typename A>
   void mimosa_json_serve(const A& api, int port)
   {
-    auto service = make_service<mimosa_silicon>(api);
+    auto service = make_service<mimosa_silicon>(api.bind_middlewares(mimosa_session_cookie_middleware()));
     mimosa_handler<decltype(service)> handler(service);
     mimosa::http::Server::Ptr server = new mimosa::http::Server;
     server->setHandler(&handler);
@@ -156,9 +148,9 @@ namespace sl
     }
 
     //mimosa::cpuForeach([&server] {
-        while (true)
-          server->serveOne(0, true);
-        //});
+    while (true)
+      server->serveOne(0, true);
+    //});
   }
 
 }

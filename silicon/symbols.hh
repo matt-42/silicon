@@ -106,3 +106,12 @@
 #define IOD_SYMBOL__Response
     iod_define_symbol(response, _Response)
 #endif
+
+#ifndef IOD_SYMBOL__Synchronous
+#define IOD_SYMBOL__Synchronous
+    iod_define_symbol(synchronous, _Synchronous)
+#endif
+#ifndef IOD_SYMBOL__Error
+#define IOD_SYMBOL__Error
+    iod_define_symbol(error, _Error)
+#endif

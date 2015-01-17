@@ -1,6 +1,6 @@
 #pragma once
 
-#include <silicon/di.hh>
+#include <iod/di.hh>
 #include <iod/utils.hh>
 
 namespace sl
@@ -148,7 +148,8 @@ namespace sl
 
     return D(
 
-      _Get_by_id(_Id = int()) = [=] (auto params, ORMI& orm, dependencies_of<decltype(read_access)>& ra_deps)
+      _Get_by_id(_Id = int()) = [=] (auto params, ORMI& orm,
+                                     di::dependencies_of<decltype(read_access)>& ra_deps)
     {
       O o;
       if (!orm.find_by_id(params.id, o))
@@ -157,13 +158,14 @@ namespace sl
         return o;
       else
         throw error::unauthorized("Not enough priviledges to edit this object");
-    },
+    }
+      ,
       
       _Create = [=] (insert_type obj, ORMI& orm,
-                     dependencies_of<decltype(validate)>& v_deps,
-                     dependencies_of<decltype(on_create_success)>& oc_deps,
-                     dependencies_of<decltype(write_access)>& wa_deps,
-                     dependencies_of<decltype(before_create)>& bc_deps)
+                     di::dependencies_of<decltype(validate)>& v_deps,
+                     di::dependencies_of<decltype(on_create_success)>& oc_deps,
+                     di::dependencies_of<decltype(write_access)>& wa_deps,
+                     di::dependencies_of<decltype(before_create)>& bc_deps)
     {
       O o;
       o = obj;
@@ -180,10 +182,10 @@ namespace sl
     },
 
       _Update = [=] (update_type obj, ORMI& orm,
-                     dependencies_of<decltype(validate)>& v_deps,
-                     dependencies_of<decltype(on_update_success)>& ou_deps,
-                     dependencies_of<decltype(write_access)>& wa_deps,
-                     dependencies_of<decltype(before_update)>& bu_deps)
+                     di::dependencies_of<decltype(validate)>& v_deps,
+                     di::dependencies_of<decltype(on_update_success)>& ou_deps,
+                     di::dependencies_of<decltype(write_access)>& wa_deps,
+                     di::dependencies_of<decltype(before_update)>& bu_deps)
     {
       O o;
       if (!orm.find_by_id(obj.id, o))
@@ -204,8 +206,8 @@ namespace sl
 
       _Destroy = [=] (PKS params,
                       ORMI& orm,
-                      dependencies_of<decltype(on_destroy_success)>& od_deps,
-                      dependencies_of<decltype(write_access)>& wa_deps)
+                      di::dependencies_of<decltype(on_destroy_success)>& od_deps,
+                      di::dependencies_of<decltype(write_access)>& wa_deps)
     {
       O o;
       if (!orm.find_by_id(params.id, o))
