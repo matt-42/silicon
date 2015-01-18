@@ -69,7 +69,8 @@ cd silicon;
 Hello World
 =========================
 
-Here is a simple hello world example serving the string {"message":"hello world."} at the route /hello
+Here is a simple hello world example serving the string {"message":"hello world."} at the route /hello.
+
 
 ```c++
 #include <silicon/api.hh>
@@ -229,15 +230,85 @@ struct sqlite_session_middleware
 };
 ```
 
+
+C++ remote client.
+=========================
+
+The C++ remote client is automatically build upon the api of the server. It allows to
+remotely call procedures on the server as if they were real C++ function. All the
+serialization, network communication, deserialization happend behind the scene.
+
+Given an API:
+```c++
+auto api = make_api(
+  @hello_world(@name) = [] (auto p)
+  {
+    return D(@message = std::string("Hello ") + p.name);
+  });
+```
+
+And a server:
+```c++
+mimosa_json_serve(api, 12345);
+```
+
+The client is:
+```c++
+auto c = json_client(api, "127.0.0.1", 12345);
+
+auto r = c.hello_world("John");
+
+assert(r.response.message == "Hello John");
+assert(r.status == 200);
+```
+
 Javascript client
 =========================
 
-FIXME
+Silicon also provide a automaticaly generated javascript client. The js source can be
+served directly served from the api:
 
-C++ client.
-=========================
+```c++
 
-FIXME
+// Predeclare the js source string.
+std::string js_client;
+  
+auto hello_api = make_api(
+
+  @hello_world(@name) = [] (auto p)
+  {
+    return D(@message = std::string("Hello ") + p.name);
+  });
+
+  // Serve it at /js_client
+  @js_client = [&] () { return js_client; }
+
+  );
+
+// Generate the js source.
+js_client = generate_javascript_client(hello_api);
+
+// Start the server.
+sl::mimosa_json_serve(hello_api, 12345);
+```
+
+A browser could directly interact with the server with the following html javascript
+page:
+
+```html
+<script type="text/javascript" src="http://127.0.0.1:12345/js_client"></script>
+
+<script type="text/javascript">
+
+// Set the address of the server.
+sl.set_server("http://127.0.0.1:12345");
+// Call the hello_world method
+sl.hello_world({name: "John"}).then(function (r) { console.log(r); });
+// The response r is the Json object returned by the server: {message: "Hello John"}
+
+</script>
+```
+
 
 Roadmap.
 =========================
