@@ -14,15 +14,16 @@ Features
   - Ease of use:
 
     The framework is designed such that the developper only writes the core of
-    the server, the framework takes care of the rest
+    the API, the framework takes care of the rest
     (serialization, deserialization, generation of client libraries,
     routing, multithreading, ...)
 
   - Fast:
 
-    Finally, C++ has no overhead such as other web programming languages: No
-    interpreter, no garbage collection, no virtual machine, and no
-    just in time compiler. It relies on a thread based mimosa http server.
+    Finally, C++ has no overhead such as other web programming
+    languages: No interpreter, no garbage collection, no virtual
+    machine and no just in time compiler. It provides several http
+    server backend: microhttpd, mimosa and cpp-netlib.
 
   - Verified:
 
