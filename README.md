@@ -231,7 +231,7 @@ struct sqlite_session_middleware
 ```
 
 
-C++ remote client.
+C++ Remote Client
 =========================
 
 The C++ remote client is automatically build upon the api of the server. It allows to
@@ -262,7 +262,7 @@ assert(r.response.message == "Hello John");
 assert(r.status == 200);
 ```
 
-Javascript client
+Javascript Remove Client
 =========================
 
 Silicon also provide a automaticaly generated javascript client. The js source can be
