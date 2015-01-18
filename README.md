@@ -59,11 +59,11 @@ Features
 Installation
 =========================
 
-
+```
 git clone https://github.com/matt-42/silicon.git
 cd silicon;
 ./install.sh __YOUR__INSTALL__PREFIX__
-
+```
 
 Hello World
 =========================
