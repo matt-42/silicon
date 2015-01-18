@@ -262,10 +262,10 @@ assert(r.response.message == "Hello John");
 assert(r.status == 200);
 ```
 
-Javascript Remove Client
+Javascript Remote Client
 =========================
 
-Silicon also provide a automaticaly generated javascript client. The js source can be
+Silicon also provides an automaticaly generated javascript client. The js source can be
 served directly served from the api:
 
 ```c++
