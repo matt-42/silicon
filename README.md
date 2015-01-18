@@ -125,7 +125,7 @@ add_iod_executable(hello_world main.cc)
 target_link_libraries(hello_world microhttpd)
 ```
 
-Procedures with arguments.
+Procedures with arguments
 =========================
 
 The procedures of an API can take several typed arguments. If none
@@ -151,7 +151,7 @@ request and passed to the "auto" parameter of the lambda function:
 ```
 
 
-Middlewares.
+Middlewares
 =========================
 
 It is often usefull for a procedure to gain access to external data,
