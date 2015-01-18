@@ -2,116 +2,116 @@
 
 #include <iod/symbol.hh>
 
-#ifndef IOD_SYMBOL__Handler_id
-#define IOD_SYMBOL__Handler_id
-    iod_define_symbol(handler_id, _Handler_id)
+#ifndef IOD_SYMBOL__handler_id
+#define IOD_SYMBOL__handler_id
+    iod_define_symbol(handler_id, _handler_id)
 #endif
-#ifndef IOD_SYMBOL__Module
-#define IOD_SYMBOL__Module
-    iod_define_symbol(module, _Module)
-#endif
-
-#ifndef IOD_SYMBOL__Secure
-#define IOD_SYMBOL__Secure
-    iod_define_symbol(secure, _Secure)
-#endif
-#ifndef IOD_SYMBOL__Http_only
-#define IOD_SYMBOL__Http_only
-    iod_define_symbol(http_only, _Http_only)
-#endif
-#ifndef IOD_SYMBOL__Expires
-#define IOD_SYMBOL__Expires
-    iod_define_symbol(expires, _Expires)
-#endif
-#ifndef IOD_SYMBOL__Path
-#define IOD_SYMBOL__Path
-    iod_define_symbol(path, _Path)
+#ifndef IOD_SYMBOL__module
+#define IOD_SYMBOL__module
+    iod_define_symbol(module, _module)
 #endif
 
-#ifndef IOD_SYMBOL__Primary_key
-#define IOD_SYMBOL__Primary_key
-    iod_define_symbol(primary_key, _Primary_key)
+#ifndef IOD_SYMBOL__secure
+#define IOD_SYMBOL__secure
+    iod_define_symbol(secure, _secure)
 #endif
-#ifndef IOD_SYMBOL__Read_access
-#define IOD_SYMBOL__Read_access
-    iod_define_symbol(read_access, _Read_access)
+#ifndef IOD_SYMBOL__http_only
+#define IOD_SYMBOL__http_only
+    iod_define_symbol(http_only, _http_only)
 #endif
-#ifndef IOD_SYMBOL__Write_access
-#define IOD_SYMBOL__Write_access
-    iod_define_symbol(write_access, _Write_access)
+#ifndef IOD_SYMBOL__expires
+#define IOD_SYMBOL__expires
+    iod_define_symbol(expires, _expires)
 #endif
-#ifndef IOD_SYMBOL__Validate
-#define IOD_SYMBOL__Validate
-    iod_define_symbol(validate, _Validate)
-#endif
-#ifndef IOD_SYMBOL__On_create_success
-#define IOD_SYMBOL__On_create_success
-    iod_define_symbol(on_create_success, _On_create_success)
-#endif
-#ifndef IOD_SYMBOL__On_destroy_success
-#define IOD_SYMBOL__On_destroy_success
-    iod_define_symbol(on_destroy_success, _On_destroy_success)
-#endif
-#ifndef IOD_SYMBOL__On_update_success
-#define IOD_SYMBOL__On_update_success
-    iod_define_symbol(on_update_success, _On_update_success)
-#endif
-#ifndef IOD_SYMBOL__Before_create
-#define IOD_SYMBOL__Before_create
-    iod_define_symbol(before_create, _Before_create)
-#endif
-#ifndef IOD_SYMBOL__Before_destroy
-#define IOD_SYMBOL__Before_destroy
-    iod_define_symbol(before_destroy, _Before_destroy)
-#endif
-#ifndef IOD_SYMBOL__Before_update
-#define IOD_SYMBOL__Before_update
-    iod_define_symbol(before_update, _Before_update)
-#endif
-#ifndef IOD_SYMBOL__Id
-#define IOD_SYMBOL__Id
-    iod_define_symbol(id, _Id)
-#endif
-#ifndef IOD_SYMBOL__Prefix
-#define IOD_SYMBOL__Prefix
-    iod_define_symbol(prefix, _Prefix)
-#endif
-#ifndef IOD_SYMBOL__Computed
-#define IOD_SYMBOL__Computed
-    iod_define_symbol(computed, _Computed)
+#ifndef IOD_SYMBOL__path
+#define IOD_SYMBOL__path
+    iod_define_symbol(path, _path)
 #endif
 
-#ifndef IOD_SYMBOL__Get_by_id
-#define IOD_SYMBOL__Get_by_id
-    iod_define_symbol(get_by_id, _Get_by_id)
+#ifndef IOD_SYMBOL__primary_key
+#define IOD_SYMBOL__primary_key
+    iod_define_symbol(primary_key, _primary_key)
 #endif
-#ifndef IOD_SYMBOL__Create
-#define IOD_SYMBOL__Create
-    iod_define_symbol(create, _Create)
+#ifndef IOD_SYMBOL__read_access
+#define IOD_SYMBOL__read_access
+    iod_define_symbol(read_access, _read_access)
 #endif
-#ifndef IOD_SYMBOL__Update
-#define IOD_SYMBOL__Update
-    iod_define_symbol(update, _Update)
+#ifndef IOD_SYMBOL__write_access
+#define IOD_SYMBOL__write_access
+    iod_define_symbol(write_access, _write_access)
 #endif
-#ifndef IOD_SYMBOL__Destroy
-#define IOD_SYMBOL__Destroy
-    iod_define_symbol(destroy, _Destroy)
+#ifndef IOD_SYMBOL__validate
+#define IOD_SYMBOL__validate
+    iod_define_symbol(validate, _validate)
+#endif
+#ifndef IOD_SYMBOL__on_create_success
+#define IOD_SYMBOL__on_create_success
+    iod_define_symbol(on_create_success, _on_create_success)
+#endif
+#ifndef IOD_SYMBOL__on_destroy_success
+#define IOD_SYMBOL__on_destroy_success
+    iod_define_symbol(on_destroy_success, _on_destroy_success)
+#endif
+#ifndef IOD_SYMBOL__on_update_success
+#define IOD_SYMBOL__on_update_success
+    iod_define_symbol(on_update_success, _on_update_success)
+#endif
+#ifndef IOD_SYMBOL__before_create
+#define IOD_SYMBOL__before_create
+    iod_define_symbol(before_create, _before_create)
+#endif
+#ifndef IOD_SYMBOL__before_destroy
+#define IOD_SYMBOL__before_destroy
+    iod_define_symbol(before_destroy, _before_destroy)
+#endif
+#ifndef IOD_SYMBOL__before_update
+#define IOD_SYMBOL__before_update
+    iod_define_symbol(before_update, _before_update)
+#endif
+#ifndef IOD_SYMBOL__id
+#define IOD_SYMBOL__id
+    iod_define_symbol(id, _id)
+#endif
+#ifndef IOD_SYMBOL__prefix
+#define IOD_SYMBOL__prefix
+    iod_define_symbol(prefix, _prefix)
+#endif
+#ifndef IOD_SYMBOL__computed
+#define IOD_SYMBOL__computed
+    iod_define_symbol(computed, _computed)
 #endif
 
-#ifndef IOD_SYMBOL__Status
-#define IOD_SYMBOL__Status
-    iod_define_symbol(status, _Status)
+#ifndef IOD_SYMBOL__get_by_id
+#define IOD_SYMBOL__get_by_id
+    iod_define_symbol(get_by_id, _get_by_id)
 #endif
-#ifndef IOD_SYMBOL__Response
-#define IOD_SYMBOL__Response
-    iod_define_symbol(response, _Response)
+#ifndef IOD_SYMBOL__create
+#define IOD_SYMBOL__create
+    iod_define_symbol(create, _create)
+#endif
+#ifndef IOD_SYMBOL__update
+#define IOD_SYMBOL__update
+    iod_define_symbol(update, _update)
+#endif
+#ifndef IOD_SYMBOL__destroy
+#define IOD_SYMBOL__destroy
+    iod_define_symbol(destroy, _destroy)
 #endif
 
-#ifndef IOD_SYMBOL__Synchronous
-#define IOD_SYMBOL__Synchronous
-    iod_define_symbol(synchronous, _Synchronous)
+#ifndef IOD_SYMBOL__status
+#define IOD_SYMBOL__status
+    iod_define_symbol(status, _status)
 #endif
-#ifndef IOD_SYMBOL__Error
-#define IOD_SYMBOL__Error
-    iod_define_symbol(error, _Error)
+#ifndef IOD_SYMBOL__response
+#define IOD_SYMBOL__response
+    iod_define_symbol(response, _response)
+#endif
+
+#ifndef IOD_SYMBOL__synchronous
+#define IOD_SYMBOL__synchronous
+    iod_define_symbol(synchronous, _synchronous)
+#endif
+#ifndef IOD_SYMBOL__error
+#define IOD_SYMBOL__error
+    iod_define_symbol(error, _error)
 #endif

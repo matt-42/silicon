@@ -13,7 +13,7 @@ namespace sl
   //   typedef typename ORM::instance_type ORMI;
     
   //   typedef typename ORMI::object_type O; // O without primary keys for create procedure.
-  //   // typedef typename ORMI::O_WO_PKS O_WO_PKS;
+  //   // typedef typename ORMI::O_wO_PKS O_WO_PKS;
   //   // typedef typename ORMI::insert_type insert_type; // O without primary keys for create procedure.
   //   // typedef typename ORMI::update_type update_type; // O without primary keys for create procedure.
   //   typedef typename ORMI::PKS PKS; // Object with only the primary keys for the delete procedure.
@@ -27,20 +27,20 @@ namespace sl
   //   };
 
   //   auto opts = D(_opts...);
-  //   auto read_access = opts.get(_Read_access, [] () { return true; });
-  //   auto write_access = opts.get(_Write_access, [] () { return true; });
-  //   auto validate = opts.get(_Validate, [] () { return true; });
-  //   auto on_create_success = opts.get(_On_create_success, [] () {});
-  //   auto on_destroy_success = opts.get(_On_destroy_success, [] () {});
-  //   auto on_update_success = opts.get(_On_update_success, [] () {});
+  //   auto read_access = opts.get(_read_access, [] () { return true; });
+  //   auto write_access = opts.get(_write_access, [] () { return true; });
+  //   auto validate = opts.get(_validate, [] () { return true; });
+  //   auto on_create_success = opts.get(_on_create_success, [] () {});
+  //   auto on_destroy_success = opts.get(_on_destroy_success, [] () {});
+  //   auto on_update_success = opts.get(_on_update_success, [] () {});
 
-  //   auto before_update = opts.get(_Before_update, [] () {});
-  //   auto before_create = opts.get(_Before_create, [] () {});
-  //   //auto before_destroy = opts.get(_Before_destroy, [] () {});
+  //   auto before_update = opts.get(_before_update, [] () {});
+  //   auto before_create = opts.get(_before_create, [] () {});
+  //   //auto before_destroy = opts.get(_before_destroy, [] () {});
 
   //   std::string prefix = opts.prefix;
     
-  //   server[prefix + "_get_by_id"](_Id = int()) = [=] (auto params, ORMI& orm,
+  //   server[prefix + "_get_by_id"](_id = int()) = [=] (auto params, ORMI& orm,
   //                                                     dependencies_of<decltype(read_access)>& ra_deps)
   //   {
   //     O o;
@@ -66,7 +66,7 @@ namespace sl
   //     {
   //       int new_id = orm.insert(o);
   //       call_callback(on_create_success, o, oc_deps);
-  //       return D(_Id = new_id);
+  //       return D(_id = new_id);
   //     }
   //     else
   //       throw error::unauthorized("Not enough priviledges to edit this object");
@@ -135,20 +135,20 @@ namespace sl
     };
 
     auto opts = D(_opts...);
-    auto read_access = opts.get(_Read_access, [] () { return true; });
-    auto write_access = opts.get(_Write_access, [] () { return true; });
-    auto validate = opts.get(_Validate, [] () { return true; });
-    auto on_create_success = opts.get(_On_create_success, [] () {});
-    auto on_destroy_success = opts.get(_On_destroy_success, [] () {});
-    auto on_update_success = opts.get(_On_update_success, [] () {});
+    auto read_access = opts.get(_read_access, [] () { return true; });
+    auto write_access = opts.get(_write_access, [] () { return true; });
+    auto validate = opts.get(_validate, [] () { return true; });
+    auto on_create_success = opts.get(_on_create_success, [] () {});
+    auto on_destroy_success = opts.get(_on_destroy_success, [] () {});
+    auto on_update_success = opts.get(_on_update_success, [] () {});
 
-    auto before_update = opts.get(_Before_update, [] () {});
-    auto before_create = opts.get(_Before_create, [] () {});
-    //auto before_destroy = opts.get(_Before_destroy, [] () {});
+    auto before_update = opts.get(_before_update, [] () {});
+    auto before_create = opts.get(_before_create, [] () {});
+    //auto before_destroy = opts.get(_before_destroy, [] () {});
 
     return D(
 
-      _Get_by_id(_Id = int()) = [=] (auto params, ORMI& orm,
+      _get_by_id(_id = int()) = [=] (auto params, ORMI& orm,
                                      di::dependencies_of<decltype(read_access)>& ra_deps)
     {
       O o;
@@ -161,7 +161,7 @@ namespace sl
     }
       ,
       
-      _Create = [=] (insert_type obj, ORMI& orm,
+      _create = [=] (insert_type obj, ORMI& orm,
                      di::dependencies_of<decltype(validate)>& v_deps,
                      di::dependencies_of<decltype(on_create_success)>& oc_deps,
                      di::dependencies_of<decltype(write_access)>& wa_deps,
@@ -175,13 +175,13 @@ namespace sl
       {
         int new_id = orm.insert(o);
         call_callback(on_create_success, o, oc_deps);
-        return D(_Id = new_id);
+        return D(_id = new_id);
       }
       else
         throw error::unauthorized("Not enough priviledges to edit this object");
     },
 
-      _Update = [=] (update_type obj, ORMI& orm,
+      _update = [=] (update_type obj, ORMI& orm,
                      di::dependencies_of<decltype(validate)>& v_deps,
                      di::dependencies_of<decltype(on_update_success)>& ou_deps,
                      di::dependencies_of<decltype(write_access)>& wa_deps,
@@ -204,7 +204,7 @@ namespace sl
       call_callback(on_update_success, o, ou_deps);
     },
 
-      _Destroy = [=] (PKS params,
+      _destroy = [=] (PKS params,
                       ORMI& orm,
                       di::dependencies_of<decltype(on_destroy_success)>& od_deps,
                       di::dependencies_of<decltype(write_access)>& wa_deps)

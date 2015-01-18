@@ -14,10 +14,10 @@ namespace sl
 {
   using namespace iod;
 
-  using s::_Secure;
-  using s::_Http_only;
-  using s::_Expires;
-  using s::_Path;
+  using s::_secure;
+  using s::_http_only;
+  using s::_expires;
+  using s::_path;
 
   template <typename... O>
   struct mimosa_session_cookie
@@ -43,10 +43,10 @@ namespace sl
         token = generate_secret_tracking_id();
         cookie->setKey(key);
         cookie->setValue(token);
-        cookie->setSecure(options_.has(_Secure));
-        cookie->setHttpOnly(options_.has(_Http_only));
-        if (options_.has(_Expires)) cookie->setExpires(options_.get(_Expires, [] () { return ""; })());
-        cookie->setPath(options_.get(_Path, "/"));
+        cookie->setSecure(options_.has(_secure));
+        cookie->setHttpOnly(options_.has(_http_only));
+        if (options_.has(_expires)) cookie->setExpires(options_.get(_expires, [] () { return ""; })());
+        cookie->setPath(options_.get(_path, "/"));
         resp->addCookie(cookie);
       }
       else

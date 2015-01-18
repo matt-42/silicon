@@ -8,11 +8,11 @@
 namespace sl
 {
 
-  using s::_Primary_key;
-  using s::_Primary_key_t;
+  using s::_primary_key;
+  using s::_primary_key_t;
 
-  using s::_Computed_t;
-  using s::_Computed;
+  using s::_computed_t;
+  using s::_computed;
   
   namespace sqlite_orm_internals
   {
@@ -20,13 +20,13 @@ namespace sl
     struct is_primary_key
     {
       typedef typename std::decay_t<M>::attributes_type attrs;
-      static const bool value = has_symbol<attrs, _Primary_key_t>::value;
+      static const bool value = has_symbol<attrs, _primary_key_t>::value;
     };
     auto remove_pks = [] (auto o)
     {
       return foreach(o) | [] (auto& m) {
         typedef typename std::decay_t<decltype(m)>::attributes_type attrs;
-        return ::iod::static_if<!has_symbol<attrs, _Primary_key_t>::value>(
+        return ::iod::static_if<!has_symbol<attrs, _primary_key_t>::value>(
           [&] () { return m; },
           [&] () {});
       };
@@ -45,7 +45,7 @@ namespace sl
       return foreach(o) | [&] (auto& m)
       {
         typedef typename std::decay_t<decltype(m)>::attributes_type attrs;
-        return ::iod::static_if<!has_symbol<attrs, _Computed_t>::value>(
+        return ::iod::static_if<!has_symbol<attrs, _computed_t>::value>(
           [&] () { return m; },
           [&] () {});
       };
@@ -181,7 +181,7 @@ namespace sl
         if (!first) ss << ", ";
         ss << m.symbol().name() << " " << sqlite_type_string(&m.value());
 
-        if (m.attributes().has(_Primary_key))
+        if (m.attributes().has(_primary_key))
           ss << " PRIMARY KEY NOT NULL";
 
         first = false;

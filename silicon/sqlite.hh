@@ -239,10 +239,10 @@ namespace sl
 
       path_ = path;
       con_.connect(path,  SQLITE_OPEN_FULLMUTEX | SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
-      if (options.has(_Synchronous))
+      if (options.has(_synchronous))
       {
         std::stringstream ss;
-        ss << "PRAGMA synchronous=" << options.get(_Synchronous, 2);
+        ss << "PRAGMA synchronous=" << options.get(_synchronous, 2);
         con_(ss.str()).exec();
       }
     }

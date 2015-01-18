@@ -46,10 +46,10 @@ namespace sl
   //       token = generate_new_token();
   //       cookie->setKey(key);
   //       cookie->setValue(token);
-  //       cookie->setSecure(options_.has(_Secure));
-  //       cookie->setHttpOnly(options_.has(_Http_only));
-  //       if (options_.has(_Expires)) cookie->setExpires(options_.get(_Expires, [] () { return ""; })());
-  //       cookie->setPath(options_.get(_Path, "/"));
+  //       cookie->setSecure(options_.has(_secure));
+  //       cookie->setHttpOnly(options_.has(_http_only));
+  //       if (options_.has(_expires)) cookie->setExpires(options_.get(_expires, [] () { return ""; })());
+  //       cookie->setPath(options_.get(_path, "/"));
   //       resp->addCookie(cookie);
   //     }
   //     else

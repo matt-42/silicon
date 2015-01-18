@@ -15,7 +15,7 @@ namespace sl
   {
     static auto run(mimosa::http::ResponseReader::Ptr rr)
     {
-      return D(s::_Status = rr->status());
+      return D(s::_status = rr->status());
     }
   };
 
@@ -37,9 +37,9 @@ namespace sl
         error_message = body;
 
       return D(
-        s::_Status = rr->status(),
-        s::_Response = result,
-        s::_Error = error_message);
+        s::_status = rr->status(),
+        s::_response = result,
+        s::_error = error_message);
     }
   };
 

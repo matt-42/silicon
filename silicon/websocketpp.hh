@@ -10,7 +10,7 @@ namespace iod
   struct websocketpp_json_service_utils
   {
     typedef std::string request_type;
-    typedef decltype(D(_Status = int(), _Body = std::string())) response_type;
+    typedef decltype(D(_status = int(), _body = std::string())) response_type;
 
     template <typename T>
     auto deserialize(const request_type& r, T& res) const
@@ -122,21 +122,21 @@ namespace iod
 
         try
         {
-          auto response = D(_Status = int(),
-                            _Id = request_id,
-                            _Body = std::string());
+          auto response = D(_status = int(),
+                            _id = request_id,
+                            _body = std::string());
           _this->service_(request.location(), request, response);
           if (response.body.size() != 0)
             server.send(client, json_encode(response));
         }
         catch(const error::error& e)
         {
-          std::string str = json_encode(D(_Status = e.status(), _Body = e.what));
+          std::string str = json_encode(D(_status = e.status(), _body = e.what));
           server.send(client, str);
         }
         catch(const std::runtime_error& e)
         {
-          std::string str = json_encode(D(_Status = 500, _Body = e.what()));
+          std::string str = json_encode(D(_status = 500, _body = e.what()));
           server.send(client, str);
         }
         
