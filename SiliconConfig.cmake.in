@@ -1,0 +1,9 @@
+#
+# - Config file for the Silicon package
+# It defines the following variables
+#  SILICON_INCLUDE_DIR - include directories for Silicon
+#
+
+@PACKAGE_INIT@
+
+set_and_check(SILICON_INCLUDE_DIR "@PACKAGE_SILICON_INCLUDE_DIR@")

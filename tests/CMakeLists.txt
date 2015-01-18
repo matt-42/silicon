@@ -65,6 +65,9 @@ target_link_libraries(mimosa_hello_world ${MIMOSA_LIBS})
 add_iod_executable(microhttpd_hello_world microhttpd_hello_world.cc)
 target_link_libraries(microhttpd_hello_world ${MHD_LIBS})
 
+add_iod_executable(sqlite sqlite.cc)
+target_link_libraries(sqlite ${MHD_LIBS} sqlite3)
+
 
 add_iod_executable(javascript_client javascript_client.cc)
 target_link_libraries(javascript_client ${MIMOSA_LIBS})
