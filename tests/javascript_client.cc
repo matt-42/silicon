@@ -1,10 +1,11 @@
 #include <iostream>
 #include <silicon/api.hh>
+#include <silicon/mimosa_serve.hh>
 #include <silicon/javascript_client.hh>
 
 using namespace sl;
 
-int main()
+int main(int argc, char* argv[])
 {
 
   std::string js_client;
@@ -23,5 +24,9 @@ int main()
 
   js_client = generate_javascript_client(hello_api);
 
-  std::cout << generate_javascript_client(hello_api) << std::endl;
+  if (argc == 2)
+    sl::mimosa_json_serve(hello_api, atoi(argv[1]));
+  else
+    std::cerr << "Usage: " << argv[0] << " port" << std::endl;
+  
 }

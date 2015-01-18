@@ -87,7 +87,6 @@ namespace sl
 
     }
 
-    template <typename T>
     auto serialize(response_type& r, const std::string& str) const
     {
       r.write(str.data(), str.size());

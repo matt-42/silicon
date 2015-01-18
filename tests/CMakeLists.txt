@@ -67,7 +67,7 @@ target_link_libraries(microhttpd_hello_world ${MHD_LIBS})
 
 
 add_iod_executable(javascript_client javascript_client.cc)
-target_link_libraries(javascript_client)
+target_link_libraries(javascript_client ${MIMOSA_LIBS})
 
 add_test(crud crud)
 add_test(client client)

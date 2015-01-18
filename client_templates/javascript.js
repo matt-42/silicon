@@ -49,7 +49,7 @@ var {{root_scope}} = new silicon_api_base();
   if ( ! {{scope_path}} ) {{scope_path}} = {};
   {{procedure}}
     // {{procedure_description}}
-    {{procedure_path}} = function(params) { return this.call_procedure("{{procedure_url}}", params, '{{return_type}}'); };
+{{procedure_path}} = function(params) { return {{root_scope}}.call_procedure("{{procedure_url}}", params, '{{return_type}}'); };
   {{end_procedure}}
 
   {{child_scopes}}

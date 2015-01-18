@@ -58,6 +58,8 @@ namespace sl
         return n;
       }
 
+      auto root() const { return stack_[0]; }
+
       std::vector<std::string> stack_;
       std::string default_join;
     };
@@ -130,7 +132,11 @@ namespace sl
         },
         "return_type", [&] (const char*&) {
           write(return_type_string((R*)0));
+        },
+        "root_scope", [&] (const char*&) {
+          write(path.root());
         }
+        
         );
     }
     
@@ -171,7 +177,11 @@ namespace sl
               [&] (auto m) {
               }, m);
           };
+        },
+        "root_scope", [&] (const char*&) {
+          write(path.root());
         }
+        
       
         );
 

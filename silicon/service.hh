@@ -85,7 +85,7 @@ namespace sl
         static_if<is_sio<decltype(f.value())>::value>(
           [&] (auto _this, auto f) { // If sio, recursion.
             _this->index_api(f.value(),
-                             prefix + f.symbol().name() + std::string("_"));
+                             prefix + f.symbol().name() + std::string("/"));
           },
           [&] (auto _this, auto f) { // Else, register the procedure.
             typedef std::remove_reference_t<decltype(f.value())> F;
