@@ -102,7 +102,7 @@ $ curl "http://127.0.0.1:12345/hello"
 {"message":"Hello world."}
 ```
 
-# Compilation
+### Compilation
 
 The project requires:
   - A C++14 compiler
@@ -241,12 +241,12 @@ FIXME
 Roadmap.
 =========================
 
-#V2
+###V2
   - Websockets
   - A binary protocol
 
 
-#V1
+###V1
   - core of the framework
   - json serialization
   - basic http servers with mimosa, cpp-netlib and microhttpd
