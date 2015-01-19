@@ -139,6 +139,10 @@ include_directories(${IOD_INCLUDE_DIR} ${SILICON_INCLUDE_DIR})
 add_iod_executable(hello_world main.cc)
 target_link_libraries(hello_world microhttpd)
 ```
+When running cmake, do not forget to pass the location of the silicon install directory:
+```
+cmake __HELLO_WORLD_DIR__ -DCMAKE_PREFIX_PATH=__YOUR__INSTALL__PREFIX__
+```
 
 Procedures with arguments
 =========================
