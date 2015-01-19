@@ -20,7 +20,7 @@ Features
 
   - Fast:
 
-    Finally, C++ has no overhead such as other web programming
+    C++ has no overhead such as other web programming
     languages: No interpreter, no garbage collection, no virtual
     machine and no just in time compiler. It provides several http
     server backend: microhttpd, mimosa and cpp-netlib.
@@ -33,25 +33,28 @@ Features
 
   - Automatic dependency injection and middlewares:
 
-    The framework implement a dependency injection patern running at
-    compile time. It traverses the dependency graph of the middlewares
-    required by each handler, instantiante them to finally call the handler.
+    Middlewares are objects requests by the api. They can be access to a session,
+    connection to a database or another webservice, or anything else that need
+    to be initialized before each api call. Middlewares may depend on each other,
+    leading to a middleware dependency graph automatically resolved at compile time.
 
-  - Automatic validation, serialization and deserialization of json messages:
+  - Automatic validation, serialization and deserialization of messages:
 
-    Relying on static introspection, a pair fast json parser and
-    encoder is generated for each message type. Since the json parser
-    knows about the structure of each message, it throws an exeption
-    when a field is missing, or when the type of a value is incorect.
+    Relying on static introspection on api arguments and return types,
+    a pair fast parser and encoder is generated for each message
+    type. The request do not reach the api until it contains all the
+    required arguments.
 
   - Automatic generation of the client libraries:
 
-    The framework generates the client libraries. As of today, only
-    javascript is supported.
+    Because the framework knows the input and output type of each api
+    procedure, it is able to automatically generate the code of the remote client.
+    The C++ client is generated at compile time and other languages are generated
+    at runtime thanks to a tiny templating engine.
 
   - Not dependent on the underlying network library or serialization format:
 
-    The abstraction layer is not tight to a specific network library or serialization format.
+    The core code of an API is not tight to a specific network library or serialization format.
     The first version of silicon provides simple http backends: microhttpd, mimosa and cpp-netlib,
     and the json format. However, in the future the library could support websocket,
     binary protocols, ...
@@ -93,6 +96,15 @@ int main()
 }
 ```
 
+The D function create plain C++ object such that:
+```c++
+auto o = D(@attr1 = 12, @attr2 = "test");
+// is equivalent to:
+struct { int attr1; std::string attr2; } o{12, "test"};
+```
+The only difference is that objects created via D are introspectable, thus
+automatically serializable.
+
 Note that the hello_api is not tight to microhttpd, so it can be served
 via any other low level network library and any serialization format.
 
@@ -106,7 +118,7 @@ $ curl "http://127.0.0.1:12345/hello"
 
 ### Compilation
 
-The project requires:
+The hello_world project requires:
   - A C++14 compiler
   - the microhttpd lib
 
@@ -131,7 +143,7 @@ Procedures with arguments
 =========================
 
 The procedures of an API can take several typed arguments. If none
-specified, the default type is std::string. The arguments are
+specified, the default type of an argument is std::string. The arguments are
 automatically deserialized from the body of the underlying network
 request and passed to the "auto" parameter of the lambda function:
 
@@ -157,10 +169,10 @@ Middlewares
 =========================
 
 It is often usefull for a procedure to gain access to external data,
-like for example a database. Procedures request a middleware by simply
+like for example access to a database. Procedures request a middleware by simply
 declaring it as a parameter.
 
-The following example get data from a sqlite db using a
+The following example gets data from a sqlite database using a
 sqlite_connection middleware:
 
 ```c++
@@ -192,7 +204,7 @@ int main()
 }
 ```
 
-A sqlite_middleware, the object responsible for sqlite_connection creation, is
+A sqlite_middleware, the object responsible for the sqlite_connection creation, is
 added to the api via bind_middlewares.
 
 Procedures can take any number of middlewares.
@@ -234,9 +246,10 @@ struct sqlite_session_middleware
 C++ Remote Client
 =========================
 
-The C++ remote client is automatically build upon the api of the server. It allows to
-remotely call procedures on the server as if they were real C++ function. All the
-serialization, network communication, deserialization happend behind the scene.
+The C++ remote client is automatically built upon the api of the server. It allows to
+remotely call procedures on the server as if they were real C++ functions. All the
+serializations, network communications, deserializations are automatically generated
+at compile time.
 
 Given an API:
 ```c++
@@ -254,8 +267,10 @@ mimosa_json_serve(api, 12345);
 
 The client is:
 ```c++
+// Instantiate the client
 auto c = json_client(api, "127.0.0.1", 12345);
 
+// Blocking call to http://127.0.0.1:12345/hello_world("John")
 auto r = c.hello_world("John");
 
 assert(r.response.message == "Hello John");
