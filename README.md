@@ -6,7 +6,8 @@ Silicon is a high performance, middleware oriented C++14 http web
 framework. It brings to C++ the high expressive power of other web
 frameworks based on dynamic languages.
 
-
+Note that the framework relies on the @ symbol which is not part of C++14. It
+is compiled into plain C++ via apreprocessor.
 
 Features
 =========================
