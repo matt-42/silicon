@@ -55,7 +55,7 @@ Features
 
   - Not dependent on the underlying network library or serialization format:
 
-    The core code of an API is not tight to a specific network library or serialization format.
+    The core code of an API is not tied to a specific network library or serialization format.
     The first version of silicon provides simple http backends: microhttpd, mimosa and cpp-netlib,
     and the json format. However, in the future the library could support websocket,
     binary protocols, ...
@@ -106,7 +106,7 @@ struct { int attr1; std::string attr2; } o{12, "test"};
 The only difference is that objects created via D are introspectable, thus
 automatically serializable.
 
-Note that the hello_api is not tight to microhttpd, so it can be served
+Note that the hello_api is not tied to microhttpd, so it can be served
 via any other low level network library and any serialization format.
 
 the sl::mhd_json_serve routine setups the json serialization/deserialization and
