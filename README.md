@@ -349,11 +349,13 @@ Roadmap.
   - sqlite orm
   - Generic CRUD
 
-## Supporting the project
+Donations
+================================
 
-The ressources of the project are quite limited today (few days per month of my free time). If you want to support the project, [please consider donating here](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=E5URY2QDRB54J). This means more features, middlewares, backends, and bugs quickly fixed.
+The ressources of the project are quite limited today (few days per month of my free time). If you want to support the project, [please consider donating here](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=E5URY2QDRB54J). This means more features, middlewares, backends, documentation, and bugs quickly fixed.
 
-## Contributing
+Contributing
+===========================
 
 Contributions are welcome. Silicon can be easily extended with
   - New middlewares
