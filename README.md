@@ -9,6 +9,8 @@ frameworks based on dynamic languages.
 Note that the framework relies on the @ symbol which is not part of C++14. It
 is compiled into plain C++ via a preprocessor.
 
+_The ressources of the project are quite limited today (few days per month of my free time). If you want to support the project, [please consider donating](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=E5URY2QDRB54J). This means more features, middlewares, backends, documentation, and bugs quickly fixed._
+
 Features
 =========================
 
@@ -348,11 +350,6 @@ Roadmap.
   - sqlite session middleware
   - sqlite orm
   - Generic CRUD
-
-Donations
-================================
-
-The ressources of the project are quite limited today (few days per month of my free time). If you want to support the project, [please consider donating here](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=E5URY2QDRB54J). This means more features, middlewares, backends, documentation, and bugs quickly fixed.
 
 Contributing
 ===========================
