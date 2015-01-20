@@ -362,6 +362,6 @@ Contributions are welcome. Silicon can be easily extended with
   - New backends (websockets, other non-http protocols)
   - New message formats (messagepack, protobuf, ...)
 
-Do not hesitate to [donate](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=E5URY2QDRB54J), fill issues, send pull requests, or contact me
+Do not hesitate to, fill issues, send pull requests, or contact me
 at matthieu.garrigues@gmail.com.
 
