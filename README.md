@@ -349,6 +349,9 @@ Roadmap.
   - sqlite orm
   - Generic CRUD
 
+## Supporting the project
+
+The ressources of the project are quite limited today (few days per month of my free time). If you want to support the project, [please consider donating here](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=E5URY2QDRB54J). This means more features, middlewares, backends, and bugs quickly fixed.
 
 ## Contributing
 
@@ -357,6 +360,6 @@ Contributions are welcome. Silicon can be easily extended with
   - New backends (websockets, other non-http protocols)
   - New message formats (messagepack, protobuf, ...)
 
-Do not hesitate to fill issues, send pull requests, or contact me
+Do not hesitate to [donate](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=E5URY2QDRB54J), fill issues, send pull requests, or contact me
 at matthieu.garrigues@gmail.com.
 
