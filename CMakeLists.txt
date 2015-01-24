@@ -22,8 +22,6 @@ configure_package_config_file (
 
 configure_file(SiliconConfigVersion.cmake.in
   "${PROJECT_BINARY_DIR}/SiliconConfigVersion.cmake" @ONLY)
-#configure_file(SiliconConfig.cmake.in
-#  "${PROJECT_BINARY_DIR}/SiliconConfig.cmake" @ONLY)
 
 install(FILES
   "${PROJECT_BINARY_DIR}/SiliconConfig.cmake"
