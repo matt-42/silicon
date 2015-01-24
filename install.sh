@@ -1,3 +1,22 @@
+readlink_f() { # Recode readlink -f for mac osx
+
+    # From http://stackoverflow.com/questions/1055671/how-can-i-get-the-behavior-of-gnus-readlink-f-on-a-mac
+    TARGET_FILE=$1
+
+    cd `dirname $TARGET_FILE`
+    TARGET_FILE=`basename $TARGET_FILE`
+
+    while [ -L "$TARGET_FILE" ]
+    do
+        TARGET_FILE=`readlink $TARGET_FILE`
+        cd `dirname $TARGET_FILE`
+        TARGET_FILE=`basename $TARGET_FILE`
+    done
+
+    PHYS_DIR=`pwd -P`
+    RESULT=$PHYS_DIR/$TARGET_FILE
+    echo $RESULT
+}
 
 check_for_executable()
 {
@@ -16,7 +35,7 @@ check_for_executable cmake;
 check_for_executable git;
 
 ROOT=$PWD
-PREFIX=$(readlink --canonicalize $1)
+PREFIX=$(readlink_f $1)
 
 cmake_build_install_current_dir $PREFIX
 
