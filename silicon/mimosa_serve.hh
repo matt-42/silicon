@@ -141,8 +141,9 @@ namespace sl
   template <typename A>
   void mimosa_json_serve(const A& api, int port)
   {
-    auto service = make_service<mimosa_silicon>(api.bind_middlewares(mimosa_session_cookie_middleware()));
-    mimosa_handler<decltype(service)> handler(service);
+    auto api2 = api.bind_middlewares(mimosa_session_cookie_middleware());
+    service<mimosa_silicon, decltype(api2)> s(api2);
+    mimosa_handler<decltype(s)> handler(s);
     mimosa::http::Server::Ptr server = new mimosa::http::Server;
     server->setHandler(&handler);
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <sys/sysinfo.h>
 #include <microhttpd.h>
 #include <stdlib.h>
 #include <string.h>
@@ -164,9 +165,9 @@ namespace sl
   template <typename A>
   void mhd_json_serve(const A& api, int port)
   {
-
-    auto service = make_service<mhd_json_service_utils>(api.bind_middlewares(mhd_session_cookie()));
-    typedef decltype(service) S;
+    auto api2 = api.bind_middlewares(mhd_session_cookie());
+    auto s = service<mhd_json_service_utils, decltype(api2)>(api2);
+    typedef decltype(s) S;
 
     struct MHD_Daemon * d;
     d = MHD_start_daemon(
@@ -177,8 +178,8 @@ namespace sl
       NULL,
       NULL,
       &mhd_handler<S>,
-      &service,
-      MHD_OPTION_THREAD_POOL_SIZE, 3,
+      &s,
+      MHD_OPTION_THREAD_POOL_SIZE, get_nprocs(),
       MHD_OPTION_END);
     if (d == NULL)
       return;

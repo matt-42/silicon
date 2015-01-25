@@ -136,12 +136,12 @@ namespace sl
     typedef boost::network::http::basic_request<cppnet_server_tag> RQ;
     typedef boost::network::http::basic_response<cppnet_server_tag> RS;
 
-    auto service = make_service<cppnet_json_service_utils<RQ, RS>>(api);
-    typedef decltype(service) S;
+    auto s = service<cppnet_json_service_utils<RQ, RS>, A>(api);
+    typedef decltype(s) S;
     typedef cppnet_handler<S, RQ, RS> H;
     typedef bnh::server<H> server_type;
 
-    H handler(service);
+    H handler(s);
  
     namespace utils = boost::network::utils;
     typename server_type::options options(handler);

@@ -8,7 +8,7 @@
 #include <websocketpp/server.hpp>
 #include <silicon/symbols.hh>
 #include <silicon/error.hh>
-#include <silicon/ws_service.hh>
+#include <silicon/service.hh>
 #include <silicon/websocketpp_remote_client.hh>
 #include <silicon/wspp_connection.hh>
 
@@ -67,8 +67,8 @@ namespace sl
 
     wspp_server server;
 
-    auto service = ws_service<websocketpp_json_service_utils, A1, client_type, wspp_connection>(server_api);
-    auto http_service = ws_service<websocketpp_json_service_utils, decltype(http_api)>(http_api);
+    auto ws_service = service<websocketpp_json_service_utils, A1, client_type, wspp_connection>(server_api);
+    auto http_service = service<websocketpp_json_service_utils, decltype(http_api)>(http_api);
 
     std::mutex connections_mutex;
     std::mutex messages_mutex;
@@ -81,13 +81,13 @@ namespace sl
     auto on_close = [&] (connection_hdl hdl)
     {
       wspp_connection c{hdl, &server};
-      di_middlewares_call(on_close_handler, service.api().middlewares(), c);
+      di_middlewares_call(on_close_handler, ws_service.api().middlewares(), c);
     };
 
     auto on_open = [&] (connection_hdl hdl)
     {
       wspp_connection c{hdl, &server};
-      di_middlewares_call(on_open_handler, service.api().middlewares(), c);
+      di_middlewares_call(on_open_handler, ws_service.api().middlewares(), c);
     };
 
     auto on_message = [&] (connection_hdl hdl, message_ptr msg)
@@ -147,7 +147,7 @@ namespace sl
         try
         {
           std::string response;
-          service(location, request, response, rclient, connection);
+          ws_service(location, request, response, rclient, connection);
           if (response.size() != 0)
             send_response(200, response);
         }

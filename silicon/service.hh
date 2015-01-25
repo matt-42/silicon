@@ -10,20 +10,21 @@ namespace sl
 {
   using namespace iod;
 
-  template <typename M, typename S>
-  struct handler_base
+  template <typename M, typename S, typename... ARGS>
+  struct ws_handler_base
   {
     typedef typename S::request_type request_type;
     typedef typename S::response_type response_type;
     
-    handler_base() {}
+    ws_handler_base() {}
     virtual void operator()(M& middlewares, S& s,
-                            request_type& request, response_type& response) = 0;
+                            request_type& request, response_type& response,
+                            ARGS&...) = 0;
 
   };
   
-  template <typename A, typename R, typename F, typename M, typename S>
-  struct handler : public handler_base<M, S>
+  template <typename A, typename R, typename F, typename M, typename S, typename... ARGS>
+  struct ws_handler : public ws_handler_base<M, S, ARGS...>
   {
     typedef A arguments_type;
     typedef R return_type;
@@ -32,7 +33,7 @@ namespace sl
     typedef typename S::request_type request_type;
     typedef typename S::response_type response_type;
     
-    handler(F f) : f_(f) {}
+    ws_handler(F f) : f_(f) {}
 
     template <typename... M2, typename... A2>
     auto unroll_middlewares_and_call(F f_, std::tuple<M2...> middlewares, A2&&... args)
@@ -41,7 +42,7 @@ namespace sl
     }
 
     virtual void operator()(M& middlewares, S& s,
-                            request_type& request, response_type& response)
+                            request_type& request, response_type& response, ARGS&... args)
     {
       // Decode arguments
       arguments_type arguments;
@@ -51,10 +52,10 @@ namespace sl
       typedef iod::callable_arguments_tuple_t<F> T;
       static_if<std::is_same<callable_return_type_t<F>, void>::value>(
         [&, this] (auto& response) {
-          this->unroll_middlewares_and_call(f_, middlewares, &request, &response, arguments);
+          this->unroll_middlewares_and_call(f_, middlewares, &request, &response, arguments, args...);
         },
         [&, this] (auto& response) {
-          s.serialize(response, this->unroll_middlewares_and_call(f_, middlewares, &request, &response, arguments));
+          s.serialize(response, this->unroll_middlewares_and_call(f_, middlewares, &request, &response, arguments, args...));
         }, response);
     }
     
@@ -63,7 +64,7 @@ namespace sl
   };
 
 
-  template <typename S, typename A>
+  template <typename S, typename A, typename... ARGS>
   struct service
   {
     typedef typename S::request_type request_type;
@@ -93,30 +94,29 @@ namespace sl
             typedef typename F::return_type R;
             typedef typename F::function_type FN;
             std::string name = std::string("/") + prefix + f.symbol().name();
-            _this->routing_table_[name] = new handler<AT, R, FN, middlewares_type, S>(f.value().function());
+            _this->routing_table_[name] =
+              new ws_handler<AT, R, FN, middlewares_type, S, ARGS...>(f.value().function());
           }, this, f);
       };
     }
-    
+
+    auto& api() { return api_; }
+
     void operator()(const std::string& route,
                     request_type& request,
-                    response_type& response)
+                    response_type& response,
+                    ARGS&... args)
     {
       auto it = routing_table_.find(route);
       if (it != routing_table_.end())
-        it->second->operator()(api_.middlewares(), s_, request, response);
+        it->second->operator()(api_.middlewares(), s_, request, response, args...);
       else
         throw error::not_found("Route ", route, " does not exist.");
     }
 
     A api_;
     S s_;
-    std::map<std::string, handler_base<middlewares_type, S>*> routing_table_;
+    std::map<std::string, ws_handler_base<middlewares_type, S, ARGS...>*> routing_table_;
   };
 
-  template <typename S, typename A>
-  auto make_service(const A& api)
-  {
-    return service<S, A>(api);
-  }
 }
