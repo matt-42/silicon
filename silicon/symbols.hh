@@ -106,6 +106,14 @@
 #define IOD_SYMBOL__response
     iod_define_symbol(response, _response)
 #endif
+#ifndef IOD_SYMBOL__body
+#define IOD_SYMBOL__body
+    iod_define_symbol(body, _body)
+#endif
+#ifndef IOD_SYMBOL__silicon_ctx
+#define IOD_SYMBOL__silicon_ctx
+    iod_define_symbol(silicon_ctx, _silicon_ctx)
+#endif
 
 #ifndef IOD_SYMBOL__synchronous
 #define IOD_SYMBOL__synchronous

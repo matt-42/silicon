@@ -22,6 +22,7 @@ endif (OPENSSL_FOUND)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/mimosa/
+                    ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/websocketpp/
                     ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/include
                     ${IOD_INCLUDE_DIR})
 
@@ -36,6 +37,10 @@ set(CPPNET_LIBS
     cppnetlib-uri cppnetlib-client-connections
     cppnetlib-server-parsers ${OPENSSL_LIBRARIES} pthread)
 
+set(WEBSOCKETS_LIBS
+    ${Boost_LIBRARIES} pthread)
+
+message(STATUS ${WEBSOCKETS_LIBS})
 set(MIMOSA_LIBS mimosa-http mimosa-uri mimosa gnutls z pthread lzma)
 
 set(MHD_LIBS gnutls gcrypt pthread microhttpd)
@@ -68,9 +73,14 @@ target_link_libraries(microhttpd_hello_world ${MHD_LIBS})
 add_iod_executable(sqlite sqlite.cc)
 target_link_libraries(sqlite ${MHD_LIBS} sqlite3)
 
-
 add_iod_executable(javascript_client javascript_client.cc)
 target_link_libraries(javascript_client ${MIMOSA_LIBS})
+
+add_iod_executable(ws_echo_server ws_echo_server.cc)
+target_link_libraries(ws_echo_server ${WEBSOCKETS_LIBS})
+
+add_iod_executable(ws_chat_server ws_chat_server.cc)
+target_link_libraries(ws_chat_server ${WEBSOCKETS_LIBS})
 
 add_test(crud crud)
 add_test(client client)

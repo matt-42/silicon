@@ -31,6 +31,8 @@ destroy
 
 status
 response
+body
+silicon_ctx
 
 synchronous
 error

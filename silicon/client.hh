@@ -115,12 +115,6 @@ namespace sl
     int port_;
   };
 
-  struct D_caller
-  {
-    template <typename... X>
-    auto operator() (X... t) const { return D(t...); }
-  };
-
   template <typename R, typename C, typename S>
   auto create_client_call(C c, S symbol, sio<>)
   {
