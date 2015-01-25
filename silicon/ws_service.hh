@@ -99,7 +99,9 @@ namespace sl
           }, this, f);
       };
     }
-    
+
+    auto& api() { return api_; }
+
     void operator()(const std::string& route,
                     request_type& request,
                     response_type& response,

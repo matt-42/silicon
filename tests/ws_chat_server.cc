@@ -2,37 +2,56 @@
 #include <silicon/remote_api.hh>
 #include <silicon/websocketpp.hh>
 
-using websocketpp::connection_hdl;
+using namespace sl;
 
-struct session
+struct user { std::string nickname; };
+
+struct chat_room
 {
+  typedef std::unique_lock<std::mutex> lock;
 
-  static session* instantiate(connection_hdl c)
+  chat_room()
+    : users_mutex(new std::mutex),
+      users(new std::map<wspp_connection, user>)
+  {}
+
+  void remove(wspp_connection c) { lock l(*users_mutex); users->erase(c); }
+  void add(wspp_connection c) { lock l(*users_mutex); (*users)[c]; }
+  
+  user& find_user(wspp_connection c)
   {
-    auto it = sessions.find(c);
-    if (it != sessions.end()) return &(it->second);
-    else
-    {
-      std::unique_lock<std::mutex> l(sessions_mutex);
-      return &(sessions[c]);
-    }
+    auto it = users->find(c);
+    if (it != users->end()) return it->second;
+    else throw error::bad_request("Cannot find this user.");
   }
 
-  static session* find(std::string n)
+  wspp_connection find_connection(std::string n)
   {
-    for (auto& it : sessions) if (it.second.nickname == n) return &it.second;
-    return 0;
+    auto u = users->end();
+    for (auto it = users->begin(); it != users->end(); it++)
+      if (it->second.nickname == n) { u = it; break; }
+
+    if (u == users->end()) throw error::bad_request("The user ", n, " does not exists.");
+    return u->first;
   }
 
-  std::string nickname;
+  bool nickname_exists(std::string n)
+  {
+    for (auto& it : *users)
+      if (it.second.nickname == n) return true;
+    return false;
+  }
+
+  template <typename F>
+  void foreach(F f) {
+    for(auto& u : *users)
+      di_call(f, wspp_connection(u.first), u.second);
+  }
 
 private:
-  static std::mutex sessions_mutex;
-  static std::map<connection_hdl, session> sessions;
+  std::shared_ptr<std::mutex> users_mutex;
+  std::shared_ptr<std::map<wspp_connection, user>> users;
 };
-
-std::mutex session::sessions_mutex;
-std::map<connection_hdl, session> session::sessions;
 
 int main(int argc, char* argv[])
 {
@@ -40,37 +59,41 @@ int main(int argc, char* argv[])
 
   // The remote client api accessible from this server.
   auto client_api = make_remote_api(   @broadcast(@from, @text), @pm(@from, @text)  );
-
+  
   // The type of a client to call the remote api.
   typedef ws_client<decltype(client_api)> client;
-  // The list of client.
-  typedef ws_clients<decltype(client_api)> clients;
 
   // The server api accessible by the client.
   auto server_api = make_api(
 
     // Set nickname.
-    @nick(@nick) = [] (auto p, session* s, client& c) {
-      while(session::find(p.nick)) p.nick += "_";
-      s->nickname = p.nick;
-      return D(@nick = s->nickname);
+    @nick(@nick) = [] (auto p, wspp_connection hdl, chat_room& room) {
+      while(room.nickname_exists(p.nick)) p.nick += "_";
+      room.find_user(hdl).nickname = p.nick;
+      return D(@nick = p.nick);
     },
 
     // Broadcast a message to all clients.
-    @broadcast(@message) = [] (auto p, session* s, clients& cs) {
-      cs | [&] (client& c) { c.broadcast(s->nickname, p.message); };
+    @broadcast(@message) = [] (auto p, wspp_connection hdl, client& rclient, chat_room& room) {
+      auto from = room.find_user(hdl);
+      room.foreach([&] (wspp_connection h) { rclient(h).broadcast(from.nickname, p.message); });      
     },
 
     // Private message.
-    @pm(@to, @message) = [] (auto p, session* s, clients& cs) {
-      cs | [&] (client& c2, session* s2) {
-        if (s2->nickname == p.to)
-          c2.pm(s->nickname, p.message);
-      };
+    @pm(@to, @message) = [] (auto p, wspp_connection hdl, client& rclient, chat_room& room) {
+
+      user from = room.find_user(hdl);
+      rclient(room.find_connection(p.to)).pm(from.nickname, p.message);
     }
     
-    );
+    ).bind_middlewares(chat_room());
 
-  websocketpp_json_serve(server_api, client_api, atoi(argv[1]));
+    
+  auto on_open_handler = [] (wspp_connection& hdl, chat_room& r) { r.add(hdl); };
+  auto on_close_handler = [] (wspp_connection hdl, chat_room& r) { r.remove(hdl); };
+
+  wspp_json_serve(server_api, client_api, atoi(argv[1]),
+                  @on_open = on_open_handler,
+                  @on_close = on_close_handler);
 
 }

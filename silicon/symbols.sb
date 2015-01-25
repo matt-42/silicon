@@ -36,3 +36,7 @@ silicon_ctx
 
 synchronous
 error
+
+on_close
+on_open
+http_api

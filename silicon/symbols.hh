@@ -123,3 +123,16 @@
 #define IOD_SYMBOL__error
     iod_define_symbol(error, _error)
 #endif
+
+#ifndef IOD_SYMBOL__on_close
+#define IOD_SYMBOL__on_close
+    iod_define_symbol(on_close, _on_close)
+#endif
+#ifndef IOD_SYMBOL__on_open
+#define IOD_SYMBOL__on_open
+    iod_define_symbol(on_open, _on_open)
+#endif
+#ifndef IOD_SYMBOL__http_api
+#define IOD_SYMBOL__http_api
+    iod_define_symbol(http_api, _http_api)
+#endif

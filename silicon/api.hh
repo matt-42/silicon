@@ -222,6 +222,12 @@ namespace sl
   {
     return api.template instantiate_middleware<T>();
   }
+
+  inline auto make_api()
+  {
+    auto a = sio<>();
+    return api<decltype(a), std::tuple<>>(a, std::tuple<>());
+  }
   
   template <typename... P>
   auto make_api(P... procs)

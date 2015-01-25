@@ -82,6 +82,9 @@ target_link_libraries(ws_echo_server ${WEBSOCKETS_LIBS})
 add_iod_executable(ws_chat_server ws_chat_server.cc)
 target_link_libraries(ws_chat_server ${WEBSOCKETS_LIBS})
 
+add_iod_executable(ws_broadcast_server ws_broadcast_server.cc)
+target_link_libraries(ws_broadcast_server ${WEBSOCKETS_LIBS})
+
 add_test(crud crud)
 add_test(client client)
 add_test(user_tracking user_tracking)

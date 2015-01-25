@@ -7,6 +7,7 @@
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
 #include <silicon/symbols.hh>
+#include <silicon/wspp_connection.hh>
 
 namespace sl
 {
@@ -18,6 +19,7 @@ namespace sl
 
   struct ws_remote_client_ctx
   {
+    
     void init(websocketpp::connection_hdl c,
               wspp_server* s)
     {
@@ -37,6 +39,20 @@ namespace sl
     wspp_server* server;
   };
 
+  template <typename A>
+  struct ws_remote_client : public A
+  {
+    ws_remote_client(A a) : A(a) {}
+
+    ws_remote_client<A>& operator()(wspp_connection c)
+    {
+      this->silicon_ctx->connection = c.hdl;
+      this->silicon_ctx->server = c.server;
+      return *this;
+    }
+  };
+
+  
   template <typename R, typename C, typename S>
   auto create_ws_remote_client_call(C c, S symbol, sio<>)
   {
@@ -87,19 +103,11 @@ namespace sl
   {
     std::shared_ptr<ws_remote_client_ctx> c(new ws_remote_client_ctx());
     auto accessor = D(_silicon_ctx = c);
-    return iod::cat(generate_ws_remote_client_methods(c, api.procedures()), accessor);
+    auto rc = iod::cat(generate_ws_remote_client_methods(c, api.procedures()), accessor);
+    return ws_remote_client<decltype(rc)>(rc);
   }
 
-  template <typename A>
-  auto make_ws_remote_client(const A& api, wspp_server& s, websocketpp::connection_hdl hdl)
-  {
-    std::shared_ptr<ws_remote_client_ctx> c(new ws_remote_client_ctx());
-    c->init(hdl, &s);
-    auto accessor = D(_silicon_ctx = c);
-    return iod::cat(generate_ws_remote_client_methods(c, api.procedures()), accessor);
-  }
-
-  template <typename A>
-  using ws_client = decltype(make_ws_remote_client(std::declval<A>()));
+  template <typename API>
+  using ws_client = decltype(make_ws_remote_client(std::declval<API>()));
 
 }

@@ -10,6 +10,7 @@
 #include <silicon/error.hh>
 #include <silicon/ws_service.hh>
 #include <silicon/websocketpp_remote_client.hh>
+#include <silicon/wspp_connection.hh>
 
 namespace sl
 {
@@ -38,6 +39,11 @@ namespace sl
 
     }
 
+    inline auto serialize(response_type& r, const std::string& res) const
+    {
+      r = res;
+    }
+    
     template <typename T>
     auto serialize(response_type& r, const T& res) const
     {
@@ -46,95 +52,23 @@ namespace sl
 
   };
 
-  template <typename C>
-  struct ws_clients
-  {
-    typedef websocketpp::connection_hdl connection_hdl;
-
-    ws_clients(const C& client_api, wspp_server* s) : api(client_api), server(s) {}
-
-    auto find(connection_hdl c)
-    {
-      auto it = clients_.find(c);
-      if (it == clients_.end())
-        throw std::runtime_error("ws_clients::find The connection handler does not exists.");
-
-      return make_ws_remote_client(api, *server, *it);
-    }
-    
-    void add(const connection_hdl& c)
-    {
-      if (clients_.find(c) != clients_.end())
-        throw std::runtime_error("ws_clients::add The connection handler already exists.");
-
-      clients_.insert(c);
-    }
-
-    void remove(const connection_hdl& c)
-    {
-      auto it = clients_.find(c);
-      if (it == clients_.end())
-        throw std::runtime_error("ws_clients::erase The connection handler does not exists.");
-
-      clients_.erase(it);
-    }
-
-    template <typename F>
-    void operator|(F f)
-    {
-      for(auto hdl : clients_)
-      {
-        auto c = make_ws_remote_client(api, *server, hdl);
-        di_call(f, hdl, c);
-      }
-    }
-
-    C api;
-    wspp_server* server;
-    std::set<connection_hdl> clients_;
-  };
-
-  // template <typename D>
-  // struct ws_session_middlewaree
-  // {
-
-  //   static D* instantiate(connection_hdl c)
-  //   {
-  //     auto it = sessions.find(c);
-  //     if (it != sessions.end()) return &(it->second);
-  //     else
-  //     {
-  //       std::unique_lock<std::mutex> l(sessions_mutex);
-  //       return &(sessions[c]);
-  //     }
-  //   }
-
-  //   static D* find(std::string n)
-  //   {
-  //     for (auto& it : sessions) if (it.second.nickname == n) return &it.second;
-  //     return 0;
-  //   }
-
-  //   std::string nickname;
-
-  // private:
-  //   static std::mutex sessions_mutex;
-  //   static std::map<connection_hdl, D> sessions;
-  // };
-  
-  template <typename A1, typename A2>
-  void websocketpp_json_serve(const A1& server_api, const A2& remote_client_api, int port)
+  template <typename A1, typename A2, typename... OPTS>
+  void wspp_json_serve(const A1& server_api, const A2& remote_client_api, int port, OPTS&&... opts)
   {
     using websocketpp::connection_hdl;
     typedef wspp_server::message_ptr message_ptr;
-    typedef decltype(make_ws_remote_client(remote_client_api)) client_type;
-    typedef ws_clients<A2> clients_type;
+    auto rclient = make_ws_remote_client(remote_client_api);
+    typedef decltype(rclient) client_type;
+
+    auto options = D(opts...);
+    auto on_close_handler = options.get(_on_close, [] () {});
+    auto on_open_handler = options.get(_on_open, [] () {});
+    auto http_api = options.get(_http_api, make_api());
+
     wspp_server server;
-    clients_type clients(remote_client_api, &server);
 
-    auto service = ws_service<websocketpp_json_service_utils, A1, client_type, clients_type, connection_hdl>(server_api);
-    
-
+    auto service = ws_service<websocketpp_json_service_utils, A1, client_type, wspp_connection>(server_api);
+    auto http_service = ws_service<websocketpp_json_service_utils, decltype(http_api)>(http_api);
 
     std::mutex connections_mutex;
     std::mutex messages_mutex;
@@ -144,16 +78,16 @@ namespace sl
 
     std::condition_variable messages_condition;
     
-    auto on_open = [&] (connection_hdl hdl)
-    {
-      lock_type lock(connections_mutex);
-      clients.add(hdl);
-    };
-
     auto on_close = [&] (connection_hdl hdl)
     {
-      lock_type lock(connections_mutex);
-      clients.remove(hdl);
+      wspp_connection c{hdl, &server};
+      di_middlewares_call(on_close_handler, service.api().middlewares(), c);
+    };
+
+    auto on_open = [&] (connection_hdl hdl)
+    {
+      wspp_connection c{hdl, &server};
+      di_middlewares_call(on_open_handler, service.api().middlewares(), c);
     };
 
     auto on_message = [&] (connection_hdl hdl, message_ptr msg)
@@ -164,6 +98,24 @@ namespace sl
       messages_condition.notify_one();
     };
 
+    auto on_http = [&] (connection_hdl hdl)
+    {
+      wspp_server::connection_ptr con = server.get_con_from_hdl(hdl);
+      try
+      {
+        std::string request, response;
+        http_service(con->get_resource(), request, response);
+        con->set_status(websocketpp::http::status_code::ok);
+        con->set_body(response);
+      }
+      catch(const error::error& e)
+      {
+        auto s = (typename websocketpp::http::status_code::value)e.status();
+        con->set_status(s);
+        con->set_body(e.what());
+      }
+    };
+    
     auto process_messages = [&] ()
     {
       while (true)
@@ -175,18 +127,17 @@ namespace sl
         messages.pop();
         lock.unlock();
 
-        connection_hdl client = m.hdl;
+        wspp_connection connection{m.hdl, &server};
         std::string str = m.msg->get_payload();
 
         int i = 0;
-        while (std::isdigit(str[i]) and i < str.size()) i++;
+        while (str[i] != ':' and i < str.size()) i++;
         std::string request_id = str.substr(0, i);
-        int j = i;
-        while (str[j] != '{' and j < str.size()) j++;
+        int j = i + 1;
+        while (str[j] != ':' and j < str.size()) j++;
         
-        std::string location = str.substr(i, j - i);
-        std::string request = str.substr(j, str.size() - j);
-
+        std::string location = str.substr(i + 1, j - i - 1);
+        std::string request = str.substr(j + 1, str.size() - j - 1);
 
         auto send_response = [&] (int status, std::string body) {
           std::stringstream ss;
@@ -195,9 +146,8 @@ namespace sl
         };
         try
         {
-          auto c = clients.find(m.hdl);
           std::string response;
-          service(location, request, response, c, clients, m.hdl);
+          service(location, request, response, rclient, connection);
           if (response.size() != 0)
             send_response(200, response);
         }
@@ -226,6 +176,7 @@ namespace sl
     server.set_open_handler(bind<void>(on_open, _1));
     server.set_close_handler(bind<void>(on_close, _1));
     server.set_message_handler(bind<void>(on_message, _1, _2));
+    server.set_http_handler(bind<void>(on_http, _1));
 
     server.listen(port);
     server.start_accept();

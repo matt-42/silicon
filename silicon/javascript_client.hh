@@ -3,6 +3,7 @@
 
 #include <iod/foreach.hh>
 #include <silicon/client_templates/javascript.hh>
+#include <silicon/client_templates/javascript_websocket.hh>
 #include <silicon/api_description.hh>
 
 namespace sl
@@ -220,6 +221,17 @@ namespace sl
     std::stringstream ss;
     auto write = [&] (const auto& s) { ss << s; };
     tpl::generate_client(api, javascript_client_template, write, path);
+    return ss.str();
+  }
+
+  template <typename A, typename... T>
+  std::string generate_javascript_websocket_client(const A& api, T... _options)
+  {
+    auto path = tpl::path_generator(".") + "sl";
+
+    std::stringstream ss;
+    auto write = [&] (const auto& s) { ss << s; };
+    tpl::generate_client(api, javascript_websocket_client_template, write, path);
     return ss.str();
   }
 }
