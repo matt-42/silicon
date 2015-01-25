@@ -63,7 +63,7 @@ namespace sl
 
       // Generate url.
       std::stringstream ss;
-      ss << "http://" << host_ << ":" << port_ << "/" << symbol;
+      ss << "http://" << host_ << ":" << port_ << symbol;
       uri::Url url(ss.str());
 
       // Send request.
@@ -140,13 +140,13 @@ namespace sl
   }
 
   template <typename C, typename A>
-  auto generate_client_methods(C& c, A api, std::string prefix = "")
+  auto generate_client_methods(C& c, A api, std::string prefix = "/")
   {
     return foreach(api) | [c, prefix] (auto m) {
 
       return static_if<is_sio<decltype(m.value())>::value>(
         [c, prefix] (auto m) { // If sio, recursion.
-          return m.symbol() = generate_client_methods(c, m.value(), prefix + m.symbol().name() + "_");
+          return m.symbol() = generate_client_methods(c, m.value(), prefix + m.symbol().name() + "/");
         },
         [c, prefix] (auto m) { // Else, register the procedure.
           typedef std::remove_reference_t<decltype(m.value())> V;

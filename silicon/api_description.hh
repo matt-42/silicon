@@ -59,7 +59,7 @@ namespace sl
           res << api_description2(m.value(), scope + m.symbol().name() + ".");
         },
         [&] (auto m) { // Else, register the procedure.
-          res << procedure_description(m) << std::endl;
+          res << procedure_description(m, scope) << std::endl;
         }, m);
       
     };

@@ -196,7 +196,7 @@ namespace sl
     template <typename T>
     auto instantiate_middleware()
     {
-      return di_middlewares([] (T t) { return t; }, middlewares_);
+      return di_middlewares_call([] (T t) { return t; }, middlewares_);
     }
 
     auto initialize_middlewares()
@@ -207,7 +207,7 @@ namespace sl
         static_if<has_initialize_method<X>::value>(
           [this] (auto& m) {
             typedef std::remove_reference_t<decltype(m)> X_;
-            di_middlewares(bind_method(m, &X_::initialize), middlewares_);
+            di_middlewares_call(bind_method(m, &X_::initialize), middlewares_);
           },
           [] (auto& m) {}, m);
       };

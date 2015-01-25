@@ -45,9 +45,9 @@ int main()
 
   // Insert.
   auto insert_r = c.user.create("matt", 12, "USA");
+  std::cout << json_encode(insert_r) << std::endl;
   assert(insert_r.status == 200);
   int id = insert_r.response.id;
-  std::cout << json_encode(insert_r) << std::endl;
 
   // Get by id.
   auto get_r = c.user.get_by_id(id);
