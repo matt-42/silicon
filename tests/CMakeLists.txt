@@ -73,6 +73,9 @@ target_link_libraries(microhttpd_hello_world ${MHD_LIBS})
 add_iod_executable(sqlite sqlite.cc)
 target_link_libraries(sqlite ${MHD_LIBS} sqlite3)
 
+add_iod_executable(mysql mysql.cc)
+target_link_libraries(mysql ${MHD_LIBS} mysqlclient)
+
 add_iod_executable(javascript_client javascript_client.cc)
 target_link_libraries(javascript_client ${MIMOSA_LIBS})
 
