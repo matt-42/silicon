@@ -6,7 +6,7 @@ title: mimosa
 Mimosa
 =====================
 
-This backend wraps [the Mimosa library](http://www.gnu.org/software/libmicrohttpd/) to serve Silicon APIs:
+This backend wraps [the Mimosa library](https://github.com/abique/mimosa) to serve Silicon APIs:
 
 ```c++
 mimosa_json_serve(api, port);
