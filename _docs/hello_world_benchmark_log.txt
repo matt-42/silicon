@@ -1,0 +1,430 @@
+
+Plain Go:
+
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 1 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    42.22us   43.08us 482.00us   98.96%
+    Req/Sec    21.93k     2.63k   25.78k    68.46%
+  39809 requests in 2.00s, 5.39MB read
+Requests/sec:  19906.74
+Transfer/sec:      2.70MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 10 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   111.78us  148.72us   5.01ms   93.34%
+    Req/Sec    90.53k     5.65k   98.33k    60.40%
+  168237 requests in 2.00s, 22.78MB read
+Requests/sec:  84124.05
+Transfer/sec:     11.39MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 50 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   375.46us  350.43us   5.37ms   89.79%
+    Req/Sec   138.09k     9.69k  156.11k    66.44%
+  249108 requests in 2.00s, 33.73MB read
+Requests/sec: 124562.47
+Transfer/sec:     16.87MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   697.16us  669.12us  10.24ms   91.88%
+    Req/Sec   152.61k    10.06k  171.33k    71.81%
+  281366 requests in 2.00s, 38.10MB read
+Requests/sec: 140684.62
+Transfer/sec:     19.05MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 200 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.32ms    1.23ms  16.37ms   92.62%
+    Req/Sec   157.48k    11.32k  184.22k    69.13%
+  291502 requests in 2.00s, 39.48MB read
+Requests/sec: 145693.89
+Transfer/sec:     19.73MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 300 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.95ms    1.44ms  16.52ms   89.00%
+    Req/Sec   151.62k    11.74k  178.67k    76.03%
+  283865 requests in 2.00s, 38.44MB read
+Requests/sec: 141931.72
+Transfer/sec:     19.22MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 400 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.65ms    1.58ms  20.71ms   83.81%
+    Req/Sec   148.89k    16.45k  187.89k    66.67%
+  279377 requests in 2.00s, 37.83MB read
+Requests/sec: 139688.22
+Transfer/sec:     18.92MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 500 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     3.36ms    1.91ms  19.01ms   83.23%
+    Req/Sec   145.26k    23.84k  200.78k    66.21%
+  271300 requests in 2.00s, 36.74MB read
+Requests/sec: 135647.22
+Transfer/sec:     18.37MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 600 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     3.91ms    1.89ms  19.53ms   76.00%
+    Req/Sec   142.56k    22.08k  199.40k    68.18%
+  268043 requests in 2.00s, 36.30MB read
+Requests/sec: 133813.09
+Transfer/sec:     18.12MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 700 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     4.81ms    2.16ms  23.57ms   77.21%
+    Req/Sec   138.90k    16.78k  177.08k    69.90%
+  264715 requests in 2.00s, 35.85MB read
+Requests/sec: 132303.45
+Transfer/sec:     17.92MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 800 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     5.06ms    4.46ms 208.78ms   96.63%
+    Req/Sec   139.92k    18.64k  190.64k    71.67%
+  264670 requests in 2.00s, 35.84MB read
+Requests/sec: 132325.67
+Transfer/sec:     17.92MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 900 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     5.67ms    2.53ms  27.97ms   72.97%
+    Req/Sec   136.88k    19.88k  181.08k    71.84%
+  260347 requests in 2.00s, 35.26MB read
+Requests/sec: 130089.07
+Transfer/sec:     17.62MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 1000 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     6.58ms    2.48ms  34.49ms   73.50%
+    Req/Sec   136.47k    14.98k  172.26k    70.67%
+  260914 requests in 2.00s, 35.33MB read
+Requests/sec: 130372.52
+Transfer/sec:     17.66MB
+
+
+Nodejs express (with cluster):
+
+Running 2s test @ http://127.0.0.1:8080/json                                           
+  1 threads and 1 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    93.55us   48.39us   1.46ms   99.24%
+    Req/Sec    11.10k   655.07    11.89k    54.00%
+  19593 requests in 2.00s, 3.68MB read
+Requests/sec:   9797.41
+Transfer/sec:      1.84MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 10 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   316.51us  322.58us   2.16ms   67.06%
+    Req/Sec    32.78k     1.87k   35.22k    63.76%
+  60393 requests in 2.00s, 11.35MB read
+Requests/sec:  30197.63
+Transfer/sec:      5.67MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 50 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.59ms  564.47us   3.37ms   33.53%
+    Req/Sec    33.52k     1.75k   38.00k    65.10%
+  62754 requests in 2.00s, 11.79MB read
+Requests/sec:  31378.33
+Transfer/sec:      5.90MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     3.21ms    2.06ms   7.77ms   67.82%
+    Req/Sec    33.19k     1.75k   37.44k    54.36%
+  61726 requests in 2.00s, 11.60MB read
+Requests/sec:  30865.86
+Transfer/sec:      5.80MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 200 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     5.54ms    3.65ms  15.50ms   55.64%
+    Req/Sec    37.60k     1.25k   40.05k    86.49%
+  72490 requests in 2.00s, 13.62MB read
+Requests/sec:  36247.14
+Transfer/sec:      6.81MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 300 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     8.17ms    2.05ms  18.15ms   58.42%
+    Req/Sec    31.63k     7.27k   38.74k    66.22%
+  56267 requests in 2.00s, 10.57MB read
+Requests/sec:  28133.15
+Transfer/sec:      5.29MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 400 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     8.79ms    5.04ms  26.91ms   74.19%
+    Req/Sec    34.81k     3.20k   38.08k    72.88%
+  61696 requests in 2.00s, 11.59MB read
+Requests/sec:  30847.66
+Transfer/sec:      5.80MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 500 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    10.29ms   10.32ms 232.32ms   92.31%
+    Req/Sec    36.83k     1.04k   38.30k    80.65%
+  68419 requests in 2.00s, 12.85MB read
+Requests/sec:  34224.23
+Transfer/sec:      6.43MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 600 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    12.36ms   23.25ms 462.43ms   99.60%
+    Req/Sec    37.06k     1.18k   38.90k    64.79%
+  67672 requests in 2.00s, 12.71MB read
+Requests/sec:  33838.66
+Transfer/sec:      6.36MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 700 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    12.11ms   15.48ms 221.04ms   89.65%
+    Req/Sec    36.95k     2.38k   39.43k    89.90%
+  67208 requests in 2.00s, 12.63MB read
+Requests/sec:  33617.70
+Transfer/sec:      6.32MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 800 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    18.91ms   18.95ms 503.60ms   99.57%
+    Req/Sec    27.42k    12.25k   37.92k    66.10%
+  45237 requests in 2.00s, 8.50MB read
+Requests/sec:  22627.65
+Transfer/sec:      4.25MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 900 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    14.41ms   28.88ms 506.38ms   99.44%
+    Req/Sec    37.07k     1.08k   38.47k    68.92%
+  67944 requests in 2.00s, 12.76MB read
+Requests/sec:  33969.16
+Transfer/sec:      6.38MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 1000 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    21.50ms    8.52ms 213.24ms   88.52%
+    Req/Sec    27.51k    12.31k   37.10k    68.00%
+  45451 requests in 2.00s, 8.54MB read
+Requests/sec:  22766.74
+Transfer/sec:      4.28MB
+
+Go revel:
+
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 1 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    63.18us   49.69us 613.00us   98.33%
+    Req/Sec    15.37k     2.35k   20.78k    64.00%
+  27833 requests in 2.00s, 3.98MB read
+Requests/sec:  13917.81
+Transfer/sec:      1.99MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 10 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   146.45us  194.50us   4.51ms   94.22%
+    Req/Sec    69.04k     5.17k   79.44k    73.83%
+  128064 requests in 2.00s, 18.32MB read
+Requests/sec:  64026.72
+Transfer/sec:      9.16MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 50 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   509.74us  476.64us   5.78ms   91.30%
+    Req/Sec   102.52k     6.49k  115.22k    65.77%
+  187563 requests in 2.00s, 26.83MB read
+Requests/sec:  93785.63
+Transfer/sec:     13.42MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     0.99ms    0.98ms  12.67ms   93.86%
+    Req/Sec   106.05k     6.14k  122.33k    66.44%
+  198435 requests in 2.00s, 28.39MB read
+Requests/sec:  99219.83
+Transfer/sec:     14.19MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 200 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.97ms    2.15ms  30.80ms   94.22%
+    Req/Sec   109.63k     8.07k  131.00k    67.11%
+  201762 requests in 2.00s, 28.86MB read
+Requests/sec: 100881.96
+Transfer/sec:     14.43MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 300 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.68ms    2.69ms  31.17ms   94.32%
+    Req/Sec   109.52k     5.68k  120.89k    67.79%
+  202213 requests in 2.00s, 28.93MB read
+Requests/sec: 101106.75
+Transfer/sec:     14.46MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 400 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     4.03ms    3.94ms  48.69ms   94.12%
+    Req/Sec   107.52k     7.28k  128.40k    67.41%
+  198590 requests in 2.00s, 28.41MB read
+Requests/sec:  99305.33
+Transfer/sec:     14.21MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 500 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     5.06ms    4.14ms  59.15ms   90.37%
+    Req/Sec   104.43k     8.31k  135.17k    75.22%
+  194980 requests in 2.00s, 27.89MB read
+Requests/sec:  97489.17
+Transfer/sec:     13.95MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 600 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     6.19ms    4.88ms  87.49ms   90.05%
+    Req/Sec   102.41k     6.08k  116.73k    71.74%
+  192899 requests in 2.00s, 27.59MB read
+Requests/sec:  96445.69
+Transfer/sec:     13.80MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 700 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     5.57ms   11.95ms 445.21ms   97.71%
+    Req/Sec   107.12k    11.66k  133.33k    60.81%
+  196691 requests in 2.00s, 28.14MB read
+Requests/sec:  98339.16
+Transfer/sec:     14.07MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 800 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     5.12ms   29.41ms 871.52ms   99.53%
+    Req/Sec   107.49k    10.05k  138.33k    67.11%
+  195842 requests in 2.00s, 28.02MB read
+Requests/sec:  97914.39
+Transfer/sec:     14.01MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 900 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     7.59ms   12.23ms 436.98ms   97.47%
+    Req/Sec   102.20k    10.91k  125.57k    65.71%
+  191948 requests in 2.00s, 27.46MB read
+Requests/sec:  95911.51
+Transfer/sec:     13.72MB
+Running 2s test @ http://127.0.0.1:8080/json
+  1 threads and 1000 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     9.96ms    6.09ms 124.79ms   92.40%
+    Req/Sec   100.61k     6.65k  127.27k    70.31%
+  192007 requests in 2.00s, 27.47MB read
+Requests/sec:  96069.98
+Transfer/sec:     13.74MB
+
+
+Silicon:
+
+Running 2s test @ http://127.0.0.1:8080/test
+  1 threads and 1 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    19.64us    6.47us 162.00us   87.12%
+    Req/Sec    44.67k     9.33k   54.67k    74.50%
+  81549 requests in 2.00s, 9.80MB read
+Requests/sec:  40780.15
+Transfer/sec:      4.90MB
+Running 2s test @ http://127.0.0.1:8080/test
+  1 threads and 10 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency    52.30us   26.22us   1.54ms   73.42%
+    Req/Sec   193.19k     8.09k  198.44k    80.54%
+  351970 requests in 2.00s, 42.29MB read
+Requests/sec: 176002.78
+Transfer/sec:     21.15MB
+Running 2s test @ http://127.0.0.1:8080/test
+  1 threads and 50 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   158.60us  132.02us   8.16ms   98.89%
+    Req/Sec   271.87k    17.67k  288.89k    90.60%
+  505521 requests in 2.00s, 60.74MB read
+Requests/sec: 252759.74
+Transfer/sec:     30.37MB
+Running 2s test @ http://127.0.0.1:8080/test
+  1 threads and 100 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   277.89us  189.24us  10.13ms   98.37%
+    Req/Sec   255.86k    12.43k  274.22k    56.38%
+  476320 requests in 2.00s, 57.24MB read
+Requests/sec: 238148.93
+Transfer/sec:     28.62MB
+Running 2s test @ http://127.0.0.1:8080/test
+  1 threads and 200 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency   680.52us  324.48us   8.27ms   80.22%
+    Req/Sec   192.12k     8.96k  204.78k    68.92%
+  358879 requests in 2.00s, 43.12MB read
+Requests/sec: 179428.47
+Transfer/sec:     21.56MB
+Running 2s test @ http://127.0.0.1:8080/test
+  1 threads and 300 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.25ms  499.01us   7.85ms   72.34%
+    Req/Sec   159.55k    10.42k  189.44k    77.85%
+  297842 requests in 2.00s, 35.79MB read
+Requests/sec: 148883.18
+Transfer/sec:     17.89MB
+Running 2s test @ http://127.0.0.1:8080/test
+  1 threads and 400 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     1.67ms  685.20us   9.11ms   76.10%
+    Req/Sec   142.95k     3.56k  153.11k    73.79%
+  272170 requests in 2.00s, 32.70MB read
+Requests/sec: 136068.13
+Transfer/sec:     16.35MB
+Running 2s test @ http://127.0.0.1:8080/test
+  1 threads and 500 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.19ms    0.87ms   9.50ms   76.60%
+    Req/Sec   136.40k     3.80k  160.90k    79.02%
+  263373 requests in 2.00s, 31.65MB read
+Requests/sec: 131630.43
+Transfer/sec:     15.82MB
+Running 2s test @ http://127.0.0.1:8080/test
+  1 threads and 600 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     2.76ms    1.29ms  10.49ms   76.62%
+    Req/Sec   132.27k     3.84k  141.25k    64.96%
+  254390 requests in 2.00s, 30.57MB read
+Requests/sec: 127163.78
+Transfer/sec:     15.28MB
+Running 2s test @ http://127.0.0.1:8080/test
+  1 threads and 700 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     3.20ms    1.23ms  11.31ms   77.65%
+    Req/Sec   128.30k     4.79k  155.20k    80.00%
+  251232 requests in 2.00s, 30.19MB read
+Requests/sec: 125505.37
+Transfer/sec:     15.08MB
+Running 2s test @ http://127.0.0.1:8080/test
+  1 threads and 800 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     3.92ms    1.75ms  14.53ms   69.60%
+    Req/Sec   127.57k     2.94k  133.73k    65.17%
+  244901 requests in 2.00s, 29.43MB read
+Requests/sec: 122344.61
+Transfer/sec:     14.70MB
+Running 2s test @ http://127.0.0.1:8080/test
+  1 threads and 900 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     4.07ms    2.93ms 204.33ms   93.11%
+    Req/Sec   127.57k     4.47k  135.45k    57.76%
+  241960 requests in 2.00s, 29.07MB read
+Requests/sec: 120781.07
+Transfer/sec:     14.51MB
+Running 2s test @ http://127.0.0.1:8080/test
+  1 threads and 1000 connections
+  Thread Stats   Avg      Stdev     Max   +/- Stdev
+    Latency     4.59ms    9.88ms 847.51ms   99.70%
+    Req/Sec   126.63k     3.82k  133.67k    70.18%
+  241197 requests in 2.00s, 28.98MB read
+Requests/sec: 120463.04
+Transfer/sec:     14.48MB
