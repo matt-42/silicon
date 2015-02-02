@@ -33,5 +33,6 @@ with C varying from 1 to 1000
 ### Results
 
 ![Hello World benchmark results](/assets/hello_world_benchmark.png)
+![Hello World benchmark results](/assets/hello_world_benchmark_latency.png)
 
-[Access to the raw benchmark log](/docs/hello_world_raw_log.txt)
+[Access to the raw benchmark log](/docs/hello_world_benchmark_log.txt)
