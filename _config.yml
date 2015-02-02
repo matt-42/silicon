@@ -1,0 +1,8 @@
+highlighter: pygments
+
+markdown: redcarpet
+
+collections:
+  docs:
+    output: true
+
