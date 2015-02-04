@@ -10,7 +10,12 @@ Silicon is a high performance, middleware oriented C++14 http web
 framework. It brings to C++ the high expressive power of other web
 frameworks based on dynamic languages.
 
-_The ressources of the project are quite limited today (few days per month of my free time). If you want to support the project, [please consider donating](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=E5URY2QDRB54J). This means more features, middlewares, backends, documentation, and bugs quickly fixed._
+_The resources of the project are quite limited today (few days per
+month of my free time). If you want to support the project, [please
+consider
+donating](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=E5URY2QDRB54J). This
+means more features, middlewares, backends, documentation, and bugs
+quickly fixed._
 
 
 Installation
@@ -27,7 +32,7 @@ Features
 
   - __Ease of use__
 
-    The framework is designed such that the developper only writes the
+    The framework is designed such that the developer only writes the
     core of the API, the framework takes care of the rest
     (serialization, deserialization, generation of client libraries,
     routing, multithreading, ...). Its learning curve is similar to
@@ -50,10 +55,12 @@ Features
 
   - __Automatic dependency injection and middlewares__
 
-    Middlewares are objects requests by the api. They can be access to a session,
-    connection to a database or another webservice, or anything else that need
-    to be initialized before each api call. Middlewares may depend on each other,
-    leading to a middleware dependency graph automatically resolved at compile time.
+    A remote procedure can request access to one ore several
+    middlewares. It could access to a session, connection to a
+    database or another webservice, or anything else that need to be
+    initialized before each api call. Middlewares may depend on each
+    other, leading to a middleware dependency graph automatically
+    resolved at compile time.
 
   - __Automatic validation, serialization and deserialization of messages__
 
@@ -77,7 +84,7 @@ Features
     at runtime thanks to a tiny templating engine.
 
 
-  - __Comming soon: asynchronism [with the C++17 resumable functions]__
+  - __Coming soon: asynchronism [with the C++17 resumable functions]__
   
     While asynchronism can be implemented with C/C++, it involves
     using callbacks, or javascript-like promises and complexify the

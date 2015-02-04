@@ -26,17 +26,35 @@ auto hello_api = make_api(
 mhd_json_serve(hello_api, 8080);
 ```
 
-starts a HTTP server listening on port 8080 and serve the hello world procedure
-at the route ```/hello```.
+starts a HTTP server listening on port 8080 and serve the hello world
+procedure at the route ```/hello```. It relies on the JSON message
+format to communicate with the client.
 
 ## Concurency and Parallelism
 
-By default, it spans one thread per core and use select for
-intra-thread concurency. This is the fastest method for procedures
-with low running time. The option ```_thread_per_connection``` creates
-one thread per connection and enables the long running procedures not
-to block the server to accept new requests.
+The microhttpd options propose different methods to manage concurent requests
+and multi-core architectures.
 
-```
-mhd_json_serve(api, port, _thread_per_connection);
-```
+
+### ```_one_thread_per_connection```
+
+Spans one thread per connection.
+
+### ```_linux_epoll```
+
+Spans one thread per CPU core, and calls the linux ```epoll``` routine to
+manage intra-thread concurency.
+
+### ```_select```
+
+Activated by default.
+
+Spans one thread per CPU core, and calls the ```select``` routine to
+manage intra-thread concurency.
+
+### ```_nthreads = n```
+
+Default: The number of processor cores.
+
+When using ```_select``` or ```_linux_epoll```, set the size of the
+thread pool.

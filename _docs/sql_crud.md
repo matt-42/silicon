@@ -30,7 +30,14 @@ auto api = make_api(
 );
 ```
 
-This sets up the following routes:
+This sets up the following procedures:
+
+```javascript
+user.get_by_id(id: int) -> {id: int, name: string, age: int, address: string}
+user.create(name: string, age: int, address: string) -> {id: int}
+user.update(id: int, name: string, age: int, address: string) -> void
+user.destroy(id: int) -> void
+```
 
 FIXME
 
@@ -50,59 +57,59 @@ sql_crud<user_orm_middleware>(
 );
 ```
 
-### _read_permission
+### ```_read_permission```
 
 Default: ```[] () { return true; }```
 
-Check for read permission, return true if the client has enough
+Check for read permission: return true if the client has enough
 privileges to read the requested object. If not, return false.
 
-### _write_permission
+### ```_write_permission```
 
 Default: ```[] () { return true; }```
 
-Check for write permission, return true if the client has enough
+Check for write permission: return true if the client has enough
 privileges to update the requested object. If not, return false.
 
-### _validate
+### ```_validate```
 
 Default: ```[] () { return true; }```
 
 In the update procedure, validate the state of the updated object. 
-Returns true if it is valid, false otherwise.
+Returns true if it is valid, false to abort the update.
 
-### _on_create_success
-
-Default: ```[] () {}```
-
-After a successful object creation, the create procedure call this
-function.
-
-### _on_update_success
+### ```_on_create_success```
 
 Default: ```[] () {}```
 
-After a successful object update, the update procedure call this
+After a successful object creation, the create procedure calls this
 function.
 
-### _on_destroy_success
+### ```_on_update_success```
 
 Default: ```[] () {}```
 
-After a successful object destruction, the destroy procedure call this
+After a successful object update, the update procedure calls this
 function.
 
-### _before_update
+### ```_on_destroy_success```
+
+Default: ```[] () {}```
+
+After a successful object destruction, the destroy procedure calls this
+function.
+
+### ```_before_update```
 
 Default: ```[] () {}```
 
 Before saving the object to the database, if _write_access returns
-true, the update procedure call this function.
+true, the update procedure calls this function.
 
-### _before_create
+### ```_before_create```
 
 Default: ```[] () {}```
 
 Before saving the object to the database, if _write_access returns
-true, the create procedure call this function.
+true, the create procedure calls this function.
 

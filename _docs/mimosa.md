@@ -26,9 +26,9 @@ auto hello_api = make_api(
 mimosa_json_serve(hello_api, 8080);
 ```
 
-starts a HTTP server listening on port 8080 and serve the hello world procedure
-at the route ```/hello```.
-
+starts a HTTP server listening on port 8080 and serve the hello world
+procedure at the route ```/hello```. It relies on the JSON message
+format to communicate with the client.
 
 ## Concurency and Parallelism
 

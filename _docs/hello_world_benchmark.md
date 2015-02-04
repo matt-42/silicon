@@ -9,7 +9,11 @@ This benchmark compares the performances of several frameworks on a simple examp
 on each request, serializes the json object ```{"message":"hello world."}``` and sends it back
 to the http client.
 
-You can find the full specification of the benchmark here:
+While it is rather simple and does not reflect a real world
+application, it gives a brief insight on the performances of the
+framework.
+
+You can find the full specification of the benchmark here (session JSON serialization):
 
 [https://www.techempower.com/benchmarks/#section=code](https://www.techempower.com/benchmarks/#section=code)
 
