@@ -1,6 +1,6 @@
 #include <iostream>
 #include <silicon/api.hh>
-#include <silicon/mimosa_serve.hh>
+#include <silicon/backends/mimosa_serve.hh>
 
 using namespace sl;
 

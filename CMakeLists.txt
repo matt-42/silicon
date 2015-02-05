@@ -7,8 +7,8 @@ configure_file(${CMAKE_SOURCE_DIR}/silicon/client_templates/javascript.hh.in
                ${CMAKE_SOURCE_DIR}/silicon/client_templates/javascript.hh)
 
 file(READ ${CMAKE_SOURCE_DIR}/client_templates/websocket.js JAVASCRIPT_WS_CLIENT_TEMPLATE)
-configure_file(${CMAKE_SOURCE_DIR}/silicon/client_templates/javascript_websocket.hh.in
-               ${CMAKE_SOURCE_DIR}/silicon/client_templates/javascript_websocket.hh)
+configure_file(${CMAKE_SOURCE_DIR}/silicon/clients/templates/javascript_websocket.hh.in
+               ${CMAKE_SOURCE_DIR}/silicon/clients/templates/javascript_websocket.hh)
 
 export(PACKAGE Silicon)
 

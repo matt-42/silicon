@@ -40,3 +40,8 @@ error
 on_close
 on_open
 http_api
+
+one_thread_per_connection
+select
+linux_epoll
+nthreads

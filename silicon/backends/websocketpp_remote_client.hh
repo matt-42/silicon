@@ -7,7 +7,7 @@
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
 #include <silicon/symbols.hh>
-#include <silicon/wspp_connection.hh>
+#include <silicon/backends/wspp_connection.hh>
 
 namespace sl
 {

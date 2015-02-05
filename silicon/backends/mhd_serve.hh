@@ -6,9 +6,10 @@
 #include <string.h>
 #include <stdio.h>
 
+#include <silicon/symbols.hh>
 #include <silicon/error.hh>
 #include <silicon/service.hh>
-#include <silicon/tracking_cookie.hh>
+#include <silicon/middlewares/tracking_cookie.hh>
 #include <iod/json.hh>
 
 namespace sl
@@ -48,6 +49,18 @@ namespace sl
 
     }
 
+    void serialize(response_type& r, const std::string res) const
+    {
+      r.status = 200;
+      r.body = res;
+    }
+
+    void serialize(response_type& r, const char* res) const
+    {
+      r.status = 200;
+      r.body = res;
+    }
+    
     template <typename T>
     auto serialize(response_type& r, const T& res) const
     {
@@ -56,6 +69,7 @@ namespace sl
       r.body = str;
     }
 
+    
   };
 
   template <typename F>
@@ -162,25 +176,47 @@ namespace sl
     return ret;
   }
 
-  template <typename A>
-  void mhd_json_serve(const A& api, int port)
+  template <typename A, typename... O>
+  void mhd_json_serve(const A& api, int port, O&&... opts)
   {
     auto api2 = api.bind_middlewares(mhd_session_cookie());
     auto s = service<mhd_json_service_utils, decltype(api2)>(api2);
     typedef decltype(s) S;
 
+    int flags = MHD_USE_SELECT_INTERNALLY;
+    auto options = D(opts...);
+    if (options.has(_one_thread_per_connection))
+      flags = MHD_USE_THREAD_PER_CONNECTION;
+    else if (options.has(_select))
+      flags = MHD_USE_SELECT_INTERNALLY;
+    else if (options.has(_linux_epoll))
+      flags = MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY;
+
+    int thread_pool_size = options.get(_nthreads, get_nprocs());
+
     struct MHD_Daemon * d;
-    d = MHD_start_daemon(
-      //MHD_USE_THREAD_PER_CONNECTION,
-      //MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY | MHD_USE_EPOLL_TURBO | MHD_USE_TCP_FASTOPEN,
-      MHD_USE_SELECT_INTERNALLY,
-      port,
-      NULL,
-      NULL,
-      &mhd_handler<S>,
-      &s,
-      MHD_OPTION_THREAD_POOL_SIZE, get_nprocs(),
-      MHD_OPTION_END);
+
+    if (flags != MHD_USE_THREAD_PER_CONNECTION)
+      d = MHD_start_daemon(
+        flags,
+        port,
+        NULL,
+        NULL,
+        &mhd_handler<S>,
+        &s,
+        MHD_OPTION_THREAD_POOL_SIZE, get_nprocs(),
+        MHD_OPTION_END);
+    else
+      d = MHD_start_daemon(
+        flags,
+        port,
+        NULL,
+        NULL,
+        &mhd_handler<S>,
+        &s,
+        MHD_OPTION_END);
+      
+    
     if (d == NULL)
       return;
 

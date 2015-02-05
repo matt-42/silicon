@@ -7,7 +7,7 @@
 #include <iod/json.hh>
 
 #include <silicon/service.hh>
-#include <silicon/tracking_cookie.hh>
+#include <silicon/middlewares/tracking_cookie.hh>
 #include <silicon/symbols.hh>
 
 namespace sl

@@ -1,19 +1,16 @@
 #pragma once
 
 #include <random>
-#include <silicon/tracking_cookie.hh>
-#include <silicon/sqlite.hh>
+#include <silicon/middlewares/tracking_cookie.hh>
+#include <silicon/middlewares/sqlite_connection.hh>
 
 namespace sl
 {
-  template <typename D>
-  struct sqlite_session_middleware;
 
   template <typename T>
   struct sqlite_session : public T
   {
     typedef T data_type;
-    typedef sqlite_session_middleware<data_type> middleware_type;
 
     sqlite_session(const std::string& key, const std::string& table_name,
                    sqlite_connection& con)
@@ -28,10 +25,8 @@ namespace sl
     }
 
     data_type& data() { return *static_cast<data_type*>(this); }
-    template <typename U>
-    auto& field() { return *static_cast<U*>(this); }
 
-    void save()
+    void _save()
     {
       std::stringstream ss;
       ss << "UPDATE " << table_name_ << " SET ";
@@ -52,7 +47,7 @@ namespace sl
       apply(ss.str(), values, con_).exec();
     };
 
-    void destroy()
+    void _destroy()
     {
       con_("DELETE from  " + table_name_ + " WHERE key = ?", key_).exec();
     }
@@ -82,7 +77,7 @@ namespace sl
       foreach(D().sio_info()) | [&] (auto& m)
       {
         if (!first) ss << ", ";
-        ss << m.symbol().name() << " " << sqlite_type_string(&m.value());
+        ss << m.symbol().name() << " " << c.type_to_string(m.value());
         first = false;
       };
       ss << ");";

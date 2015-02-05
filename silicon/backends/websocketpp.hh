@@ -9,8 +9,8 @@
 #include <silicon/symbols.hh>
 #include <silicon/error.hh>
 #include <silicon/service.hh>
-#include <silicon/websocketpp_remote_client.hh>
-#include <silicon/wspp_connection.hh>
+#include <silicon/backends/websocketpp_remote_client.hh>
+#include <silicon/backends/wspp_connection.hh>
 
 namespace sl
 {

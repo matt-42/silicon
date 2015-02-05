@@ -2,7 +2,6 @@
 
 #include <memory>
 #include <cstring>
-#include <boost/lockfree/queue.hpp>
 
 #include <sqlite3.h>
 #include <iod/sio.hh>
@@ -14,17 +13,6 @@ namespace sl
 {
 
   static const struct null_t { null_t() {} } null;
-
-  
-  template <typename T>
-  inline std::string sqlite_type_string(T*, std::enable_if_t<std::is_integral<T>::value>* = 0) { return "INTEGER"; }
-  template <typename T>
-  inline std::string sqlite_type_string(T*, std::enable_if_t<std::is_floating_point<T>::value>* = 0) { return "REAL"; }
-  inline std::string sqlite_type_string(std::string*) { return "TEXT"; }
-  inline std::string sqlite_type_string(blob*) { return "BLOB"; }
-
-  template <typename T>
-  inline std::string sqlite_type_string(const T*) { return sqlite_type_string((T*)0); }
   
   void free_sqlite3_statement(void* s)
   {
@@ -155,11 +143,8 @@ namespace sl
     sqlite3_close_v2((sqlite3*) db);
   }
 
-  struct sqlite_middleware;
   struct sqlite_connection
   {
-    typedef sqlite_middleware middleware_type;
-
     typedef std::shared_ptr<sqlite3> db_sptr;
 
     sqlite_connection() : db_(nullptr)
@@ -219,7 +204,15 @@ namespace sl
 
       return sqlite_statement(db_, stmt);
     }
-  
+
+
+    template <typename T>
+    inline std::string type_to_string(const T&, std::enable_if_t<std::is_integral<T>::value>* = 0) { return "INTEGER"; }
+    template <typename T>
+    inline std::string type_to_string(const T&, std::enable_if_t<std::is_floating_point<T>::value>* = 0) { return "REAL"; }
+    inline std::string type_to_string(const std::string&) { return "TEXT"; }
+    inline std::string type_to_string(const blob&) { return "BLOB"; }
+    
     sqlite3* db_;
     db_sptr db_sptr_;
   };
@@ -251,10 +244,10 @@ namespace sl
     std::string path_;
   };
 
-  struct sqlite_middleware
+  struct sqlite_connection_middleware
   {
     template <typename... O>
-    sqlite_middleware(const std::string& database_path, O... options)
+    sqlite_connection_middleware(const std::string& database_path, O... options)
     {
       db_.init(database_path, options...);
     }

@@ -3,7 +3,6 @@
 #include <sstream>
 #include <iod/utils.hh>
 #include <silicon/symbols.hh>
-#include <silicon/sqlite.hh>
 
 namespace sl
 {
@@ -14,7 +13,7 @@ namespace sl
   using s::_computed_t;
   using s::_computed;
   
-  namespace sqlite_orm_internals
+  namespace sql_orm_internals
   {
     template <typename M>
     struct is_primary_key
@@ -52,51 +51,50 @@ namespace sl
     };
     
   }
-
-  template <typename O>
-  struct sqlite_orm_middleware;
   
-  template <typename O>
-  struct sqlite_orm
+  template <typename C, typename O>
+  struct sql_orm
   {
     typedef O object_type;
 
-    typedef sqlite_orm_middleware<O> middleware_type;
-
     // O without primary keys for create procedure.
-    typedef decltype(sqlite_orm_internals::remove_pks(std::declval<O>())) O_WO_PKS;
+    typedef decltype(sql_orm_internals::remove_pks(std::declval<O>())) O_WO_PKS;
 
-    typedef decltype(sqlite_orm_internals::remove_computed_fields(std::declval<O>())) update_type;
-    typedef decltype(sqlite_orm_internals::remove_pks(std::declval<update_type>())) insert_type;
-    
     // Object with only the primary keys for the delete procedure.
-    typedef decltype(sqlite_orm_internals::get_pks(std::declval<O>())) PKS;
+    typedef decltype(sql_orm_internals::get_pks(std::declval<O>())) PKS;
 
-    sqlite_orm(const std::string& table, sqlite_connection& con) : table_name_(table), con_(con) {}
+    sql_orm(const std::string& table, C& con) : table_name_(table), con_(con) {}
 
     int find_by_id(int id, O& o)
     {
       return con_("SELECT * from " + table_name_ + " where id == ?", id) >> o;
     }
 
-    int insert(const O& o)
+    template <typename... T>
+    auto select_where(T&&... t)
+    {
+      return con_("SELECT * from " + table_name_ + " where ", t...);
+    }
+
+    template <typename N>
+    int insert(const N& o)
     {
       // save all fields except primary keys.
-      // sqlite will automatically fill primary keys.
+      // The db will automatically fill auto increment keys.
 
       std::stringstream ss;
       std::stringstream vs;
       ss << "INSERT into " << table_name_ << "(";
 
       bool first = true;      
-      auto values = foreach(o) | [&] (auto& m) {
-        return static_if<!sqlite_orm_internals::is_primary_key<decltype(m)>::value>(
+      auto values = foreach(O_WO_PKS()) | [&] (auto& m) {
+        return static_if<!sql_orm_internals::is_primary_key<decltype(m)>::value>(
           [&] () {
             if (!first) { ss << ","; vs << ","; }
             first = false;
             ss << m.symbol().name();
             vs << "?";
-            return m.symbol() = m.value();
+            return m.symbol() = m.symbol().member_access(o);
           },
           [] () {
           });
@@ -115,7 +113,7 @@ namespace sl
 
       bool first = true;      
       auto values = foreach(o) | [&] (auto& m) {
-        return static_if<!sqlite_orm_internals::is_primary_key<decltype(m)>::value>(
+        return static_if<!sql_orm_internals::is_primary_key<decltype(m)>::value>(
           [&] () {
             if (!first) ss << ",";
             first = false;
@@ -146,8 +144,7 @@ namespace sl
       ss << "DELETE from " << table_name_ << " WHERE ";
 
       bool first = true;
-      const PKS& pks = *(PKS*)0;
-      auto values = foreach(pks) | [&] (auto& m) {
+      auto values = foreach(PKS()) | [&] (auto& m) {
         if (!first) ss << " and ";
         first = false;
         ss << m.symbol().name() << " == ? ";
@@ -162,15 +159,15 @@ namespace sl
   };
 
   
-  template <typename O>
-  struct sqlite_orm_middleware
+  template <typename C, typename O>
+  struct sql_orm_middleware
   {
     typedef O object_type;
-    typedef sqlite_orm<O> instance_type;
+    typedef sql_orm<C, O> instance_type;
 
-    sqlite_orm_middleware(const std::string& table_name) : table_name_(table_name) {}
+    sql_orm_middleware(const std::string& table_name) : table_name_(table_name) {}
 
-    void initialize(sqlite_connection& c)
+    void initialize(C& c)
     {
       std::stringstream ss;
       ss << "CREATE TABLE if not exists " <<  table_name_ << " (";
@@ -179,7 +176,7 @@ namespace sl
       foreach(O()) | [&] (auto& m)
       {
         if (!first) ss << ", ";
-        ss << m.symbol().name() << " " << sqlite_type_string(&m.value());
+        ss << m.symbol().name() << " " << c.type_to_string(m.value());
 
         if (m.attributes().has(_primary_key))
           ss << " PRIMARY KEY NOT NULL";
@@ -187,15 +184,14 @@ namespace sl
         first = false;
       };
       ss << ");";
-      // std::cout << ss.str() << std::endl;
       c(ss.str()).exec();
     }
     
-    auto instantiate(sqlite_connection& con) {
-      return sqlite_orm<O>(table_name_, con);
+    auto instantiate(C& con) {
+      return sql_orm<C, O>(table_name_, con);
     };
 
     std::string table_name_;
   };
-  
+
 }

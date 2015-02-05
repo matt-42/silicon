@@ -3,7 +3,6 @@
 #include <map>
 #include <mimosa/http/client-channel.hh>
 #include <iod/json.hh>
-//#include <silicon/mimosa_backend.hh>
 #include <silicon/symbols.hh>
 
 namespace sl
@@ -15,7 +14,12 @@ namespace sl
   {
     static auto run(mimosa::http::ResponseReader::Ptr rr)
     {
-      return D(s::_status = rr->status());
+      std::string body;
+      char buf[1024];
+      int n;
+      while ((n = rr->read(buf, 1024))) { body.append(buf, n); }
+      
+      return D(s::_status = rr->status(), s::_error = body);
     }
   };
 

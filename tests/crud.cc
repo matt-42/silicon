@@ -3,11 +3,11 @@
 
 #include <silicon/api.hh>
 #include <silicon/api_description.hh>
-#include <silicon/mimosa_serve.hh>
-#include <silicon/sqlite.hh>
-#include <silicon/sqlite_orm.hh>
-#include <silicon/crud.hh>
-#include <silicon/client.hh>
+#include <silicon/backends/mimosa_serve.hh>
+#include <silicon/middlewares/sqlite_connection.hh>
+#include <silicon/middlewares/sqlite_orm.hh>
+#include <silicon/sql_crud.hh>
+#include <silicon/clients/client.hh>
 
 typedef decltype(iod::D(@id(@primary_key) = int(),
                         @name = std::string(),
@@ -15,17 +15,16 @@ typedef decltype(iod::D(@id(@primary_key) = int(),
                         @address = std::string()
                    )) User;
 
-
 int main()
 {
   using namespace sl;
 
   auto api = make_api(
     
-    @user = crud<sqlite_orm_middleware<User>>() // Crud for the User object.
+    @user = sql_crud<sqlite_orm_middleware<User>>() // Crud for the User object.
     )
     .bind_middlewares(
-      sqlite_middleware("/tmp/sl_test_crud.sqlite", @synchronous = 1), // sqlite middleware.
+      sqlite_connection_middleware("/tmp/sl_test_crud.sqlite", @synchronous = 1), // sqlite middleware.
       sqlite_orm_middleware<User>("users") // Orm middleware.
       );
 

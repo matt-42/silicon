@@ -136,3 +136,21 @@
 #define IOD_SYMBOL__http_api
     iod_define_symbol(http_api, _http_api)
 #endif
+
+#ifndef IOD_SYMBOL__one_thread_per_connection
+#define IOD_SYMBOL__one_thread_per_connection
+    iod_define_symbol(one_thread_per_connection, _one_thread_per_connection)
+#endif
+#ifndef IOD_SYMBOL__select
+#define IOD_SYMBOL__select
+    iod_define_symbol(select, _select)
+#endif
+#ifndef IOD_SYMBOL__linux_epoll
+#define IOD_SYMBOL__linux_epoll
+    iod_define_symbol(linux_epoll, _linux_epoll)
+#endif
+#ifndef IOD_SYMBOL__nthreads
+#define IOD_SYMBOL__nthreads
+    iod_define_symbol(nthreads, _nthreads)
+#endif
+

@@ -1,8 +1,8 @@
 #include <thread>
-#include <silicon/client.hh>
+#include <silicon/clients/client.hh>
 #include <silicon/api.hh>
 #include <silicon/api_description.hh>
-#include <silicon/mimosa_serve.hh>
+#include <silicon/backends/mimosa_serve.hh>
 
 
 int main()

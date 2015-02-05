@@ -1,5 +1,5 @@
 #include <iostream>
-#include <silicon/mysql.hh>
+#include <silicon/middlewares/mysql_connection.hh>
 
 /* Mysql setup script:
 
@@ -21,7 +21,6 @@ int main()
   {
     auto m = mysql_middleware("localhost", "silicon", "my_silicon", "silicon_test");
     auto c = m.instantiate();
-
     
     auto res = D(@id = int(), @name = std::string(), @age = int());
 

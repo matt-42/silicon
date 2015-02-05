@@ -1,6 +1,6 @@
 #include <silicon/api.hh>
 #include <silicon/remote_api.hh>
-#include <silicon/websocketpp.hh>
+#include <silicon/backends/websocketpp.hh>
 
 using namespace sl;
 

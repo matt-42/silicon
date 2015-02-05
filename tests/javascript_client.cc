@@ -1,7 +1,7 @@
 #include <iostream>
 #include <silicon/api.hh>
-#include <silicon/mimosa_serve.hh>
-#include <silicon/javascript_client.hh>
+#include <silicon/backends/mimosa_serve.hh>
+#include <silicon/clients/javascript_client.hh>
 
 using namespace sl;
 

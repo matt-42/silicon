@@ -1,5 +1,5 @@
 #include <iostream>
-#include <silicon/mhd_serve.hh>
+#include <silicon/backends/mhd_serve.hh>
 #include <silicon/api.hh>
 
 using namespace sl;
@@ -7,7 +7,8 @@ using namespace sl;
 auto hello_api = make_api(
 
   @test = [] () { return D(@message = "hello world."); },
-  @test2(@name) = [] (const auto& p) { return D(@message = "hello " + p.name); }
+  @test2(@name) = [] (const auto& p) { return D(@message = "hello " + p.name); },
+  @test3 = [] () { return "hello world."; }
 
 );
 

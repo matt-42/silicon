@@ -6,7 +6,6 @@
 #include <thread>
 #include <memory>
 #include <cstring>
-#include <boost/lockfree/queue.hpp>
 
 #include <mysql/mysql.h>
 #include <iod/sio.hh>
@@ -18,15 +17,6 @@
 namespace sl
 {
   using namespace iod;
-  // template <typename T>
-  // inline std::string mysql_type_string(T*, std::enable_if_t<std::is_integral<T>::value>* = 0) { return "INTEGER"; }
-  // template <typename T>
-  // inline std::string mysql_type_string(T*, std::enable_if_t<std::is_floating_point<T>::value>* = 0) { return "REAL"; }
-  // inline std::string mysql_type_string(std::string*) { return "TEXT"; }
-  // inline std::string mysql_type_string(blob*) { return "BLOB"; }
-
-  // template <typename T>
-  // inline std::string mysql_type_string(const T*) { return mysql_type_string((T*)0); }
 
   struct mysql_scoped_use_result
   {
@@ -190,7 +180,15 @@ namespace sl
         throw std::runtime_error(std::string("Mysql error: ") + mysql_error(con_));
       return mysql_statement(con_);
     }
-  
+
+
+    template <typename T>
+    inline std::string type_to_string(const T&, std::enable_if_t<std::is_integral<T>::value>* = 0) { return "INT"; }
+    template <typename T>
+    inline std::string type_to_string(const T&, std::enable_if_t<std::is_floating_point<T>::value>* = 0) { return "DOUBLE"; }
+    inline std::string type_to_string(const std::string&) { return "MEDIUMTEXT"; }
+    inline std::string type_to_string(const blob&) { return "BLOB"; }
+    
     MYSQL* con_;
   };
 

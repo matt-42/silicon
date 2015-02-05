@@ -2,8 +2,8 @@
 #include <cstring>
 
 #include <iod/foreach.hh>
-#include <silicon/client_templates/javascript.hh>
-#include <silicon/client_templates/javascript_websocket.hh>
+#include <silicon/clients/templates/javascript.hh>
+#include <silicon/clients/templates/javascript_websocket.hh>
 #include <silicon/api_description.hh>
 
 namespace sl

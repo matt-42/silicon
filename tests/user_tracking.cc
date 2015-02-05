@@ -1,8 +1,8 @@
 #include <thread>
 #include <iostream>
-#include <silicon/mimosa_serve.hh>
+#include <silicon/backends/mimosa_serve.hh>
 #include <silicon/api.hh>
-#include <silicon/client.hh>
+#include <silicon/clients/client.hh>
 
 using namespace sl;
 

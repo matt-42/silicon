@@ -1,7 +1,7 @@
 #include <silicon/api.hh>
 #include <silicon/remote_api.hh>
-#include <silicon/websocketpp.hh>
-#include <silicon/javascript_client.hh>
+#include <silicon/backends/websocketpp.hh>
+#include <silicon/clients/javascript_client.hh>
 
 using namespace sl;
 

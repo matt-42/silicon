@@ -1,6 +1,6 @@
 #include <silicon/api.hh>
-#include <silicon/mhd_serve.hh>
-#include <silicon/sqlite.hh>
+#include <silicon/backends/mhd_serve.hh>
+#include <silicon/middlewares/sqlite_connection.hh>
 
 int main()
 {
@@ -18,7 +18,7 @@ int main()
     }
     )
     .bind_middlewares(
-      sqlite_middleware("db.sqlite") // sqlite middleware.
+      sqlite_connection_middleware("db.sqlite") // sqlite middleware.
       );
 
   sl::mhd_json_serve(api, 12345);

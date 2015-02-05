@@ -2,12 +2,11 @@
 #include <iostream>
 
 #include <silicon/api.hh>
-#include <silicon/mimosa_serve.hh>
-#include <silicon/sqlite.hh>
-#include <silicon/sqlite_session.hh>
-#include <silicon/sqlite_orm.hh>
-#include <silicon/crud.hh>
-#include <silicon/client.hh>
+#include <silicon/backends/mimosa_serve.hh>
+#include <silicon/middlewares/sqlite_connection.hh>
+#include <silicon/middlewares/sqlite_session.hh>
+#include <silicon/middlewares/sqlite_orm.hh>
+#include <silicon/clients/client.hh>
 
 using namespace sl;
 
@@ -63,11 +62,11 @@ struct authenticator
     int count = 0;
     User u;
     // 1/ check if the user is valid (user_is_valid function).
-    if (con("SELECT * from users where name = ?", name) >> u)
+    if (con("SELECT * from users where name == \"" + name + "\"") >> u)
     {
       // 2/ store data in the session (session.store(user)).
       sess.user_id = u.id;
-      sess.save();
+      sess._save();
       return true;
     }
     else
@@ -102,12 +101,12 @@ int main()
 
     @logout = [] (session& sess)
     {
-      sess.destroy();
+      sess._destroy();
     }
 
     )
     .bind_middlewares(
-      sqlite_middleware("/tmp/sl_test_authentication.sqlite"), // sqlite middleware.
+      sqlite_connection_middleware("/tmp/sl_test_authentication.sqlite"), // sqlite middleware.
       sqlite_orm_middleware<User>("users"), // Orm middleware for users.
       sqlite_session_middleware<session_data>("sessions"),
       mimosa_session_cookie_middleware()
@@ -120,7 +119,7 @@ int main()
   
   { // Setup database for testing.
     auto orm = api.template instantiate_middleware<sqlite_orm<User>>();
-    orm.insert(User(0, "John Doe"));
+    std::cout << orm.insert(User(0, "John Doe")) << std::endl;
   }
 
   // Test.

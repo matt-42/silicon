@@ -1,8 +1,8 @@
 #include <thread>
 #include <iostream>
-#include <silicon/mhd_serve.hh>
+#include <silicon/backends/mhd_serve.hh>
 #include <silicon/api.hh>
-#include <silicon/client.hh>
+#include <silicon/clients/client.hh>
 
 using namespace sl;
 
