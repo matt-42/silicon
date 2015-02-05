@@ -14,9 +14,9 @@ client sessions.
 
 Given D the object representing the session of one user:
 
- - mysql_session<D>: Store the session data in a mysql table.
- - sqlite_session<D>: Store the session data in a sqlite table.
- - hashmap_session<D>: Store the session data in an in-memory hash map.
+ - ```mysql_session<D>```: Store the session data in a mysql table.
+ - ```sqlite_session<D>```: Store the session data in a sqlite table.
+ - ```hashmap_session<D>```: Store the session data in an in-memory hash map.
 
 ## SQL Session
 
@@ -33,14 +33,20 @@ int main()
   auto api = make_api(
     _set_id(_id = int()) = [] (auto p, sqlite_session<session_data>& sess)
     {
-      sess.data().user_id = p.id;
-      sess.save();
+      sess.user_id = p.id;
+      sess._save();
     },
 
     _get_my_id() = [] (sqlite_session<session_data>& sess)
     {
-      return D(_id = sess.data().user_id;
-    }
+      return D(_id = sess.user_id;
+    },
+
+    _logout = [] (sqlite_session<session_data>& sess)
+    {
+      sess._destroy();
+    },
+
 
     )
     .bind_middlewares(
