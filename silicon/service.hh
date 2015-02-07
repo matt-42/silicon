@@ -4,6 +4,7 @@
 #include <iod/foreach.hh>
 #include <silicon/api.hh>
 #include <silicon/error.hh>
+#include <silicon/di_middlewares.hh>
 #include <iod/di.hh>
 
 namespace sl
@@ -35,12 +36,6 @@ namespace sl
     
     ws_handler(F f) : f_(f) {}
 
-    template <typename... M2, typename... A2>
-    auto unroll_middlewares_and_call(F f_, std::tuple<M2...> middlewares, A2&&... args)
-    {
-      return di_call(f_, tuple_get_by_type<M2>(middlewares)..., args...);
-    }
-
     virtual void operator()(M& middlewares, S& s,
                             request_type& request, response_type& response, ARGS&... args)
     {
@@ -51,11 +46,11 @@ namespace sl
       // Call the procedure and serialize its result.
       typedef iod::callable_arguments_tuple_t<F> T;
       static_if<std::is_same<callable_return_type_t<F>, void>::value>(
-        [&, this] (auto& response) {
-          this->unroll_middlewares_and_call(f_, middlewares, &request, &response, arguments, args...);
+        [&, this] (auto& response) { // If the procedure does not return a value just call it.
+          di_middlewares_call(f_, middlewares, &request, &response, arguments, args...);
         },
-        [&, this] (auto& response) {
-          s.serialize(response, this->unroll_middlewares_and_call(f_, middlewares, &request, &response, arguments, args...));
+        [&, this] (auto& response) { // If the procedure returns a value, serialize it.
+          s.serialize(response, di_middlewares_call(f_, middlewares, &request, &response, arguments, args...));
         }, response);
     }
     

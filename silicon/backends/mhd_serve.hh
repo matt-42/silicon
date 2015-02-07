@@ -179,9 +179,6 @@ namespace sl
   template <typename A, typename... O>
   void mhd_json_serve(const A& api, int port, O&&... opts)
   {
-    auto api2 = api.bind_middlewares(mhd_session_cookie());
-    auto s = service<mhd_json_service_utils, decltype(api2)>(api2);
-    typedef decltype(s) S;
 
     int flags = MHD_USE_SELECT_INTERNALLY;
     auto options = D(opts...);
@@ -194,6 +191,10 @@ namespace sl
 
     int thread_pool_size = options.get(_nthreads, get_nprocs());
 
+    auto api2 = api.bind_middlewares(mhd_session_cookie());
+    auto s = service<mhd_json_service_utils, decltype(api2)>(api2);
+    typedef decltype(s) S;
+      
     struct MHD_Daemon * d;
 
     if (flags != MHD_USE_THREAD_PER_CONNECTION)

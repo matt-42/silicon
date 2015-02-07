@@ -153,6 +153,38 @@ namespace sl
     };
   }
 
+  template <typename P, typename... PA, typename... GA>
+  auto apply_global_middleware2(P proc, std::tuple<PA...>*, std::tuple<GA...>*)
+  {
+    return [=] (PA&&... pa, GA&&... ga)
+    {
+      return proc(pa...);
+    };
+  }
+
+  template <typename P, typename F>
+  auto apply_global_middleware(P proc, F global)
+  {
+    return apply_global_middleware2(proc, (callable_arguments_tuple_t<P>*)0,
+                                    (callable_arguments_tuple_t<F>*)0);
+  }
+
+  template <typename P, typename F>
+  auto apply_global_middleware_rec(P procedures, F global)
+  {
+    return foreach(procedures) | [&] (auto m)
+    {
+      return static_if<is_sio<decltype(m.value())>::value>(
+        [&] (auto m) { // If sio, recursion.
+          return m.symbol() = apply_global_middleware_rec(m.value(), global);
+        },
+        [&] (auto m) { // Else, register the procedure.
+          return m.symbol() = make_procedure(0, m.symbol(),
+                                             apply_global_middleware(m.value().function(), global));
+        }, m);
+    };
+  }
+
   template <typename P, typename M>
   struct api
   {
@@ -182,6 +214,13 @@ namespace sl
       return api<P, decltype(nm)>(procedures_, nm);
     }
 
+    template <typename F>
+    auto global_middlewares(F global) const
+    {
+      auto new_procs = apply_global_middleware_rec(procedures_, global);
+      return api<decltype(new_procs), M>(new_procs, middlewares_);
+    }
+    
     template <typename N>
     struct has_initialize_method
     {
@@ -213,7 +252,7 @@ namespace sl
           [] (auto& m) {}, m);
       };
     }
-    
+
     P procedures_;
     M middlewares_;
   };

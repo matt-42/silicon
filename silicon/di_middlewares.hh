@@ -1,3 +1,5 @@
+#pragma once
+
 #include <iod/di.hh>
 #include <iod/tuple_utils.hh>
 
