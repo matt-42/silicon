@@ -46,7 +46,7 @@ auto api = make_api(
 )
 .bind_middlewares(
   // Bind the sqlite middleware and specify the path to the db file.
-  sqlite_middleware("db.sqlite") // sqlite middleware.
+  sqlite_connection_middleware("db.sqlite") // sqlite middleware.
 );
 ```
 
