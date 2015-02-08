@@ -166,7 +166,7 @@ private:
 
 auto hello_api = make_api(
 
-  @test = [] () { return D(@message = "hello world."); }
+  _test = [] () { return D(_message = "hello world."); }
 
   ).global_middlewares([] (request_logger&) {});
 
