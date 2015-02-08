@@ -42,16 +42,15 @@ Features
 
     C++ has no overhead such as other web programming languages: No
     interpreter, no garbage collection, no virtual machine and no just
-    in time compiler. Plus, the static paradigm of the framework
-    enable the compiler to better optimize the code. Finally, Silicon
-    provides several high performance C/C++ server libraries
-    leveraging the processing power of multi-cores processors.
+    in time compiler. Finally, Silicon provides several high
+    performance C/C++ server libraries leveraging the processing power
+    of multi-cores processors.
 
-  - __Type safe__
+  - __A static paradigm for more safety and performances__
 
-    Thanks to the static programming paradigm of the framework, lots
-    of the common errors will be detected and reported by the
-    compiler.
+    Silicon flexibility entirely runs at compile time. It does not use
+    virtual classes or dynamic inheritance. This allows the compiler to
+    detect more bugs and to generate faster code.
 
   - __Automatic dependency injection and middlewares__
 
