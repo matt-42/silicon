@@ -11,7 +11,7 @@ int main()
     @get_user(@id = int()) = [] (auto p, sqlite_connection& c)
     {
       auto res = D(@name = std::string(), @age = int());
-      if (!(c("SELECT name, age from users where id = ?", p.id) >> res))
+      if (!(c("SELECT name, age from users where id = ?")(p.id) >> res))
         throw error::not_found("User with id ", p.id, " not found.");
 
       return res;

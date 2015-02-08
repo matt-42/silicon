@@ -2,17 +2,17 @@
 
 #include <memory>
 #include <cstring>
+#include <unordered_map>
 
 #include <sqlite3.h>
 #include <iod/sio.hh>
 #include <iod/callable_traits.hh>
 #include <silicon/symbols.hh>
 #include <silicon/blob.hh>
+#include <silicon/null.hh>
 
 namespace sl
 {
-
-  static const struct null_t { null_t() {} } null;
   
   void free_sqlite3_statement(void* s)
   {
@@ -22,6 +22,8 @@ namespace sl
   struct sqlite_statement
   {
     typedef std::shared_ptr<sqlite3_stmt> stmt_sptr;
+
+    sqlite_statement() {}
     
     sqlite_statement(sqlite3* db, sqlite3_stmt* s) : db_(db), stmt_(s),
                                    stmt_sptr_(stmt_sptr(s, free_sqlite3_statement))
@@ -56,9 +58,7 @@ namespace sl
     template <typename... A>
     int operator>>(iod::sio<A...>& o) {
 
-      if (sqlite3_step(stmt_) != SQLITE_ROW)
-        return false;
-
+      if (empty()) return false;
       row_to_sio(o);
       return true;
     }
@@ -66,40 +66,50 @@ namespace sl
     template <typename T>
     int operator>>(T& o) {
 
-      if (sqlite3_step(stmt_) != SQLITE_ROW)
-        return false;
-
+      if (empty()) return false;
       this->read_column(0, o);
       return true;
     }
-    
-    int exec() {
-      int ret = sqlite3_step(stmt_);
-      if (ret != SQLITE_ROW and ret != SQLITE_DONE)
-        throw std::runtime_error(sqlite3_errstr(ret));
 
-      return ret == SQLITE_ROW or ret == SQLITE_DONE;
-    }
-
-    int last_insert_rowid()
+    int last_insert_id()
     {
       return sqlite3_last_insert_rowid(db_);
     }
 
-    int exists() {
-      return sqlite3_step(stmt_) == SQLITE_ROW;
+    int empty() {
+      return last_step_ret_ != SQLITE_ROW;
+    }
+
+    template <typename... T>
+    auto& operator()(T&&... args)
+    {
+      int i = 1;
+      foreach(std::forward_as_tuple(args...)) | [&] (auto& m)
+      {
+        int err;
+        if ((err = this->bind(stmt_, i, m)) != SQLITE_OK)
+          throw std::runtime_error(std::string("Sqlite error during binding: ") + sqlite3_errmsg(db_));
+        i++;
+      };
+
+      last_step_ret_ = sqlite3_step(stmt_);
+      if (last_step_ret_ != SQLITE_ROW and last_step_ret_ != SQLITE_DONE)
+        throw std::runtime_error(sqlite3_errstr(last_step_ret_));
+
+      return *this;
     }
 
     template <typename F>
     void operator|(F f)
     {
-      while (sqlite3_step(stmt_) == SQLITE_ROW)
+      while (last_step_ret_ == SQLITE_ROW)
       {
         typedef callable_arguments_tuple_t<F> tp;
         typedef std::remove_reference_t<std::tuple_element_t<0, tp>> T;
         T o;
         row_to_sio(o);
         f(o);
+        last_step_ret_ = sqlite3_step(stmt_);
       }
     }
 
@@ -116,12 +126,6 @@ namespace sl
       sqlite_statement* _this;
     };
 
-    template <typename... A>
-    auto operator()(A&&... typeinfo)
-    {
-      return typed_iterator<decltype(iod::D(typeinfo...))>{this};
-    }
-
     void read_column(int pos, int& v) { v = sqlite3_column_int(stmt_, pos); }
     void read_column(int pos, float& v) { v = sqlite3_column_double(stmt_, pos); }
     void read_column(int pos, double& v) { v = sqlite3_column_double(stmt_, pos); }
@@ -132,11 +136,19 @@ namespace sl
       v = std::move(std::string((const char*) str, n));
     }
 
+    int bind(sqlite3_stmt* stmt, int pos, double d) const { return sqlite3_bind_double(stmt, pos, d); }
+    int bind(sqlite3_stmt* stmt, int pos, int d) const { return sqlite3_bind_int(stmt, pos, d); }
+    void bind(sqlite3_stmt* stmt, int pos, null_t) { sqlite3_bind_null(stmt, pos); }
+    int bind(sqlite3_stmt* stmt, int pos, const std::string& s) const {
+      return sqlite3_bind_text(stmt, pos, s.data(), s.size(), nullptr); }
+    int bind(sqlite3_stmt* stmt, int pos, const blob& b) const {
+      return sqlite3_bind_blob(stmt, pos, b.data(), b.size(), nullptr); }
+    
     sqlite3* db_;
     sqlite3_stmt* stmt_;
     stmt_sptr stmt_sptr_;
+    int last_step_ret_;
   };
-
 
   void free_sqlite3_db(void* db)
   {
@@ -160,15 +172,6 @@ namespace sl
       db_sptr_ = db_sptr(db_, free_sqlite3_db);
     }
 
-
-    int bind(sqlite3_stmt* stmt, int pos, double d) const { return sqlite3_bind_double(stmt, pos, d); }
-    int bind(sqlite3_stmt* stmt, int pos, int d) const { return sqlite3_bind_int(stmt, pos, d); }
-    void bind(sqlite3_stmt* stmt, int pos, null_t) { sqlite3_bind_null(stmt, pos); }
-    int bind(sqlite3_stmt* stmt, int pos, const std::string& s) const {
-      return sqlite3_bind_text(stmt, pos, s.data(), s.size(), nullptr); }
-    int bind(sqlite3_stmt* stmt, int pos, const blob& b) const {
-      return sqlite3_bind_blob(stmt, pos, b.data(), b.size(), nullptr); }
-
     template <typename E>
     inline void format_error(E&) const {}
 
@@ -178,31 +181,20 @@ namespace sl
       err << a;
       format_error(err, args...);
     }
-
-    int last_insert_rowid()
-    {
-      return sqlite3_last_insert_rowid(db_);
-    }
     
-    template <typename... A>
-    sqlite_statement operator()(const std::string& req, A&&... args) const
+    sqlite_statement& operator()(const std::string& req)
     {
-      sqlite3_stmt* stmt;
+      auto it = stm_cache_.find(req);
+      if (it != stm_cache_.end()) return it->second;
 
+      sqlite3_stmt* stmt;
+      
       int err = sqlite3_prepare_v2(db_, req.c_str(), req.size(), &stmt, nullptr);
       if (err != SQLITE_OK)
         throw std::runtime_error(std::string("Sqlite error during prepare: ") + sqlite3_errmsg(db_) + " statement was: " + req);
-  
-      int i = 1;
-      foreach(std::forward_as_tuple(args...)) | [&] (auto& m)
-      {
-        int err;
-        if ((err = this->bind(stmt, i, m)) != SQLITE_OK)
-          throw std::runtime_error(std::string("Sqlite error during binding: ") + sqlite3_errmsg(db_));
-        i++;
-      };
 
-      return sqlite_statement(db_, stmt);
+      stm_cache_[req] = sqlite_statement(db_, stmt);
+      return stm_cache_[req];
     }
 
 
@@ -215,6 +207,7 @@ namespace sl
     
     sqlite3* db_;
     db_sptr db_sptr_;
+    std::unordered_map<std::string, sqlite_statement> stm_cache_;
   };
 
   struct sqlite_database
@@ -236,7 +229,7 @@ namespace sl
       {
         std::stringstream ss;
         ss << "PRAGMA synchronous=" << options.get(_synchronous, 2);
-        con_(ss.str()).exec();
+        con_(ss.str())();
       }
     }
 

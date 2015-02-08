@@ -29,8 +29,7 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/mimosa/
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib
                 ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib64
                 $ENV{HOME}/local/lib)
-add_definitions(-O3 -march=native -ftemplate-depth=512 -DNDEBUG)
-add_definitions(-std=c++14)
+add_definitions(-std=c++14  -ftemplate-depth=512 -O3 -DNDEBUG)
 
 set(CPPNET_LIBS
     ${Boost_LIBRARIES}

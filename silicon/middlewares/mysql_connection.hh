@@ -3,15 +3,18 @@
 #include <mutex>
 #include <sstream>
 #include <map>
+#include <unordered_map>
 #include <thread>
 #include <memory>
 #include <cstring>
 
 #include <mysql/mysql.h>
 #include <iod/sio.hh>
+#include <iod/tuple_utils.hh>
 #include <iod/callable_traits.hh>
 #include <silicon/symbols.hh>
 #include <silicon/blob.hh>
+#include <silicon/null.hh>
 #include <silicon/error.hh>
 
 namespace sl
@@ -33,125 +36,285 @@ namespace sl
     MYSQL_RES* res_;
   };
 
+  auto type_to_mysql_statement_buffer_type(const char&)          { return MYSQL_TYPE_TINY;     }
+  auto type_to_mysql_statement_buffer_type(const short int&)     { return MYSQL_TYPE_SHORT;    }
+  auto type_to_mysql_statement_buffer_type(const int&)           { return MYSQL_TYPE_LONG;     }
+  auto type_to_mysql_statement_buffer_type(const long long int&) { return MYSQL_TYPE_LONGLONG; }
+  auto type_to_mysql_statement_buffer_type(const float&)         { return MYSQL_TYPE_FLOAT;    }
+  auto type_to_mysql_statement_buffer_type(const double&)        { return MYSQL_TYPE_DOUBLE;   }
+  auto type_to_mysql_statement_buffer_type(const blob&)          { return MYSQL_TYPE_BLOB;     }
+  auto type_to_mysql_statement_buffer_type(const char*)          { return MYSQL_TYPE_STRING;   }
+
+  auto type_to_mysql_statement_buffer_type(const unsigned char&)          { return MYSQL_TYPE_TINY;     }
+  auto type_to_mysql_statement_buffer_type(const unsigned short int&)     { return MYSQL_TYPE_SHORT;    }
+  auto type_to_mysql_statement_buffer_type(const unsigned int&)           { return MYSQL_TYPE_LONG;     }
+  auto type_to_mysql_statement_buffer_type(const unsigned long long int&) { return MYSQL_TYPE_LONGLONG; }
+
   struct mysql_statement
   {
-    mysql_statement(MYSQL* c) : con_(c)
+    mysql_statement() : metadata_(nullptr), stmt_(nullptr) {}
+
+    mysql_statement(MYSQL_STMT* s) : stmt_(s)
     {
+      metadata_ = mysql_stmt_result_metadata(stmt_);
+
+      metadata_sptr_ = std::shared_ptr<MYSQL_RES>(metadata_, mysql_free_result);
+      stmt_sptr_ = std::shared_ptr<MYSQL_STMT>(stmt_, mysql_stmt_close);
+
+      if (!metadata_)
+        throw std::runtime_error(std::string("mysql_stmt_result_metadata error: ") + mysql_stmt_error(stmt_));
+
+      fields_ = mysql_fetch_fields(metadata_);
+      num_fields_ = mysql_num_fields(metadata_);
     }
 
-    template <typename... A>
-    void row_to_sio(iod::sio<A...>& o,
-                    MYSQL_ROW row,
-                    MYSQL_FIELD* fields,
-                    unsigned long* lengths,
-                    int num_fields)
+    template <typename... T>
+    auto& operator()(T&&... args)
     {
-      int filled[sizeof...(A)];
-      for (unsigned i = 0; i < sizeof...(A); i++) filled[i] = 0;
+      MYSQL_BIND bind[sizeof...(T)];
+      memset(bind, 0, sizeof(bind));
 
       int i = 0;
-      for (int i = 0; i < num_fields; i++)
+      foreach(std::forward_as_tuple(args...)) | [&] (auto& m)
       {
-        const char* cname = fields[i].name;
-        bool found = false;
-        int j = 0;
-        foreach(o) | [&] (auto& m)
-        {
-          if (!found and !filled[j] and !strcmp(cname, m.symbol().name()))
-          {
-            this->read_column(row[i], lengths[i], m.value());
-            found = true;
-            filled[j] = 1;
-          }
-          j++;
-        };
-      }
+        this->bind(bind[i], m);
+        i++;
+      };
+
+      if (mysql_stmt_bind_param(stmt_, bind) != 0)
+        throw std::runtime_error(std::string("mysql_stmt_bind_param error: ") + mysql_stmt_error(stmt_));
+
+      if (mysql_stmt_execute(stmt_) != 0)
+        throw std::runtime_error(std::string("mysql_stmt_execute error: ") + mysql_stmt_error(stmt_));
+        
+      return *this;
     }
-  
-    template <typename... A>
-    int operator>>(iod::sio<A...>& o) {
 
-      mysql_scoped_use_result res(con_);
-      MYSQL_FIELD* fields = mysql_fetch_fields(res);
-      int num_fields = mysql_num_fields(res);
-      MYSQL_ROW row = mysql_fetch_row(res);
+    int affected_rows()
+    {
+      return mysql_stmt_affected_rows(stmt_);
+    }
 
-      if (!row) return 0;
+    template <typename V>
+    void bind(MYSQL_BIND& b, V& v)
+    {
+      b.buffer = const_cast<std::remove_const_t<V>*>(&v);
+      b.buffer_type = type_to_mysql_statement_buffer_type(v);
+      b.is_unsigned = std::is_unsigned<V>::value;
+    }
 
-      row_to_sio(o, row, fields, mysql_fetch_lengths(res), num_fields);
-
-      return 1;
+    void bind(MYSQL_BIND& b, std::string& s)
+    {
+      b.buffer = &s[0];
+      b.buffer_type = MYSQL_TYPE_STRING;
+      b.buffer_length = s.size();      
+    }
+    void bind(MYSQL_BIND& b, const std::string& s) { bind(b, *const_cast<std::string*>(&s)); }
+    
+    void bind(MYSQL_BIND& b, char* s)
+    {
+      b.buffer = s;
+      b.buffer_type = MYSQL_TYPE_STRING;
+      b.buffer_length = strlen(s);
+    }
+    void bind(MYSQL_BIND& b, const char* s) { bind(b, const_cast<char*>(s)); }
+    
+    void bind(MYSQL_BIND& b, blob& s)
+    {
+      b.buffer = &s[0];
+      b.buffer_type = MYSQL_TYPE_BLOB;
+      b.buffer_length = s.size();      
+    }
+    void bind(MYSQL_BIND& b, const blob& s) { bind(b, *const_cast<blob*>(&s)); }
+    
+    void bind(MYSQL_BIND& b, null_t& n)
+    {
+      b.buffer_type = MYSQL_TYPE_NULL;
     }
 
     template <typename T>
-    int operator>>(T& o)
+    void fetch_column(MYSQL_BIND*, unsigned long, T&, int) {}
+    void fetch_column(MYSQL_BIND* b, unsigned long real_length, std::string& v, int i)
     {
-      mysql_scoped_use_result res(con_);
-      MYSQL_FIELD* fields = mysql_fetch_fields(res);
-      int num_fields = mysql_num_fields(res);
-      MYSQL_ROW row = mysql_fetch_row(res);
-
-      if (!row || num_fields == 0) return 0;
-
-      this->read_column(row[0], mysql_fetch_lengths(res)[0], o);
-
-      return 1;
+      v.resize(real_length);
+      b[i].buffer_length = real_length;
+      b[i].length = nullptr;
+      b[i].buffer = &v[0];
+      if (mysql_stmt_fetch_column(stmt_, b + i, i, 0) != 0)
+        throw std::runtime_error(std::string("mysql_stmt_fetch_column error: ") + mysql_stmt_error(stmt_));
     }
 
-    int last_insert_rowid()
+    template <typename T>
+    void bind_output(MYSQL_BIND& b, unsigned long* real_length, T& v) { bind(b, v); }
+    void bind_output(MYSQL_BIND& b, unsigned long* real_length, std::string& v)
     {
-      return mysql_insert_id(con_);
+      b.buffer_type = MYSQL_TYPE_STRING;
+      b.buffer_length = 0;
+      b.buffer = 0;
+      b.length = real_length;
     }
 
-    bool exists() {
-      MYSQL_RES* res = mysql_use_result(con_);
-      bool e = mysql_fetch_row(res) != 0;
-      mysql_free_result(res);
-      return e;
+    template <typename A>
+    static constexpr int number_of_fields(const A&) { return 1; }
+    template <typename... A>
+    static constexpr int number_of_fields(const sio<A...>&) { return sizeof...(A); }
+    template <typename... A>
+    static constexpr int number_of_fields(const std::tuple<A...>&) { return sizeof...(A); }
+
+    template <typename T>
+    int operator>>(T&& o) {
+
+      unsigned long real_lengths[number_of_fields(o)];
+      MYSQL_BIND bind[number_of_fields(o)];
+      memset(bind, 0, sizeof(bind));
+
+      prepare_fetch(bind, real_lengths, o);
+      int f = fetch();
+      int res = 1;
+      if (f == MYSQL_NO_DATA)
+        res = 0;
+      else
+        finalize_fetch(bind, real_lengths, o);
+
+      mysql_stmt_free_result(stmt_);
+      return res;
     }
 
     template <typename F>
     void operator|(F f)
     {
-      mysql_scoped_use_result res(con_);
-      MYSQL_ROW row;
-      MYSQL_FIELD* fields = mysql_fetch_fields(res);
-      int num_fields = mysql_num_fields(res);
-      while ((row = mysql_fetch_row(res)))
-      {
-        typedef callable_arguments_tuple_t<F> tp;
-        typedef std::remove_reference_t<std::tuple_element_t<0, tp>> T;
-        T o;
-        row_to_sio(o, row, fields, mysql_fetch_lengths(res), num_fields);
-        f(o);
-      }
+      typedef std::remove_reference_t<callable_arguments_tuple_t<F>> tp;
+      static_if<std::tuple_size<tp>::value == 1>(
+        [&, this] (auto* tp_) {
+          typedef std::remove_pointer_t<decltype(tp_)> tp2;
+          typedef std::remove_reference_t<std::tuple_element_t<0, tp2>> T;
+          T o;
+
+          unsigned long real_lengths[number_of_fields(T())];
+          MYSQL_BIND bind[number_of_fields(T())];
+          memset(bind, 0, sizeof(bind));
+      
+          prepare_fetch(bind, real_lengths, o);
+      
+          while (fetch() != MYSQL_NO_DATA)
+          {
+            finalize_fetch(bind, real_lengths, o);
+            f(o);
+          }
+          mysql_stmt_free_result(stmt_);
+        },
+
+        [&, this] (auto* tp_) {
+          tuple_remove_references_and_const_t<std::remove_pointer_t<decltype(tp_)>> o;
+
+          unsigned long real_lengths[std::tuple_size<tp>::value];
+          MYSQL_BIND bind[std::tuple_size<tp>::value];
+          memset(bind, 0, sizeof(bind));
+      
+          prepare_fetch(bind, real_lengths, o);
+      
+          while (fetch() != MYSQL_NO_DATA)
+          {
+            finalize_fetch(bind, real_lengths, o);
+            apply(o, f);
+          }
+          mysql_stmt_free_result(stmt_);
+        }, (tp*) 0
+        
+        );
     }
 
-    template <typename V>
-    void append_to(V& v)
+
+    template <typename A>
+    void prepare_fetch(MYSQL_BIND* bind, unsigned long* real_lengths, A& o)
     {
-      (*this) | [&v] (typename V::value_type& o) { v.push_back(o); };
+      if (num_fields_ != 1)
+        throw std::runtime_error("mysql_statement error: The number of column in the result set shoud be 1. Use std::tuple or iod::sio to fetch several columns or modify the request so that it returns a set of 1 column.");
+
+      this->bind_output(bind[0], real_lengths, o);
+      mysql_stmt_bind_result(stmt_, bind);
+    }
+    
+    template <typename... A>
+    void prepare_fetch(MYSQL_BIND* bind, unsigned long* real_lengths, sio<A...>& o)
+    {
+      if (num_fields_ != sizeof...(A))
+        throw std::runtime_error("mysql_statement error: The number of column in the result set does not match the number of attributes of the object to bind.");
+      
+      foreach(o) | [&] (auto& m) {
+        // Find m.symbol().name() position.
+        for (int i = 0; i < num_fields_; i++)
+          if (!strcmp(fields_[i].name, m.symbol().name()))
+            // bind the column.
+            this->bind_output(bind[i], real_lengths + i, m.value());
+      };
+      mysql_stmt_bind_result(stmt_, bind);
     }
 
-    void read_column(const char* col, unsigned long len, int& v) {
-      v = 0;
-      for (int i = 0; i <= 9  and i < len; i++)
-        v = v * 10 + col[i] - '0';
+    template <typename... A>
+    void prepare_fetch(MYSQL_BIND* bind, unsigned long* real_lengths, std::tuple<A...>& o)
+    {
+      if (num_fields_ != sizeof...(A))
+        throw std::runtime_error("mysql_statement error: The number of column in the result set does not match the number of attributes of the tuple to bind.");
+
+      int i = 0;
+      foreach(o) | [&] (auto& m) {
+        this->bind_output(bind[i], real_lengths + i, m);
+        i++;
+      };
+
+      mysql_stmt_bind_result(stmt_, bind);
+    }
+    
+    template <typename... A>
+    void finalize_fetch(MYSQL_BIND* bind, unsigned long* real_lengths, sio<A...>& o)
+    {
+      foreach(o) | [&] (auto& m) {
+        for (int i = 0; i < num_fields_; i++)
+          if (!strcmp(fields_[i].name, m.symbol().name()))
+            this->fetch_column(bind, real_lengths[i], m.value(), i);
+      };      
     }
 
-    template <typename T>
-    void read_column(const char* col, unsigned long len, T& v) {
-      std::istringstream ss(std::string(col, len));
-      ss >> v;
-      if (!ss.good())
-        throw std::runtime_error("Mysql read column: Could not parse the mysql result.");
+    template <typename... A>
+    void finalize_fetch(MYSQL_BIND* bind, unsigned long* real_lengths, std::tuple<A...>& o)
+    {
+      int i = 0;
+      foreach(o) | [&] (auto& m) {
+        this->fetch_column(bind, real_lengths[i], m, i);
+        i++;
+      };
     }
 
-    void read_column(const char* col, unsigned long len, std::string& v) {
-      v = std::string(col, len);
+    template <typename A>
+    void finalize_fetch(MYSQL_BIND* bind, unsigned long* real_lengths, A& o)
+    {
+      this->fetch_column(bind, real_lengths[0], o, 0);
+    }
+    
+    int fetch()
+    {
+      int f = mysql_stmt_fetch(stmt_);
+      if (f == 1)
+        throw std::runtime_error(std::string("mysql_stmt_fetch error: ") + mysql_stmt_error(stmt_));
+      return f;
+    }
+   
+    int last_insert_id()
+    {
+      return mysql_stmt_insert_id(stmt_);
     }
 
-    MYSQL* con_;
+    bool empty() {
+      return mysql_stmt_fetch(stmt_) == MYSQL_NO_DATA;
+    }
+
+    MYSQL_STMT* stmt_;
+    std::shared_ptr<MYSQL_STMT> stmt_sptr_;
+    int num_fields_;
+    MYSQL_RES* metadata_;
+    std::shared_ptr<MYSQL_RES> metadata_sptr_;
+    MYSQL_FIELD* fields_;
   };
 
   struct mysql_connection
@@ -166,21 +329,21 @@ namespace sl
       return mysql_insert_id(con_);
     }
     
-    template <typename... A>
-    mysql_statement operator()(A&&... args) const
+    mysql_statement& operator()(std::string rq)
     {
-      std::stringstream ss;
-  
-      foreach(std::forward_as_tuple(args...)) | [&] (auto& m)
-      {
-        ss << m;
-      };
+      auto it = stm_cache_.find(rq);
+      if (it != stm_cache_.end()) return it->second;
 
-      if (mysql_real_query(con_, ss.str().c_str(), ss.str().size()))
-        throw std::runtime_error(std::string("Mysql error: ") + mysql_error(con_));
-      return mysql_statement(con_);
+      MYSQL_STMT* stmt = mysql_stmt_init(con_);
+      if (!stmt)
+        throw std::runtime_error(std::string("mysql_stmt_init error: ") + mysql_error(con_));
+
+      if (mysql_stmt_prepare(stmt, rq.data(), rq.size()))
+        throw std::runtime_error(std::string("mysql_stmt_prepare error: ") + mysql_error(con_));
+
+      stm_cache_[rq] = mysql_statement(stmt);
+      return stm_cache_[rq];
     }
-
 
     template <typename T>
     inline std::string type_to_string(const T&, std::enable_if_t<std::is_integral<T>::value>* = 0) { return "INT"; }
@@ -188,7 +351,8 @@ namespace sl
     inline std::string type_to_string(const T&, std::enable_if_t<std::is_floating_point<T>::value>* = 0) { return "DOUBLE"; }
     inline std::string type_to_string(const std::string&) { return "MEDIUMTEXT"; }
     inline std::string type_to_string(const blob&) { return "BLOB"; }
-    
+
+    std::unordered_map<std::string, mysql_statement> stm_cache_;
     MYSQL* con_;
   };
 

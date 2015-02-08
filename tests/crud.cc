@@ -50,12 +50,12 @@ int main()
 
   // Get by id.
   auto get_r = c.user.get_by_id(id);
-  assert(get_r.status == 200);
   std::cout << json_encode(get_r) << std::endl;;
+  assert(get_r.status == 200);
 
   auto get_r2 = c.user.get_by_id(42);
-  assert(get_r2.status == 404);
   std::cout << json_encode(get_r2) << std::endl;;
+  assert(get_r2.status == 404);
 
   // Update
   auto update_r = c.user.update(id, "john", 42, "Canada");

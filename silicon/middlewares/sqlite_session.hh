@@ -18,10 +18,10 @@ namespace sl
     {
       // Get and decode the session data
       auto sio = T::sio_info();
-      if ((con_("SELECT * from " + table_name_ + " WHERE key = ?", key) >> sio))
+      if ((con_("SELECT * from " + table_name_ + " WHERE key = ?")(key) >> sio))
         foreach(sio) | [this] (auto& m) { m.symbol().member_access(*this) = m.value(); };
       else
-        con_("INSERT into " + table_name_ + " (key) VALUES (?)", key).exec();
+        con_("INSERT into " + table_name_ + " (key) VALUES (?)")(key);
     }
 
     data_type& data() { return *static_cast<data_type*>(this); }
@@ -44,12 +44,13 @@ namespace sl
         return m.symbol() = m.symbol().member_access(this->data());
       };
 
-      apply(ss.str(), values, con_).exec();
+      auto rq = con_(ss.str());
+      apply(values, rq);
     };
 
     void _destroy()
     {
-      con_("DELETE from  " + table_name_ + " WHERE key = ?", key_).exec();
+      con_("DELETE from  " + table_name_ + " WHERE key = ?")(key_);
     }
 
     //private:
@@ -81,7 +82,7 @@ namespace sl
         first = false;
       };
       ss << ");";
-      c(ss.str()).exec();
+      c(ss.str())();
     }
 
     typedef sqlite_session<D> session_type;

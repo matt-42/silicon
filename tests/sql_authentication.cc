@@ -62,7 +62,7 @@ struct authenticator
     int count = 0;
     User u;
     // 1/ check if the user is valid (user_is_valid function).
-    if (con("SELECT * from users where name == \"" + name + "\"") >> u)
+    if (con("SELECT * from users where name == ?")(name) >> u)
     {
       // 2/ store data in the session (session.store(user)).
       sess.user_id = u.id;

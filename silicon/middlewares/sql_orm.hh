@@ -67,21 +67,20 @@ namespace sl
 
     int find_by_id(int id, O& o)
     {
-      return con_("SELECT * from " + table_name_ + " where id == ?", id) >> o;
+      return con_("SELECT * from " + table_name_ + " where id == ?")(id) >> o;
     }
 
-    template <typename... T>
-    auto select_where(T&&... t)
-    {
-      return con_("SELECT * from " + table_name_ + " where ", t...);
-    }
+    // template <typename... T>
+    // auto select_where(T&&... t)
+    // {
+    //   return con_("SELECT * from " + table_name_ + " where ", t...);
+    // }
 
     template <typename N>
     int insert(const N& o)
     {
       // save all fields except primary keys.
       // The db will automatically fill auto increment keys.
-
       std::stringstream ss;
       std::stringstream vs;
       ss << "INSERT into " << table_name_ << "(";
@@ -101,12 +100,12 @@ namespace sl
       };
 
       ss << ") VALUES (" << vs.str() << ")";
-      if (apply(ss.str(), values, con_).exec())
-        return con_.last_insert_rowid();
-      else return false;
+      auto req = con_(ss.str());
+      apply(values, req);
+      return req.last_insert_id();
     };
 
-    int update(O& o)
+    void update(O& o)
     {
       std::stringstream ss;
       ss << "UPDATE " << table_name_ << " SET ";
@@ -134,11 +133,11 @@ namespace sl
         return m.symbol() = o[m.symbol()];
       };
       
-      return apply(ss.str(), values, pks_values, con_).exec();
+      apply(values, pks_values, con_(ss.str()));
     }
 
     template <typename T>
-    int destroy(const T& o)
+    void destroy(const T& o)
     {
       std::stringstream ss;
       ss << "DELETE from " << table_name_ << " WHERE ";
@@ -151,7 +150,7 @@ namespace sl
         return m.symbol() = o[m.symbol()];
       };
 
-      return apply(ss.str(), values, con_).exec();
+      apply(values, con_(ss.str()));
     }
     
     std::string table_name_;
@@ -184,7 +183,7 @@ namespace sl
         first = false;
       };
       ss << ");";
-      c(ss.str()).exec();
+      c(ss.str())();
     }
     
     auto instantiate(C& con) {
