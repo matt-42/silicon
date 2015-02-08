@@ -6,19 +6,28 @@ using namespace sl;
 
 struct request_logger
 {
-  request_logger(std::string x) : xx(x)
+  request_logger()
   {
+    time = get_time();
     std::cout << "Request start!" << std::endl;
   }
 
   ~request_logger()
   {
-    std::cout << "Request end! " << xx << std::endl;
+    std::cout << "Request took " << (get_time() - time) << " microseconds." << std::endl;
   }
 
-  std::string xx;
-  
-  static auto instantiate() { return request_logger("xxxx"); }
+  inline double get_time()
+  {
+    timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
+    return double(ts.tv_sec) * 1e6 + double(ts.tv_nsec) / 1e3;
+  }
+
+  static auto instantiate() { return request_logger(); }
+
+private:
+  double time;
 };
 
 auto hello_api = make_api(
