@@ -1,4 +1,5 @@
 #include <iostream>
+#include <cassert>
 #include <silicon/middlewares/mysql_connection.hh>
 
 /* Mysql setup script:
@@ -27,7 +28,7 @@ int main()
 
   try
   {
-    auto m = mysql_middleware("localhost", "silicon", "my_silicon", "silicon_test");
+    auto m = mysql_connection_middleware("localhost", "silicon", "my_silicon", "silicon_test");
     auto c = m.instantiate();
 
     typedef unsigned int US;
@@ -36,6 +37,11 @@ int main()
     auto print = [] (User res) {
       std::cout << res.id << " - " << res.name << " - " << res.age << std::endl;
     };
+
+    int test;
+    c("SELECT 1 + 2")() >> test;
+    std::cout << test << std::endl;
+    assert(test == 3);
 
     int count = 0;
     c("SELECT count(*) from users")() >> count;

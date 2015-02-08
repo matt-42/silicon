@@ -356,14 +356,14 @@ namespace sl
     MYSQL* con_;
   };
 
-  struct mysql_middleware
+  struct mysql_connection_middleware
   {
     template <typename... O>
-    mysql_middleware(const std::string& host,
-                     const std::string& user,
-                     const std::string& passwd,
-                     const std::string& database,
-                     O... options)
+    mysql_connection_middleware(const std::string& host,
+                                const std::string& user,
+                                const std::string& passwd,
+                                const std::string& database,
+                                O... options)
       : host_(host),
         user_(user),
         passwd_(passwd),
