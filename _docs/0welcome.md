@@ -33,11 +33,12 @@ Features
 
   - __Ease of use__
 
-    The framework is designed such that the developer only writes the
-    core of the API, the framework takes care of the rest
-    (serialization, deserialization, generation of the client libraries,
-    routing, multithreading, ...). Its learning curve is similar to
-    frameworks based on nodejs or go.
+    Silicon is designed such that the developer only writes the core
+    of the API. The framework and the middlewares handle other stuffs
+    like serialization, deserialization, generation of the client
+    libraries, routing, multithreading, managing a pool of connection
+    to a database... Its learning curve is similar to frameworks based
+    on nodejs or go.
 
   - __High performance__
 
