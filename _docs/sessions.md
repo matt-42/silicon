@@ -45,14 +45,14 @@ int main()
     _logout = [] (sqlite_session<session_data>& sess)
     {
       sess._destroy();
-    },
-
+    }
 
     )
     .bind_middlewares(
       sqlite_middleware("/tmp/sl_test_authentication.sqlite"), // sqlite middleware.
-      sqlite_session_middleware<session_data>("sessions")
+      sqlite_session_middleware<session_data>("sessions") // The sessions will be stored in the "sessions" table.
       );
 }
 
 ```
+

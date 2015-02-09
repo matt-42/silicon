@@ -7,7 +7,7 @@ title: apis
 APIs and Procedures
 =============================
 
-An API is a set of procedures that silicon will serve to the external
+An API is a set of procedures that Silicon serves to the external
 world. Remote clients are able to call these functions via http, or
 other protocols depending on the backend serving the API.
 
@@ -35,19 +35,18 @@ _procedureX(_arg1, _arg2 = int())  = [] (auto param) { return D(_message = "Hell
 ```
 
 
-__Passing arguments:__ From this signature, the backend deserializes the arguments and pass
-them to the ```auto param``` argument of the function. In this case,
-```param.arg1``` has the type ```std::string``` and ```param.arg2``` is an
-```int```. If the arguments are invalid, the backend will send back an error
-code without calling the function.
+__Passing arguments:__ From this signature, the backend deserializes
+the arguments and pass them to the ```auto param``` argument of the
+function. In this case, ```param.arg1``` has the type
+```std::string``` and ```param.arg2``` is an ```int```. If the
+arguments are invalid, the backend sends back an invalid argument error without calling the function.
 
-__The response:__ The return value of the function is serialized and sent to the remote
-client.
-
+__The response:__ The return value of the function is serialized and
+sent to the remote client.
 
 ## Namespaces
 
-A API can include namespaces. They allows to better organise large
+A API may include namespaces. They allows to better organise large
 APIs.
 
 ```c++
@@ -59,19 +58,20 @@ auto my_api = make_api(
 
   _namespace1 = D(
     _procedure2(_arg1, _arg2 = int()) = [] (auto param) {
-      std::cout << "Hello from procedure2: " << param.arg1 << param.arg2 << std::endl;
+      std::cout << "Hello from namespace1.procedure2: "
+      		<< param.arg1 << param.arg2 << std::endl;
     },
     _procedure3 = [] () {
-      std::cout << "Hello from procedure3"  << std::endl;
+      std::cout << "Hello from namespace1.procedure3"  << std::endl;
     }),
 
   _namespace2 = D(
     _procedure4 = [] () {
-      std::cout << "Hello from procedure4"  << std::endl;
+      std::cout << "Hello from namespace2.procedure4"  << std::endl;
     },
     _procedure5 = [] () {
-      std::cout << "Hello from procedure5"  << std::endl;
-    }),
+      std::cout << "Hello from namespace2.procedure5"  << std::endl;
+    })
 
 );
 

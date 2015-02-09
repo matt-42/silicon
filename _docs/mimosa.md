@@ -12,7 +12,7 @@ This backend wraps [the Mimosa library](https://github.com/abique/mimosa) to ser
 mimosa_json_serve(api, port);
 ```
 
-The hello world example:
+The following hello world example ...
 
 ```c++
 auto hello_api = make_api(
@@ -26,7 +26,7 @@ auto hello_api = make_api(
 mimosa_json_serve(hello_api, 8080);
 ```
 
-starts a HTTP server listening on port 8080 and serve the hello world
+... starts a HTTP server listening on port 8080 and serve the hello world
 procedure at the route ```/hello```. It relies on the JSON message
 format to communicate with the client.
 

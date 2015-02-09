@@ -8,42 +8,41 @@ Middlewares in the Silicon framework
 ============================================
 
 
-The design of the silicon middlewares relies on several concepts:
+The design of the Silicon middlewares relies on several concepts:
 
    - A middleware does one thing and does it well.
    - Middlewares can stack on each others.
    - Each procedure of a silicon API instantiate only the middleware they explicitely requires.
-   - The framework introspect at compile time the signature of
+   - The framework introspects at compile time the signature of
      procedures to setup the instantiation of required the required middlewares.
      This introspection has no cost at runtime.
 
 A middleware is represented by one or two classes:
 
-   - __The instance:__ It contains the api exposed to the handler. It is instantiated
-     once for each request and if possible recycled for another request. It does not
-     have to be thread-safe.
+   - __The instance:__ It contains the code and data exposed to the
+     procedures. It is instantiated once per procedure call.
    - __The factory:__ Initialized once at the initialization of the
      server. It manages the instances and can hold data and the states
-     needed to create the instances.  The ```instantiate``` method may take
+     needed to provide instances.  The ```instantiate``` method may take
      one or more middleware instances as argument if the instance
      stacks on other middlewares. The factory can also implement a
      initialize method if it relies on other middlewares for its
-     initialization. For example, ```sqlite_session::initialize``` relies on
-     a ```sqlite_connection``` to create the session table.
+     initialization. For example, ```sqlite_session::initialize``` 
+     relies on a ```sqlite_connection``` to create the session table.
 
 __Stateless factories:__ When a middleware factory does not have to
-maintain a state or data to create instances, the instance class
-implements _instantiate_ as a static method.
+maintain a state or data to provide instances, the instance class
+can directly implement _instantiate_ as a static method.
 
-__Naming Convention:__ Given a middleware, for example a connection to a mysql
-database. The instance name should be ```mysql_connection``` and the factory
-```mysql_connection_middleware```. 
+__Naming Convention:__ Given a middleware, for example a connection to
+a mysql database. The instance name should be ```mysql_connection```
+and the factory ```mysql_connection_middleware```.
 
 
 Using middlewares
 =========================
 
-It is often usefull for a procedure to gain access to external data,
+It is often usefull for a procedure to gain access to external data
 like access to a database. Procedures request a middleware by simply
 declaring it as a parameter.
 
@@ -64,7 +63,7 @@ int main()
     _get_user(_id = int()) = [] (auto p, sqlite_connection& c)
     {
       auto res = D(_name = std::string(), _age = int());
-      if (!(c("SELECT name, age from users where id = ?", p.id) >> res))
+      if (!(c("SELECT name, age from users where id = ?")(p.id)() >> res))
         throw error::not_found("User with id ", p.id, " not found.");
 
       return res;
@@ -106,7 +105,7 @@ struct sqlite_session_middleware
     // Create the table if it does not exists
   }
 
-  // Run for every procedure call tacking session_data as argument.
+  // Run for every procedure call taking session_data as argument.
   session_data instantiate(tracking_cookie& cookie, sqlite_connection& con)
   {
     // Fetch the session belonging to cookie.id and using the connection con.
@@ -120,16 +119,17 @@ struct sqlite_session_middleware
 Global Middlewares
 =========================
 
-Operation like logging the requests, monitoring the server load need
+Operations like logging the requests, monitoring the server load need
 to insert code before and after each procedure call. In Silicon, an
-API can implicitly attach a set of middlewares each procedure
-call. The instantiate method of will run before each request, and the
-destructor of the instance after.
+API can implicitly attach a set of middlewares to each procedure
+call. The instantiate method of these middlewares will run before each
+request, and the destructor of the instance after.
 
 To pass a set of global middleware to an API, simply call its
 ```global_middlewares``` method.
 
-Here is a example showing a very simple request timer:
+Here is a example showing a very simple example logging the running
+time of each request:
 
 ```c++
 #include <iostream>

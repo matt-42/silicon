@@ -5,20 +5,21 @@ layout: post
 Hello World Benchmark
 ===========================
 
-This benchmark compares the performances of several frameworks on a simple example:
-on each request, serializes the json object ```{"message":"hello world."}``` and sends it back
-to the http client.
+This benchmark compares the performances of several frameworks on a
+simple case: on each request, serializes the json object
+```{"message":"hello world."}``` and sends it back to the http client.
 
 While it is rather simple and does not reflect a real world
 application, it gives a brief insight on the performances of the
 framework.
 
-You can find the full specification of the benchmark here (session JSON serialization):
+The full specification of the benchmark are hosted by Techempower
+(session JSON serialization):
 
 [https://www.techempower.com/benchmarks/#section=code](https://www.techempower.com/benchmarks/#section=code)
 
-The reference code of the nodejs express and go revel version can be found on the
-TechEmpower benchmark git repository:
+The reference code of the nodejs express and go revel version can be
+found on the git repository:
 
 [https://github.com/TechEmpower/FrameworkBenchmarks](https://github.com/TechEmpower/FrameworkBenchmarks)
 

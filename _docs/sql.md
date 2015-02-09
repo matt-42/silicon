@@ -6,27 +6,29 @@ title: sql
 SQL middlewares
 ========================
 
-Silicon provides middlewares to fast access sql databases. It leverages
-SQL prepared statements to speedup the execution of queries. It also
-caches prepared statements so that one request is only prepared once
-per sql session, even if it is call from different procedures.
+Silicon provides middlewares a fast access to sql databases. It
+leverages SQL prepared statements to speedup the execution of
+queries. It also caches prepared statements so that one request is
+only prepared once per sql session, even if it is called from different
+procedures.
 
 ## Supported databases
 
   - sqlite
   - mysql
+  - Soon: postgresql
 
 ## Getting started
 
-A procedure can take an ```sqlite_connection``` as argument. In case of a
-faillure to establish the connection, the framework returns an error
-500 to the client and skip the procedure call. Thus, there is no need
-to check the validity of the connection at the begining of each
+A procedure can take an ```sqlite_connection``` as argument. In case
+of a faillure to establish the connection, it throws an internal
+server error skipping the procedure call. Thus, there is no need to
+check the validity of the connection at the begining of each
 procedure.
 
-Data required to instantiate the connection (i.e. the database filepath) is
-passed once to the ```sqlite_middleware``` constructor that is bound the the
-api via its method ```bind_middleware```:
+Data required to instantiate the connection (for sqlite, the database
+filepath) is passed once to the ```sqlite_connection_middleware```
+constructor. ```bind_middleware``` binds the middleware to an API:
 
 ```c++
 auto api = make_api(
@@ -54,7 +56,7 @@ auto api = make_api(
 ## SELECT queries
 
 In the procedure, the connection object helps to read the result of
-SELECT queries via a type safe manner.
+SELECT queries in a type safe manner.
 
 ```c++
 // Read one scalar.
@@ -64,7 +66,7 @@ c("SELECT 1+2")() >> s;
 
 // Read a record.
 int age; std::string name;
-c("SELECT name, age from users LIMIT 1") >> std::tie(age, name);
+c("SELECT name, age from users LIMIT 1") >> std::tie(name, age);
 // name == "first_user_name"
 // age == first_user_age
 
@@ -92,9 +94,9 @@ c("SELECT name, age from users") | [] (R r) {
 
 ## Other queries
 
+The middleware can also issue queries that does not return a result set.
+
 ```c++
-// Execute a query.
-std::string n = "John";
-int age = 12;
-c("INSERT into users(name, age) VALUES (?, ?)")(n, age);
+// Execute an insert query.
+c("INSERT into users(name, age) VALUES (?, ?)")("John", 12);
 ```

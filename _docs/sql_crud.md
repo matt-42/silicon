@@ -20,7 +20,7 @@ typedef sqlite_orm_middleware<User> user_orm_middleware;
 
 auto api = make_api(
     
-      // Attach the CRUD procedure to the namespace user.
+      // Attach the set of CRUD procedures to the namespace user.
       // See bellow the option descriptions.
       _user = sql_crud<user_orm_middleware>(options...)
 )
@@ -39,12 +39,10 @@ user.update(id: int, name: string, age: int, address: string) -> void
 user.destroy(id: int) -> void
 ```
 
-FIXME
-
 ## Options
 
-```sql_crud`` `takes a set of options to configure the behavior of the
-procedures. All options are lambda functions and can take as argument
+```sql_crud``` takes a set of options to configure the behavior of the
+procedures. All options are lambda functions and take as argument
 a set of middlewares and the requested object. For example, the
 following example checks if the user session has enough privileges to
 alter an object:
@@ -52,7 +50,7 @@ alter an object:
 ```c++
 sql_crud<user_orm_middleware>(
   _read_permission = [] (session& sess, User& u) { 
-    return sess.data().id == u.id; 
+    return sess.id == u.id; 
   }
 );
 ```

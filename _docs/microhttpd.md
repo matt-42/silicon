@@ -47,7 +47,7 @@ manage intra-thread concurency.
 
 ### ```_select```
 
-Activated by default.
+Active by default.
 
 Spans one thread per CPU core, and calls the ```select``` routine to
 manage intra-thread concurency.
