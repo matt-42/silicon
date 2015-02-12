@@ -8,48 +8,54 @@ namespace sl
 {
 
   using s::_primary_key;
-  using s::_primary_key_t;
-
-  using s::_computed_t;
-  using s::_computed;
+  using s::_auto_increment;
+  using s::_read_only;
   
   namespace sql_orm_internals
   {
-    template <typename M>
-    struct is_primary_key
+    auto remove_members_with_attribute = [] (const auto& o, const auto& a)
     {
-      typedef typename std::decay_t<M>::attributes_type attrs;
-      static const bool value = has_symbol<attrs, _primary_key_t>::value;
-    };
-    auto remove_pks = [] (auto o)
-    {
-      return foreach(o) | [] (auto& m) {
+      std::decay_t<decltype(a)>
+      return foreach(o) | [&] (auto& m)
+      {
         typedef typename std::decay_t<decltype(m)>::attributes_type attrs;
-        return ::iod::static_if<!has_symbol<attrs, _primary_key_t>::value>(
+        return ::iod::static_if<!has_symbol<attrs, std::decay_t<decltype(a)>>::value>(
           [&] () { return m; },
           [&] () {});
       };
     };
-    auto get_pks = [] (auto o)
-    {
-      return foreach(o) | [] (const auto& m) {
-        return static_if<!is_primary_key<decltype(m)>::value>(
-          [&] () {},
-          [&] () { return m; });
-      };
-    };
 
-    auto remove_computed_fields = [] (const auto& o)
+    auto extract_members_with_attribute = [] (const auto& o, const auto& a)
     {
+      std::decay_t<decltype(a)>
       return foreach(o) | [&] (auto& m)
       {
         typedef typename std::decay_t<decltype(m)>::attributes_type attrs;
-        return ::iod::static_if<!has_symbol<attrs, _computed_t>::value>(
+        return ::iod::static_if<has_symbol<attrs, std::decay_t<decltype(a)>>::value>(
+          [&] () { return m; },
+          [&] () {});
+      };
+    };
+
+    auto extract_first_members_with_attribute = [] (const auto& o, const auto& a)
+    {
+      std::decay_t<decltype(a)>
+      return foreach(o) | [&] (auto& m)
+      {
+        typedef typename std::decay_t<decltype(m)>::attributes_type attrs;
+        return ::iod::static_if<has_symbol<attrs, std::decay_t<decltype(a)>>::value>(
           [&] () { return m; },
           [&] () {});
       };
     };
     
+    template <typename T>
+    using remove_auto_increment_t = decltype(remove_members_with_attribute(std::declval<T>(), _auto_increment));
+    template <typename T>
+    using remove_read_only_fields_t = decltype(remove_members_with_attribute(std::declval<T>(), _read_only));
+    template <typename T>
+    using extract_primary_keys_t = decltype(extract_members_with_attribute(std::declval<T>(), _primary_key));
+
   }
   
   template <typename C, typename O>
@@ -57,11 +63,11 @@ namespace sl
   {
     typedef O object_type;
 
-    // O without primary keys for create procedure.
-    typedef decltype(sql_orm_internals::remove_pks(std::declval<O>())) O_WO_PKS;
+    // O without auto increment for create procedure.
+    typedef sql_orm_internals::remove_auto_increment_t<O> without_auto_inc_type;
 
-    // Object with only the primary keys for the delete procedure.
-    typedef decltype(sql_orm_internals::get_pks(std::declval<O>())) PKS;
+    // Object with only the primary keys for the delete and update procedures.
+    typedef sql_orm_internals::get_primary_keys_t<O> PKS;
 
     sql_orm(const std::string& table, C& con) : table_name_(table), con_(con) {}
 
@@ -70,24 +76,18 @@ namespace sl
       return con_("SELECT * from " + table_name_ + " where id == ?")(id) >> o;
     }
 
-    // template <typename... T>
-    // auto select_where(T&&... t)
-    // {
-    //   return con_("SELECT * from " + table_name_ + " where ", t...);
-    // }
-
     template <typename N>
     int insert(const N& o)
     {
-      // save all fields except primary keys.
+      // save all fields except auto increment.
       // The db will automatically fill auto increment keys.
       std::stringstream ss;
       std::stringstream vs;
       ss << "INSERT into " << table_name_ << "(";
 
       bool first = true;      
-      auto values = foreach(O_WO_PKS()) | [&] (auto& m) {
-        return static_if<!sql_orm_internals::is_primary_key<decltype(m)>::value>(
+      auto values = foreach(without_auto_inc_type()) | [&] (auto& m) {
+        return static_if<!sql_orm_internals::is_auto_increment<decltype(m)>::value>(
           [&] () {
             if (!first) { ss << ","; vs << ","; }
             first = false;
@@ -112,7 +112,7 @@ namespace sl
 
       bool first = true;      
       auto values = foreach(o) | [&] (auto& m) {
-        return static_if<!sql_orm_internals::is_primary_key<decltype(m)>::value>(
+        return static_if<!sql_orm_internals::is_auto_increment<decltype(m)>::value>(
           [&] () {
             if (!first) ss << ",";
             first = false;
@@ -178,7 +178,9 @@ namespace sl
         ss << m.symbol().name() << " " << c.type_to_string(m.value());
 
         if (m.attributes().has(_primary_key))
-          ss << " PRIMARY KEY NOT NULL";
+          ss << " PRIMARY KEY NOT NULL ";
+        if (m.attributes().has(_auto_increment))
+          ss << " AUTO INCREMENT ";
 
         first = false;
       };

@@ -9,7 +9,7 @@
 #include <silicon/sql_crud.hh>
 #include <silicon/clients/client.hh>
 
-typedef decltype(iod::D(@id(@primary_key) = int(),
+typedef decltype(iod::D(@id(@auto_increment) = int(),
                         @name = std::string(),
                         @age = int(),
                         @address = std::string()

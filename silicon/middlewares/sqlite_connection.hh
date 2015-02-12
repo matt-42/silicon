@@ -135,6 +135,11 @@ namespace sl
       auto n = sqlite3_column_bytes(stmt_, pos);
       v = std::move(std::string((const char*) str, n));
     }
+    template <typename C, typename D>
+    void read_column(int pos, std::chrono::time_point<C, D>& v)
+    {
+      v = std::chrono::time_point<C, D>(sqlite3_column_int(stmt_, pos)); 
+    }
 
     int bind(sqlite3_stmt* stmt, int pos, double d) const { return sqlite3_bind_double(stmt, pos, d); }
     int bind(sqlite3_stmt* stmt, int pos, int d) const { return sqlite3_bind_int(stmt, pos, d); }

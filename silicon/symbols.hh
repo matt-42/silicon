@@ -32,6 +32,14 @@
 #define IOD_SYMBOL__primary_key
     iod_define_symbol(primary_key, _primary_key)
 #endif
+#ifndef IOD_SYMBOL__auto_increment
+#define IOD_SYMBOL__auto_increment
+    iod_define_symbol(auto_increment, _auto_increment)
+#endif
+#ifndef IOD_SYMBOL__read_only
+#define IOD_SYMBOL__read_only
+    iod_define_symbol(read_only, _read_only)
+#endif
 #ifndef IOD_SYMBOL__read_access
 #define IOD_SYMBOL__read_access
     iod_define_symbol(read_access, _read_access)
@@ -153,4 +161,3 @@
 #define IOD_SYMBOL__nthreads
     iod_define_symbol(nthreads, _nthreads)
 #endif
-

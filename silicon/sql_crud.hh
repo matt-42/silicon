@@ -15,8 +15,8 @@ namespace sl
     typedef typename ORMI::object_type O; // O without primary keys for create procedure.
     typedef typename ORMI::PKS PKS; // Object with only the primary keys for the delete procedure.
 
-    typedef decltype(sql_orm_internals::remove_computed_fields(std::declval<O>())) update_type;
-    typedef decltype(sql_orm_internals::remove_pks(std::declval<update_type>())) insert_type;
+    typedef decltype(sql_orm_internals::remove_read_only_fields(std::declval<O>())) update_type;
+    typedef decltype(sql_orm_internals::remove_auto_increment_t(std::declval<update_type>())) insert_type;
     
     auto call_callback = [] (auto& f, O& o, auto& deps)
     {

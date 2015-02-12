@@ -11,6 +11,8 @@ expires
 path
 
 primary_key
+auto_increment
+read_only
 read_access
 write_access
 validate
