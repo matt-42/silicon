@@ -66,22 +66,22 @@ int main()
     }
 
     )
-    .bind_middlewares(
-      sqlite_middleware("/tmp/sl_test_authentication.sqlite"), // sqlite middleware.
-      sqlite_session_middleware<session_data>("sessions") // The middleware stores the sessions in the "sessions" table.
+    .bind_factories(
+      sqlite_connection_factory("/tmp/sl_test_authentication.sqlite"), // sqlite middleware.
+      sqlite_session_factory<session_data>("sessions") // The middleware stores the sessions in the "sessions" table.
       );
 }
 
 ```
 
-To initialize a sqlite session middleware call:
+To initialize a sqlite session factory call:
 ```c++
-sqlite_session_middleware<__a_session_data_type__>("__the_session_sqlite_table_name__");
+sqlite_session_factory<__a_session_data_type__>("__the_session_sqlite_table_name__");
 ```
 
-To initialize a mysql session middleware call:
+To initialize a mysql session factory call:
 ```c++
-mysql_session_middleware<__a_session_data_type__>("__the_session_mysql_table_name__");
+mysql_session_factory<__a_session_data_type__>("__the_session_mysql_table_name__");
 ```
 
 
@@ -125,8 +125,8 @@ int main()
     }
 
     )
-    .bind_middlewares(
-      hashmap_session_middleware() // The middleware factory storing the session hashmap.
+    .bind_factories(
+      hashmap_session_factory() // The middleware factory storing the session hashmap.
       );
 }
 ```
@@ -145,6 +145,6 @@ Set the session to timeout after N seconds.
 
 Example:
 ```c++
-sqlite_session_middleware("db.sqlite", _expires = 3600);
+sqlite_session_factory("db.sqlite", _expires = 3600);
 ```
 -->

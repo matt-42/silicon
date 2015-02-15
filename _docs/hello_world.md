@@ -40,7 +40,7 @@ int main()
 }
 ```
 
-The D function builds plain C++ objects such that:
+The ```iod::D``` function builds plain C++ objects such that:
 
 ```c++
 auto o = D(_attr1 = 12, _attr2 = "test");

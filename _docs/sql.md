@@ -27,8 +27,8 @@ check the validity of the connection at the begining of each
 procedure.
 
 Data required to instantiate the connection (for sqlite, the database
-filepath) is passed once to the ```sqlite_connection_middleware```
-constructor. ```bind_middleware``` binds the middleware to an API:
+filepath) is passed once to the ```sqlite_connection_factory```
+constructor. ```bind_factory``` binds the middleware to an API:
 
 ```c++
 auto api = make_api(
@@ -46,9 +46,9 @@ auto api = make_api(
     return D(_name = name);
   }
 )
-.bind_middlewares(
+.bind_factories(
   // Bind the sqlite middleware and specify the path to the db file.
-  sqlite_connection_middleware("db.sqlite") // sqlite middleware.
+  sqlite_connection_factory("db.sqlite") // sqlite middleware.
 );
 ```
 

@@ -11,7 +11,7 @@ Middlewares in the Silicon framework
 The design of the Silicon middlewares relies on several concepts:
 
    - A middleware does one thing and does it well.
-   - Middlewares can stack on each others.
+   - Some middlewares can rely on others to implement higher level features.
    - Each procedure of a silicon API instantiate only the middleware they explicitely requires.
    - The framework introspects at compile time the signature of
      procedures to setup the instantiation of required the required middlewares.
@@ -36,7 +36,7 @@ can directly implement _instantiate_ as a static method.
 
 __Naming Convention:__ Given a middleware, for example a connection to
 a mysql database. The instance name should be ```mysql_connection```
-and the factory ```mysql_connection_middleware```.
+and the factory ```mysql_connection_factory```.
 
 
 Using middlewares
@@ -69,8 +69,8 @@ int main()
       return res;
     }
     )
-    .bind_middlewares(
-      sqlite_connection_middleware("db.sqlite") // sqlite middleware.
+    .bind_factories(
+      sqlite_connection_factory("db.sqlite") // sqlite middleware.
       );
 
   sl::mhd_json_serve(api, 12345);
@@ -78,9 +78,9 @@ int main()
 }
 ```
 
-A ```sqlite_connection_middleware```, the object responsible for the
+A ```sqlite_connection_factory```, the object responsible for the
 ```sqlite_connection``` creation, is added to the api via
-bind_middlewares.
+bind_factories.
 
 Procedures can take any number of middlewares as argument, in any order.
 
@@ -92,9 +92,9 @@ cycle. For example, a sqlite session storage requires a cookie
 tracking id to identify a request and an access to a sqlite database.
 
 ```c++
-struct sqlite_session_middleware
+struct sqlite_session_factory
 {
-  sqlite_session_middleware(const std::string& table_name)
+  sqlite_session_factory(const std::string& table_name)
     : table_name_(table_name)
   {
   }
@@ -168,7 +168,7 @@ auto hello_api = make_api(
 
   _test = [] () { return D(_message = "hello world."); }
 
-  ).global_middlewares([] (request_logger&) {});
+  ).template global_middlewares<request_logger, __other_factory_instance_types__...>>();
 
 int main(int argc, char* argv[])
 {

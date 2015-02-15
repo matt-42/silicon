@@ -17,17 +17,17 @@ typedef decltype(iod::D(_id(_auto_increment, _primary_key) = int(),
                    )) User;
 
 // And its ORM
-typedef sqlite_orm_middleware<User> user_orm_middleware;
+typedef sqlite_orm_factory<User> user_orm_factory;
 
 auto api = make_api(
     
       // Attach the set of CRUD procedures to the namespace user.
       // See bellow the option descriptions.
-      _user = sql_crud<user_orm_middleware>(options...)
+      _user = sql_crud<user_orm>(options...)
 )
-.bind_middlewares(
-  sqlite_middleware("test_crud.sqlite"), // sqlite middleware. Set the db filepath.
-  user_orm_middleware("users") // ORM middleware. Set the users table name.
+.bind_factories(
+  sqlite_connection_factory("test_crud.sqlite"), // sqlite middleware. Set the db filepath.
+  user_orm_factory("users") // ORM middleware. Set the users table name.
 );
 ```
 
@@ -49,7 +49,7 @@ following example checks if the user session has enough privileges to
 alter an object:
 
 ```c++
-sql_crud<user_orm_middleware>(
+sql_crud<user_orm>(
   _read_permission = [] (session& sess, User& u) { 
     return sess.id == u.id; 
   }

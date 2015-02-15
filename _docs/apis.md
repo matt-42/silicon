@@ -39,7 +39,8 @@ __Passing arguments:__ From this signature, the backend deserializes
 the arguments and pass them to the ```auto param``` argument of the
 function. In this case, ```param.arg1``` has the type
 ```std::string``` and ```param.arg2``` is an ```int```. If the
-arguments are invalid, the backend sends back an invalid argument error without calling the function.
+arguments are invalid, the backend sends back an invalid argument
+error without calling the function.
 
 __The response:__ The return value of the function is serialized and
 sent to the remote client.

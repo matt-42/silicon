@@ -19,23 +19,23 @@ to implement a basic mapping between C++ object and the database tables.
 
 ## Getting started
 
-The following typedef defines a simple object, with a primary key on
+The following typedef defines a simple object, with a auto increment attribute on
 the field id:
 
 ```c++
-typedef decltype(D(_id(_primary_key) = int(),
+typedef decltype(D(_id(_auto_increment) = int(),
                    _name = std::string(),
                    _age = int()
                    )) User;
 ```
 
-An API can rely on the ```sql_orm_middleware``` to query, insert, remove,
+An API can rely on the ```sql_orm_factory``` to query, insert, remove,
 or update the ```users``` table.
 
 ```c++
 
 // Instantiate the user ORM targetting a sqlite database.
-typedef sqlite_orm_middleware<User> user_orm_factory;
+typedef sqlite_orm_factory<User> user_orm_factory;
 typedef sqlite_orm<User> user_orm;
 
 auto orm_api = make_api(
@@ -59,8 +59,8 @@ auto orm_api = make_api(
     
   }    
 
-).bind_middleware( // Bind the middleware factories
-    sqlite_connection_middleware("./db.sqlite"), // Create the sqlite_connection
+).bind_factories( // Bind the middleware factories
+    sqlite_connection_factory("./db.sqlite"), // Create the sqlite_connection
     user_orm_factory("users") // The orm takes the table name
 );
 
