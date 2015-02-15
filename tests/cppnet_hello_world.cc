@@ -1,13 +1,15 @@
 #include <iostream>
 #include <silicon/backends/cppnet_serve.hh>
 #include <silicon/api.hh>
+#include "symbols.hh"
 
 using namespace sl;
+using namespace s;
 
 auto hello_api = make_api(
 
-  @test = [] () { return D(@message = "hello world."); },
-  @test2(@name) = [] (const auto& p) { return D(@message = "hello " + p.name); }
+  _test = [] () { return D(_message = "hello world."); },
+  _test2(_name) = [] (const auto& p) { return D(_message = "hello " + p.name); }
 
 );
 

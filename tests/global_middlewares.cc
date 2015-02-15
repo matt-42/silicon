@@ -1,6 +1,9 @@
 #include <iostream>
 #include <silicon/backends/mhd_serve.hh>
 #include <silicon/api.hh>
+#include "symbols.hh"
+
+using namespace s;
 
 using namespace sl;
 
@@ -32,7 +35,7 @@ private:
 
 auto hello_api = make_api(
 
-  @test = [] () { return D(@message = "hello world."); }
+  _test = [] () { return D(_message = "hello world."); }
 
   ).global_middlewares([] (request_logger&) {});
 

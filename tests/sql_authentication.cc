@@ -7,12 +7,15 @@
 #include <silicon/middlewares/sqlite_session.hh>
 #include <silicon/middlewares/sqlite_orm.hh>
 #include <silicon/clients/client.hh>
+#include "symbols.hh"
+
+using namespace s;
 
 using namespace sl;
 
 // User database type
-typedef decltype(D(@id(@auto_increment, @primary_key) = int(),
-                       @name = std::string()
+typedef decltype(D(_id(_auto_increment, _primary_key) = int(),
+                       _name = std::string()
                    )) User;
 
 // ==================================================
@@ -22,7 +25,7 @@ struct session_data
 {
   session_data() { user_id = -1; }
   bool authenticated() const { return user_id != -1; }
-  auto sio_info() { return D(@user_id = int()); }
+  auto sio_info() { return D(_user_id = int()); }
   int user_id;
 };
 
@@ -88,18 +91,18 @@ int main()
   using namespace sl;
 
   auto api = make_api(
-    @who_am_I = [] (current_user& user)
+    _who_am_I = [] (current_user& user)
     {
       return user.user_data();
     },
 
-    @signin(@name) = [] (auto params, authenticator& auth)
+    _signin(_name) = [] (auto params, authenticator& auth)
     {
       if (!auth.authenticate(params.name))
         throw error::bad_request("Invalid user name");
     },
 
-    @logout = [] (session& sess)
+    _logout = [] (session& sess)
     {
       sess._destroy();
     }

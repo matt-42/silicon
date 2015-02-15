@@ -1,6 +1,9 @@
 #include <iostream>
 #include <cassert>
 #include <silicon/middlewares/mysql_connection.hh>
+#include "symbols.hh"
+
+using namespace s;
 
 /* Mysql setup script:
 
@@ -32,7 +35,7 @@ int main()
     auto c = m.instantiate();
 
     typedef unsigned int US;
-    typedef decltype(D(@id = int(), @age = US(),  @name = std::string())) User;
+    typedef decltype(D(_id = int(), _age = US(),  _name = std::string())) User;
 
     auto print = [] (User res) {
       std::cout << res.id << " - " << res.name << " - " << res.age << std::endl;

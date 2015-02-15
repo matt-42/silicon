@@ -1,14 +1,17 @@
 #include <iostream>
 #include <silicon/api.hh>
 #include <silicon/backends/mimosa_serve.hh>
+#include "symbols.hh"
+
+using namespace s;
 
 using namespace sl;
 
 auto hello_api = make_api(
 
-  @test = [] () { return D(@message = "hello world."); },
-  @test2(@name) = [] (auto p) {
-    return D(@message = "hello " + p.name);
+  _test = [] () { return D(_message = "hello world."); },
+  _test2(_name) = [] (auto p) {
+    return D(_message = "hello " + p.name);
   }
 
 );

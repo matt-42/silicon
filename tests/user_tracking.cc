@@ -3,6 +3,9 @@
 #include <silicon/backends/mimosa_serve.hh>
 #include <silicon/api.hh>
 #include <silicon/clients/client.hh>
+#include "symbols.hh"
+
+using namespace s;
 
 using namespace sl;
 
@@ -10,8 +13,8 @@ int main()
 {
   auto api = make_api(
 
-    @my_tracking_id = [] (tracking_cookie c) {
-      return D(@id = c.id());
+    _my_tracking_id = [] (tracking_cookie c) {
+      return D(_id = c.id());
     }
     
     );

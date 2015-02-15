@@ -44,54 +44,51 @@ set(MIMOSA_LIBS mimosa-http mimosa-uri mimosa gnutls z pthread lzma)
 
 set(MHD_LIBS gnutls gcrypt pthread microhttpd)
 
-add_iod_executable(cppnet_hello_world cppnet_hello_world.cc)
+add_executable(cppnet_hello_world cppnet_hello_world.cc)
 target_link_libraries(cppnet_hello_world ${CPPNET_LIBS})
 
-add_iod_executable(sql_authentication sql_authentication.cc)
+add_executable(sql_authentication sql_authentication.cc)
 target_link_libraries(sql_authentication sqlite3 ${MIMOSA_LIBS})
 
-add_iod_executable(user_tracking user_tracking.cc)
+add_executable(user_tracking user_tracking.cc)
 target_link_libraries(user_tracking  ${MIMOSA_LIBS})
 
 
-add_iod_executable(user_tracking_mhd user_tracking_mhd.cc)
+add_executable(user_tracking_mhd user_tracking_mhd.cc)
 target_link_libraries(user_tracking_mhd  ${MHD_LIBS} ${MIMOSA_LIBS})
 
-add_iod_executable(crud crud.cc)
+add_executable(crud crud.cc)
 target_link_libraries(crud sqlite3 ${MIMOSA_LIBS})
 
-add_iod_executable(client client.cc)
+add_executable(client client.cc)
 target_link_libraries(client sqlite3 ${MIMOSA_LIBS})
 
-add_iod_executable(mimosa_hello_world mimosa_hello_world.cc)
+add_executable(mimosa_hello_world mimosa_hello_world.cc)
 target_link_libraries(mimosa_hello_world ${MIMOSA_LIBS})
 
-add_iod_executable(microhttpd_hello_world microhttpd_hello_world.cc)
+add_executable(microhttpd_hello_world microhttpd_hello_world.cc)
 target_link_libraries(microhttpd_hello_world ${MHD_LIBS})
 
-add_iod_executable(sqlite sqlite.cc)
+add_executable(sqlite sqlite.cc)
 target_link_libraries(sqlite ${MHD_LIBS} sqlite3)
 
-add_iod_executable(mysql mysql.cc)
+add_executable(mysql mysql.cc)
 target_link_libraries(mysql ${MHD_LIBS} mysqlclient)
 
-add_iod_executable(javascript_client javascript_client.cc)
+add_executable(javascript_client javascript_client.cc)
 target_link_libraries(javascript_client ${MIMOSA_LIBS})
 
-add_iod_executable(ws_echo_server ws_echo_server.cc)
+add_executable(ws_echo_server ws_echo_server.cc)
 target_link_libraries(ws_echo_server ${WEBSOCKETS_LIBS})
 
-add_iod_executable(ws_chat_server ws_chat_server.cc)
+add_executable(ws_chat_server ws_chat_server.cc)
 target_link_libraries(ws_chat_server ${WEBSOCKETS_LIBS})
 
-add_iod_executable(ws_broadcast_server ws_broadcast_server.cc)
+add_executable(ws_broadcast_server ws_broadcast_server.cc)
 target_link_libraries(ws_broadcast_server ${WEBSOCKETS_LIBS})
 
-add_iod_executable(global_middlewares global_middlewares.cc)
+add_executable(global_middlewares global_middlewares.cc)
 target_link_libraries(global_middlewares ${MHD_LIBS})
-
-add_iod_executable(bug bug.cc)
-target_link_libraries(bug sqlite3 ${MIMOSA_LIBS})
 
 add_test(crud crud)
 add_test(client client)

@@ -3,24 +3,26 @@
 #include <silicon/api.hh>
 #include <silicon/api_description.hh>
 #include <silicon/backends/mimosa_serve.hh>
+#include "symbols.hh"
 
 
 int main()
   try
   {
     using namespace sl;
+    using namespace s;
 
     auto api = make_api(
-      @hello_world(@name) = [] (auto p)
+      _hello_world(_name) = [] (auto p)
       {
-        return D(@message = std::string("Hello ") + p.name);
+        return D(_message = std::string("Hello ") + p.name);
       },
 
-      @scope = D(
+      _scope = D(
 
-        @test(@name) = [] (auto p)
+        _test(_name) = [] (auto p)
         {
-          return D(@message = std::string("Hello ") + p.name);
+          return D(_message = std::string("Hello ") + p.name);
         }
         
         )

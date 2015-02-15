@@ -2,6 +2,9 @@
 #include <silicon/api.hh>
 #include <silicon/backends/mimosa_serve.hh>
 #include <silicon/clients/javascript_client.hh>
+#include "symbols.hh"
+
+using namespace s;
 
 using namespace sl;
 
@@ -12,13 +15,13 @@ int main(int argc, char* argv[])
   
   auto hello_api = make_api(
 
-    @test = [] () { return D(@message = "hello world."); },
-    @test2 = [] () { return D(@message = "hello world."); },
-    @my_scope = D(@test2(@name) = [] (auto p) {
-      return D(@message = "hello " + p.name);
+    _test = [] () { return D(_message = "hello world."); },
+    _test2 = [] () { return D(_message = "hello world."); },
+    _my_scope = D(_test2(_name) = [] (auto p) {
+      return D(_message = "hello " + p.name);
       }),
 
-    @js_client = [&] () { return js_client; }
+    _js_client = [&] () { return js_client; }
 
     );
 

@@ -10,19 +10,22 @@
 #include <silicon/crud.hh>
 #include <silicon/hash.hh>
 #include <silicon/javascript_client.hh>
+#include "symbols.hh"
+
+using namespace s;
 
 using namespace iod;
 
 // Models
-typedef decltype(iod::D(@id(@primary_key) = int(),
-                        @email = std::string(),
-                        @password = blob()
+typedef decltype(iod::D(_id(_primary_key) = int(),
+                        _email = std::string(),
+                        _password = blob()
                    )) User;
 
-typedef decltype(iod::D(@id(@primary_key) = int(),
-                        @user_id(@computed) = int(),
-                        @title = std::string(),
-                        @filename = std::string()
+typedef decltype(iod::D(_id(_primary_key) = int(),
+                        _user_id(_computed) = int(),
+                        _title = std::string(),
+                        _filename = std::string()
                    )) Song;
 
 
@@ -33,7 +36,7 @@ struct session_data
   session_data() { user_id = -1; }
   bool is_authenticated() const { return user_id != -1; }
 
-  auto sio_info() { return D(@user_id = int()); }
+  auto sio_info() { return D(_user_id = int()); }
   
   int user_id;
 };
@@ -105,19 +108,19 @@ auto mysoundcloud_server(std::string sqlite_db_path, std::string song_root_)
   // Build the server with its attached middlewares.
   return iod::make_api(
 
-    @test = [] () { return D(@message = "hello world."); },
+    _test = [] () { return D(_message = "hello world."); },
     
       // =========================================================
       // User signup, signout, login, logout.
-      @login(@email, @password) = [] (auto params, authenticator& auth) {
+      _login(_email, _password) = [] (auto params, authenticator& auth) {
         if (!auth.login(params.email, hash_sha3_512(params.password)))
           throw error::bad_request("Invalid login or password");
       },
 
-      @logout = [] (session& sess) { sess.destroy(); },
+      _logout = [] (session& sess) { sess.destroy(); },
 
 
-      @signup(@email, @password) = [] (auto params, sqlite_orm<User>& users, sqlite_connection& con) {
+      _signup(_email, _password) = [] (auto params, sqlite_orm<User>& users, sqlite_connection& con) {
         if (con("SELECT * from msc_users where email == ?", params.email).exists())
           throw error::bad_request("This user already exists");
         User u;
@@ -126,11 +129,11 @@ auto mysoundcloud_server(std::string sqlite_db_path, std::string song_root_)
         int id = 0;
         if (!(id = users.insert(u)))
           throw error::bad_request("Cannot create user account");
-        return D(@id = id);
+        return D(_id = id);
       },
  
 
-      @signout(@password) = [] (auto params, sqlite_orm<User>& users,
+      _signout(_password) = [] (auto params, sqlite_orm<User>& users,
                                 current_user& user, session& sess, sqlite_connection& db) {
         if (user.password != hash_sha3_512(params.password)) throw error::bad_request("Invalid password");
         
@@ -141,14 +144,14 @@ auto mysoundcloud_server(std::string sqlite_db_path, std::string song_root_)
 
       // ========================================================
       // CRUD on songs.
-      @song = crud<sqlite_orm_middleware<Song>>(
-        @write_access = [] (current_user& user, Song& song) { return song.user_id == user.id; },
-        @before_create = [] (current_user& user, Song& song) { return song.user_id = user.id; },
-        @on_destroy_success = [=] (Song& song) { ::remove(song_path(song).c_str());}),
+      _song = crud<sqlite_orm_middleware<Song>>(
+        _write_access = [] (current_user& user, Song& song) { return song.user_id == user.id; },
+        _before_create = [] (current_user& user, Song& song) { return song.user_id = user.id; },
+        _on_destroy_success = [=] (Song& song) { ::remove(song_path(song).c_str());}),
 
       // =========================================================
       // Upload procedure to attach a given file to the song of the given id.
-      @upload =
+      _upload =
       [&] (auto params, sqlite_orm<Song>& orm, current_user& user, mimosa::http::RequestReader* req) {
 
         // // Parse
@@ -174,7 +177,7 @@ auto mysoundcloud_server(std::string sqlite_db_path, std::string song_root_)
 
       // // =========================================================
       // // Access to the song of the given id.
-      // @stream(@id = int()) = [&] (auto params, sqlite_orm<Song>& orm)
+      // _stream(_id = int()) = [&] (auto params, sqlite_orm<Song>& orm)
       // {
       //   Song song;
       //   if (!orm.find_by_id(params.id, song))
@@ -198,8 +201,8 @@ auto mysoundcloud_server(std::string sqlite_db_path, std::string song_root_)
 // {
 //   auto c = silicon_client(mysoundcloud_server("","").get_api(), "0.0.0.0", port);
 
-//   std::string email = "test@test.com"; 
-//   std::string email2 = "test2@test.com"; 
+//   std::string email = "test_test.com"; 
+//   std::string email2 = "test2_test.com"; 
 //   std::string password = "password";
 //   std::string song_title = "song_test";
 //   std::string song_filename = "song_test.mp3";
@@ -245,7 +248,7 @@ int main(int argc, char* argv[])
   // auto server = mysoundcloud_server(argv[1], argv[3]);
 
   // // Serve the javascript client code at a specific route.
-  // // std::string javascript_client_source_code = generate_javascript_client(server, @module = "msc");
+  // // std::string javascript_client_source_code = generate_javascript_client(server, _module = "msc");
   // // server.route("/bindings.js") = [&] (response& resp)
   // // {
   // //   resp.set_header("Content-Type", "text/javascript");

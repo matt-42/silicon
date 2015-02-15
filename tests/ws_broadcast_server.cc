@@ -2,6 +2,9 @@
 #include <silicon/remote_api.hh>
 #include <silicon/backends/websocketpp.hh>
 #include <silicon/clients/javascript_client.hh>
+#include "symbols.hh"
+
+using namespace s;
 
 using namespace sl;
 
@@ -73,7 +76,7 @@ int main(int argc, char* argv[])
   using namespace sl;
 
   // The remote client api accessible from this server.
-  auto client_api = make_remote_api( @message(@text) );
+  auto client_api = make_remote_api( _message(_text) );
   
   // The type of a client to call the remote api.
   typedef ws_client<decltype(client_api)> client;
@@ -82,7 +85,7 @@ int main(int argc, char* argv[])
   auto server_api = make_api(
 
     // Broadcast a message to all clients.
-    @broadcast(@message) = [] (auto p, client& rclient, chat_room& room) {
+    _broadcast(_message) = [] (auto p, client& rclient, chat_room& room) {
       room.foreach([&] (wspp_connection h) { rclient(h).message(p.message); });      
     }
     
@@ -97,13 +100,13 @@ int main(int argc, char* argv[])
 
   // Serve the js and html code via classic http routes.
   auto http_api = make_api(
-    @js_client = [&] () { return js_client; },
-    @home = [&] () { return index_html_source; });
+    _js_client = [&] () { return js_client; },
+    _home = [&] () { return index_html_source; });
 
   // Start the websocketpp server.
   wspp_json_serve(server_api, client_api, atoi(argv[1]),
-                  @on_open = on_open_handler,
-                  @on_close = on_close_handler,
-                  @http_api = http_api);
+                  _on_open = on_open_handler,
+                  _on_close = on_close_handler,
+                  _http_api = http_api);
 
 }

@@ -8,11 +8,15 @@
 #include <silicon/middlewares/sqlite_orm.hh>
 #include <silicon/clients/client.hh>
 
-typedef decltype(iod::D(@id(@auto_increment, @primary_key) = int(),
-                        @name = std::string(),
-                        @age = int(),
-                        @address = std::string(),
-                        @city(@read_only) = std::string()
+#include "symbols.hh"
+
+using namespace s;
+
+typedef decltype(iod::D(_id(_auto_increment, _primary_key) = int(),
+                        _name = std::string(),
+                        _age = int(),
+                        _address = std::string(),
+                        _city(_read_only) = std::string()
                    )) User;
 
 #include <silicon/sql_crud.hh>
@@ -28,12 +32,12 @@ int main()
   
   auto api = make_api(
     
-    @user = sql_crud<sqlite_orm_middleware<User>>(
+    _user = sql_crud<sqlite_orm_middleware<User>>(
       // _before_create = [] (User& u) { u.city = "Paris"; }
       ) // Crud for the User object.
     )
     .bind_middlewares(
-      sqlite_connection_middleware("/tmp/sl_test_crud.sqlite", @synchronous = 1), // sqlite middleware.
+      sqlite_connection_middleware("/tmp/sl_test_crud.sqlite", _synchronous = 1), // sqlite middleware.
       sqlite_orm_middleware<User>("users") // Orm middleware.
       );
 
