@@ -1,5 +1,5 @@
 #include <iostream>
-#include <silicon/backends/mhd_serve.hh>
+#include <silicon/backends/mhd.hh>
 #include <silicon/api.hh>
 #include "symbols.hh"
 

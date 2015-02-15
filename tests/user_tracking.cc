@@ -1,6 +1,6 @@
 #include <thread>
 #include <iostream>
-#include <silicon/backends/mimosa_serve.hh>
+#include <silicon/backends/mimosa.hh>
 #include <silicon/api.hh>
 #include <silicon/clients/client.hh>
 #include "symbols.hh"

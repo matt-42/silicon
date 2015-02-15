@@ -1,6 +1,6 @@
 #include <thread>
 #include <iostream>
-#include <silicon/backends/mhd_serve.hh>
+#include <silicon/backends/mhd.hh>
 #include <silicon/api.hh>
 #include <silicon/clients/client.hh>
 #include "symbols.hh"

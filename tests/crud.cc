@@ -3,10 +3,11 @@
 
 #include <silicon/api.hh>
 #include <silicon/api_description.hh>
-#include <silicon/backends/mimosa_serve.hh>
+#include <silicon/backends/mimosa.hh>
 #include <silicon/middlewares/sqlite_connection.hh>
 #include <silicon/middlewares/sqlite_orm.hh>
 #include <silicon/clients/client.hh>
+#include <silicon/sql_crud.hh>
 
 #include "symbols.hh"
 
@@ -19,21 +20,15 @@ typedef decltype(iod::D(_id(_auto_increment, _primary_key) = int(),
                         _city(_read_only) = std::string()
                    )) User;
 
-#include <silicon/sql_crud.hh>
 
 int main()
 {
   using namespace sl;
-
-  auto f = [] (User& u) { u.city = "Paris"; };
-  User u;
-  di_call(f, u);
-  std::cout << u.city << std::endl;
   
   auto api = make_api(
     
     _user = sql_crud<sqlite_orm_middleware<User>>(
-      // _before_create = [] (User& u) { u.city = "Paris"; }
+      _before_create = [] (User& u) { u.city = "Paris"; }
       ) // Crud for the User object.
     )
     .bind_middlewares(
@@ -47,7 +42,7 @@ int main()
 
   std::cout << api_description(api) << std::endl;
   // api_description print:
-  // user.get_by_id(id: int) -> {id: int, name: string, age: int, address: string}
+  // user.get_by_id(id: int) -> {id: int, name: string, age: int, address: string, city: string}
   // user.create(name: string, age: int, address: string) -> {id: int}
   // user.update(id: int, name: string, age: int, address: string) -> void
   // user.destroy(id: int) -> void
@@ -59,6 +54,7 @@ int main()
   auto insert_r = c.user.create("matt", 12, "USA");
   std::cout << json_encode(insert_r) << std::endl;
   assert(insert_r.status == 200);
+  assert(insert_r.response.city == "Paris");
   int id = insert_r.response.id;
 
   // Get by id.

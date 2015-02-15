@@ -2,7 +2,7 @@
 #include <iostream>
 
 #include <silicon/api.hh>
-#include <silicon/backends/mimosa_serve.hh>
+#include <silicon/backends/mimosa.hh>
 #include <silicon/middlewares/sqlite_connection.hh>
 #include <silicon/middlewares/sqlite_session.hh>
 #include <silicon/middlewares/sqlite_orm.hh>

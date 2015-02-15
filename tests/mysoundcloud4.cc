@@ -5,7 +5,7 @@
 #include <silicon/sqlite_orm.hh>
 #include <silicon/sqlite_session.hh>
 #include <silicon/api.hh>
-#include <silicon/mimosa_serve.hh>
+#include <silicon/mimosa.hh>
 #include <silicon/client.hh>
 #include <silicon/crud.hh>
 #include <silicon/hash.hh>

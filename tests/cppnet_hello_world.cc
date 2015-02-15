@@ -1,5 +1,5 @@
 #include <iostream>
-#include <silicon/backends/cppnet_serve.hh>
+#include <silicon/backends/cppnet.hh>
 #include <silicon/api.hh>
 #include "symbols.hh"
 
