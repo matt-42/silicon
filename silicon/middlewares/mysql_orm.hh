@@ -8,5 +8,5 @@ namespace sl
   template <typename O>
   using mysql_orm = sql_orm<mysql_connection, O>;  
   template <typename O>
-  using mysql_orm_middleware = sql_orm_middleware<mysql_connection, O>;
+  using mysql_orm_factory = sql_orm_factory<mysql_connection, O>;
 }

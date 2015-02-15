@@ -108,11 +108,11 @@ int main()
     }
 
     )
-    .bind_middlewares(
-      sqlite_connection_middleware("/tmp/sl_test_authentication.sqlite"), // sqlite middleware.
-      sqlite_orm_middleware<User>("users"), // Orm middleware for users.
-      sqlite_session_middleware<session_data>("sessions"),
-      mimosa_session_cookie_middleware()
+    .bind_factories(
+      sqlite_connection_factory("/tmp/sl_test_authentication.sqlite"), // sqlite middleware.
+      sqlite_orm_factory<User>("users"), // Orm middleware for users.
+      sqlite_session_factory<session_data>("sessions"),
+      mimosa_session_cookie_factory()
       );
 
   
@@ -121,7 +121,7 @@ int main()
   usleep(.1e6);
   
   { // Setup database for testing.
-    auto orm = api.template instantiate_middleware<sqlite_orm<User>>();
+    auto orm = api.template instantiate_factory<sqlite_orm<User>>();
     std::cout << orm.insert(User(0, "John Doe")) << std::endl;
   }
 

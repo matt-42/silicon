@@ -150,12 +150,12 @@ namespace sl
   struct mysql_connection;
 
   template <typename C, typename O>
-  struct sql_orm_middleware
+  struct sql_orm_factory
   {
     typedef O object_type;
     typedef sql_orm<C, O> instance_type;
 
-    sql_orm_middleware(const std::string& table_name) : table_name_(table_name) {}
+    sql_orm_factory(const std::string& table_name) : table_name_(table_name) {}
 
     void initialize(C& c)
     {

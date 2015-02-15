@@ -4,7 +4,7 @@
 #include <iod/foreach.hh>
 #include <silicon/api.hh>
 #include <silicon/error.hh>
-#include <silicon/di_middlewares.hh>
+#include <silicon/di_factories.hh>
 #include <iod/di.hh>
 
 namespace sl
@@ -47,10 +47,10 @@ namespace sl
       typedef iod::callable_arguments_tuple_t<F> T;
       static_if<std::is_same<callable_return_type_t<F>, void>::value>(
         [&, this] (auto& response) { // If the procedure does not return a value just call it.
-          di_middlewares_call(f_, middlewares, &request, &response, arguments, args...);
+          di_factories_call(f_, middlewares, &request, &response, arguments, args...);
         },
         [&, this] (auto& response) { // If the procedure returns a value, serialize it.
-          s.serialize(response, di_middlewares_call(f_, middlewares, &request, &response, arguments, args...));
+          s.serialize(response, di_factories_call(f_, middlewares, &request, &response, arguments, args...));
         }, response);
     }
     
@@ -70,7 +70,7 @@ namespace sl
       : api_(api)
     {
       index_api(api_.procedures());
-      api_.initialize_middlewares();
+      api_.initialize_factories();
     }
 
     template <typename O>

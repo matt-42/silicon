@@ -8,5 +8,5 @@ namespace sl
   template <typename O>
   using sqlite_session = sql_session<sqlite_connection, O>;  
   template <typename O>
-  using sqlite_session_middleware = sql_session_middleware<sqlite_connection, O>;
+  using sqlite_session_factory = sql_session_factory<sqlite_connection, O>;
 }

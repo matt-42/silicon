@@ -81,13 +81,13 @@ namespace sl
     auto on_close = [&] (connection_hdl hdl)
     {
       wspp_connection c{hdl, &server};
-      di_middlewares_call(on_close_handler, ws_service.api().middlewares(), c);
+      di_factories_call(on_close_handler, ws_service.api().middlewares(), c);
     };
 
     auto on_open = [&] (connection_hdl hdl)
     {
       wspp_connection c{hdl, &server};
-      di_middlewares_call(on_open_handler, ws_service.api().middlewares(), c);
+      di_factories_call(on_open_handler, ws_service.api().middlewares(), c);
     };
 
     auto on_message = [&] (connection_hdl hdl, message_ptr msg)

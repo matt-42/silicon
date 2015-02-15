@@ -8,7 +8,7 @@
 #include <iod/callable_traits.hh>
 #include <iod/di.hh>
 #include <iod/bind_method.hh>
-#include <silicon/di_middlewares.hh>
+#include <silicon/di_factories.hh>
 
 namespace sl
 {
@@ -156,31 +156,31 @@ namespace sl
   template <typename P, typename... PA, typename... GA>
   auto apply_global_middleware2(P proc, std::tuple<PA...>*, std::tuple<GA...>*)
   {
-    return [=] (PA&&... pa, GA&&... ga)
+    return [=] (PA&&... pa, GA... ga)
     {
       return proc(pa...);
     };
   }
 
   template <typename P, typename F>
-  auto apply_global_middleware(P proc, F global)
+  auto apply_global_middleware(P proc, F m_tuple)
   {
     return apply_global_middleware2(proc, (callable_arguments_tuple_t<P>*)0,
-                                    (callable_arguments_tuple_t<F>*)0);
+                                    m_tuple);
   }
 
   template <typename P, typename F>
-  auto apply_global_middleware_rec(P procedures, F global)
+  auto apply_global_middleware_rec(P procedures, F m_tuple)
   {
     return foreach(procedures) | [&] (auto m)
     {
       return static_if<is_sio<decltype(m.value())>::value>(
         [&] (auto m) { // If sio, recursion.
-          return m.symbol() = apply_global_middleware_rec(m.value(), global);
+          return m.symbol() = apply_global_middleware_rec(m.value(), m_tuple);
         },
         [&] (auto m) { // Else, register the procedure.
           return m.symbol() = make_procedure(0, m.symbol(),
-                                             apply_global_middleware(m.value().function(), global));
+                                             apply_global_middleware(m.value().function(), m_tuple));
         }, m);
     };
   }
@@ -208,16 +208,16 @@ namespace sl
     }
 
     template <typename... X>
-    auto bind_middlewares(X... m) const
+    auto bind_factories(X... m) const
     {
       auto nm = std::tuple_cat(middlewares_, std::make_tuple(m...));
       return api<P, decltype(nm)>(procedures_, nm);
     }
 
-    template <typename F>
-    auto global_middlewares(F global) const
+    template <typename... F>
+    auto global_middlewares() const
     {
-      auto new_procs = apply_global_middleware_rec(procedures_, global);
+      auto new_procs = apply_global_middleware_rec(procedures_, (std::tuple<F...>*)0);
       return api<decltype(new_procs), M>(new_procs, middlewares_);
     }
     
@@ -234,12 +234,12 @@ namespace sl
     };
 
     template <typename T>
-    auto instantiate_middleware()
+    auto instantiate_factory()
     {
-      return di_middlewares_call([] (T t) { return t; }, middlewares_);
+      return di_factories_call([] (T t) { return t; }, middlewares_);
     }
 
-    auto initialize_middlewares()
+    auto initialize_factories()
     {
       foreach(middlewares_) | [this] (auto& m)
       {
@@ -247,7 +247,7 @@ namespace sl
         static_if<has_initialize_method<X>::value>(
           [this] (auto& m) {
             typedef std::remove_reference_t<decltype(m)> X_;
-            di_middlewares_call(bind_method(m, &X_::initialize), middlewares_);
+            di_factories_call(bind_method(m, &X_::initialize), middlewares_);
           },
           [] (auto& m) {}, m);
       };
@@ -258,9 +258,9 @@ namespace sl
   };
 
   template <typename T, typename A>
-  auto instantiate_middleware(A& api)
+  auto instantiate_factory(A& api)
   {
-    return api.template instantiate_middleware<T>();
+    return api.template instantiate_factory<T>();
   }
 
   inline auto make_api()

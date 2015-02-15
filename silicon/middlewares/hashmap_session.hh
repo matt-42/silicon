@@ -8,11 +8,11 @@ namespace sl
 {
 
   template <typename D>
-  struct hashmap_session_middleware
+  struct hashmap_session_factory
   {
     typedef decltype(iod::cat(D(_created_at
     template <typename... O>
-    hashmap_session_middleware(O... opts) : expires_(D(opts...).get(_expires, 10000))
+    hashmap_session_factory(O... opts) : expires_(D(opts...).get(_expires, 10000))
     {
     }
 

@@ -27,13 +27,13 @@ int main()
   
   auto api = make_api(
     
-    _user = sql_crud<sqlite_orm_middleware<User>>(
+    _user = sql_crud<sqlite_orm<User>>(
       _before_create = [] (User& u) { u.city = "Paris"; }
       ) // Crud for the User object.
     )
-    .bind_middlewares(
-      sqlite_connection_middleware("/tmp/sl_test_crud.sqlite", _synchronous = 1), // sqlite middleware.
-      sqlite_orm_middleware<User>("users") // Orm middleware.
+    .bind_factories(
+      sqlite_connection_factory("/tmp/sl_test_crud.sqlite", _synchronous = 1), // sqlite middleware.
+      sqlite_orm_factory<User>("users") // Orm middleware.
       );
 
   // Start server.

@@ -64,10 +64,10 @@ namespace sl
 
   // Session middleware.
   template <typename C, typename D>
-  struct sql_session_middleware
+  struct sql_session_factory
   {
     template <typename... O>
-    sql_session_middleware(const std::string& table_name, O... opts)
+    sql_session_factory(const std::string& table_name, O... opts)
       : expires_(iod::D(opts...).get(_expires, 10000)),
 	table_name_(table_name)
     {

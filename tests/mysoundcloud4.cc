@@ -190,10 +190,10 @@ auto mysoundcloud_server(std::string sqlite_db_path, std::string song_root_)
       // }
       
     )
-    // .bind_middlewares(sqlite_middleware(sqlite_db_path),
-    //                   sqlite_session_middleware<session_data>("msc_sessions"),
-    //                   sqlite_orm_middleware<Song>("msc_songs"),
-    //                   sqlite_orm_middleware<User>("msc_users"));
+    // .bind_factories(sqlite_factory(sqlite_db_path),
+    //                   sqlite_session_factory<session_data>("msc_sessions"),
+    //                   sqlite_orm_factory<Song>("msc_songs"),
+    //                   sqlite_orm_factory<User>("msc_users"));
 
 }
 

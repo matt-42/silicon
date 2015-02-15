@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
       rclient(room.find_connection(p.to)).pm(from.nickname, p.message);
     }
     
-    ).bind_middlewares(chat_room());
+    ).bind_factories(chat_room());
 
     
   auto on_open_handler = [] (wspp_connection& hdl, chat_room& r) { r.add(hdl); };

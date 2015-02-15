@@ -8,6 +8,6 @@ namespace sl
   template <typename O>
   using sqlite_orm = sql_orm<sqlite_connection, O>;
   template <typename O>
-  using sqlite_orm_middleware = sql_orm_middleware<sqlite_connection, O>;
+  using sqlite_orm_factory = sql_orm_factory<sqlite_connection, O>;
 
 }

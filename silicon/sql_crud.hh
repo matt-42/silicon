@@ -12,11 +12,9 @@ namespace sl
   using handler_deps = di::dependencies_of_<tuple_remove_elements_t<callable_arguments_tuple_t<F>,
                                                                     O, O&, const O&>>;
   
-  template <typename ORM, typename... T>
+  template <typename ORMI, typename... T>
   auto sql_crud(T&&... _opts)
-  {
-    typedef typename ORM::instance_type ORMI;
-    
+  {    
     typedef typename ORMI::object_type O; // O without primary keys for create procedure.
     typedef typename ORMI::PKS PKS; // Object with only the primary keys for the delete procedure.
 

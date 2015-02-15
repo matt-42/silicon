@@ -27,7 +27,7 @@ struct request_logger
     return double(ts.tv_sec) * 1e6 + double(ts.tv_nsec) / 1e3;
   }
 
-  static auto instantiate() { return request_logger(); }
+  static request_logger instantiate() { return request_logger(); }
 
 private:
   double time;
@@ -37,7 +37,7 @@ auto hello_api = make_api(
 
   _test = [] () { return D(_message = "hello world."); }
 
-  ).global_middlewares([] (request_logger&) {});
+  ).template global_middlewares<request_logger>();
 
 int main(int argc, char* argv[])
 {

@@ -252,10 +252,10 @@ namespace sl
     std::string path_;
   };
 
-  struct sqlite_connection_middleware
+  struct sqlite_connection_factory
   {
     template <typename... O>
-    sqlite_connection_middleware(const std::string& database_path, O... options)
+    sqlite_connection_factory(const std::string& database_path, O... options)
     {
       db_.init(database_path, options...);
     }

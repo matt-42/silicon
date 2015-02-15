@@ -89,7 +89,7 @@ int main(int argc, char* argv[])
       room.foreach([&] (wspp_connection h) { rclient(h).message(p.message); });      
     }
     
-    ).bind_middlewares(chat_room());
+    ).bind_factories(chat_room());
 
   // on_open, on_close handlers.
   auto on_open_handler = [] (wspp_connection hdl, chat_room& r) { r.add(hdl); };

@@ -8,5 +8,5 @@ namespace sl
   template <typename O>
   using mysql_session = sql_session<mysql_connection, O>;  
   template <typename O>
-  using mysql_session_middleware = sql_session_middleware<mysql_connection, O>;
+  using mysql_session_factory = sql_session_factory<mysql_connection, O>;
 }

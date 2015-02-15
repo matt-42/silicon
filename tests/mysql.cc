@@ -31,7 +31,7 @@ int main()
 
   try
   {
-    auto m = mysql_connection_middleware("localhost", "silicon", "my_silicon", "silicon_test");
+    auto m = mysql_connection_factory("localhost", "silicon", "my_silicon", "silicon_test");
     auto c = m.instantiate();
 
     typedef unsigned int US;

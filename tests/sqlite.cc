@@ -20,8 +20,8 @@ int main()
       return res;
     }
     )
-    .bind_middlewares(
-      sqlite_connection_middleware("db.sqlite") // sqlite middleware.
+    .bind_factories(
+      sqlite_connection_factory("db.sqlite") // sqlite middleware.
       );
 
   sl::mhd_json_serve(api, 12345);

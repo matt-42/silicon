@@ -357,10 +357,10 @@ namespace sl
     MYSQL* con_;
   };
 
-  struct mysql_connection_middleware
+  struct mysql_connection_factory
   {
     template <typename... O>
-    mysql_connection_middleware(const std::string& host,
+    mysql_connection_factory(const std::string& host,
                                 const std::string& user,
                                 const std::string& passwd,
                                 const std::string& database,
