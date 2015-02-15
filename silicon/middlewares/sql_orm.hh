@@ -15,11 +15,11 @@ namespace sl
   {
     auto remove_members_with_attribute = [] (const auto& o, const auto& a)
     {
-      std::decay_t<decltype(a)>
+      typedef std::decay_t<decltype(a)> A; 
       return foreach(o) | [&] (auto& m)
       {
         typedef typename std::decay_t<decltype(m)>::attributes_type attrs;
-        return ::iod::static_if<!has_symbol<attrs, std::decay_t<decltype(a)>>::value>(
+        return ::iod::static_if<!has_symbol<attrs, A>::value>(
           [&] () { return m; },
           [&] () {});
       };
@@ -27,23 +27,11 @@ namespace sl
 
     auto extract_members_with_attribute = [] (const auto& o, const auto& a)
     {
-      std::decay_t<decltype(a)>
+      typedef std::decay_t<decltype(a)> A; 
       return foreach(o) | [&] (auto& m)
       {
         typedef typename std::decay_t<decltype(m)>::attributes_type attrs;
-        return ::iod::static_if<has_symbol<attrs, std::decay_t<decltype(a)>>::value>(
-          [&] () { return m; },
-          [&] () {});
-      };
-    };
-
-    auto extract_first_members_with_attribute = [] (const auto& o, const auto& a)
-    {
-      std::decay_t<decltype(a)>
-      return foreach(o) | [&] (auto& m)
-      {
-        typedef typename std::decay_t<decltype(m)>::attributes_type attrs;
-        return ::iod::static_if<has_symbol<attrs, std::decay_t<decltype(a)>>::value>(
+        return ::iod::static_if<has_symbol<attrs, A>::value>(
           [&] () { return m; },
           [&] () {});
       };
@@ -67,8 +55,10 @@ namespace sl
     typedef sql_orm_internals::remove_auto_increment_t<O> without_auto_inc_type;
 
     // Object with only the primary keys for the delete and update procedures.
-    typedef sql_orm_internals::get_primary_keys_t<O> PKS;
+    typedef sql_orm_internals::extract_primary_keys_t<O> PKS;
 
+    static_assert(!std::is_same<PKS, void>::value, "You must set at least one member of the CRUD object as primary key.");
+    
     sql_orm(const std::string& table, C& con) : table_name_(table), con_(con) {}
 
     int find_by_id(int id, O& o)
@@ -76,27 +66,22 @@ namespace sl
       return con_("SELECT * from " + table_name_ + " where id == ?")(id) >> o;
     }
 
+    // save all fields except auto increment.
+    // The db will automatically fill auto increment keys.
     template <typename N>
     int insert(const N& o)
     {
-      // save all fields except auto increment.
-      // The db will automatically fill auto increment keys.
       std::stringstream ss;
       std::stringstream vs;
       ss << "INSERT into " << table_name_ << "(";
 
       bool first = true;      
       auto values = foreach(without_auto_inc_type()) | [&] (auto& m) {
-        return static_if<!sql_orm_internals::is_auto_increment<decltype(m)>::value>(
-          [&] () {
-            if (!first) { ss << ","; vs << ","; }
-            first = false;
-            ss << m.symbol().name();
-            vs << "?";
-            return m.symbol() = m.symbol().member_access(o);
-          },
-          [] () {
-          });
+        if (!first) { ss << ","; vs << ","; }
+        first = false;
+        ss << m.symbol().name();
+        vs << "?";
+        return m.symbol() = m.symbol().member_access(o);
       };
 
       ss << ") VALUES (" << vs.str() << ")";
@@ -105,35 +90,38 @@ namespace sl
       return req.last_insert_id();
     };
 
-    void update(O& o)
+    // Update N's members except auto increment members.
+    // N must have at least one primary key.
+    template <typename N>
+    int update(const N& o)
     {
+      // check if N has at least one member of PKS.
+      auto pk = intersect(o, PKS());
+      static_assert(decltype(pk)::size() > 0, "You must provide at least one primary key to update an object.");
       std::stringstream ss;
       ss << "UPDATE " << table_name_ << " SET ";
 
       bool first = true;      
       auto values = foreach(o) | [&] (auto& m) {
-        return static_if<!sql_orm_internals::is_auto_increment<decltype(m)>::value>(
-          [&] () {
-            if (!first) ss << ",";
-            first = false;
-            ss << m.symbol().name() << " = ?";
-            return m;
-          },
-          [] () {});
+        if (!first) ss << ",";
+        first = false;
+        ss << m.symbol().name() << " = ?";
+        return m;
       };
 
       ss << " WHERE ";
       
       first = true;
-      const PKS& pks = *(PKS*)0;
-      auto pks_values = foreach(pks) | [&] (auto& m) {
+      auto pks_values = foreach(pk) | [&] (auto& m) {
         if (!first) ss << " and ";
         first = false;
         ss << m.symbol().name() << " == ? ";
-        return m.symbol() = o[m.symbol()];
+        return m.symbol() = m.value();
       };
-      
-      apply(values, pks_values, con_(ss.str()));
+
+      auto stmt = con_(ss.str());
+      apply(values, pks_values, stmt);
+      return stmt.last_insert_id();
     }
 
     template <typename T>
@@ -157,7 +145,10 @@ namespace sl
     sqlite_connection con_;
   };
 
-  
+
+  struct sqlite_connection;
+  struct mysql_connection;
+
   template <typename C, typename O>
   struct sql_orm_middleware
   {
@@ -177,18 +168,26 @@ namespace sl
         if (!first) ss << ", ";
         ss << m.symbol().name() << " " << c.type_to_string(m.value());
 
-        if (m.attributes().has(_primary_key))
-          ss << " PRIMARY KEY NOT NULL ";
-        if (m.attributes().has(_auto_increment))
+        if (std::is_same<C, sqlite_connection>::value and
+            m.attributes().has(_auto_increment))
+          ss << " PRIMARY KEY ";
+        
+        if (std::is_same<C, mysql_connection>::value and
+            m.attributes().has(_auto_increment))
           ss << " AUTO INCREMENT ";
 
+        // To activate when pgsql_connection is implemented.
+        // if (std::is_same<C, pgsql_connection>::value and
+        //     m.attributes().has(_auto_increment))
+        //   ss << " SERIAL ";
+        
         first = false;
       };
       ss << ");";
       c(ss.str())();
     }
     
-    auto instantiate(C& con) {
+    sql_orm<C, O> instantiate(C& con) {
       return sql_orm<C, O>(table_name_, con);
     };
 

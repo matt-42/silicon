@@ -16,14 +16,15 @@ namespace sl
       : data_type(), key_(key), table_name_(table_name), con_(con)
     {
       // Get and decode the session data
-      auto sio = iod::cat(T::sio_info(), D(_created_at = sql_date()));
-      if ((con_("SELECT * from " + table_name_ + " WHERE key = ?")(key) >> sio))
+      //auto sio = iod::cat(T::sio_info(), D(_created_at = sql_date()));
+      auto sio = T::sio_info();
+      if (con_("SELECT * from " + table_name_ + " WHERE key = ?")(key) >> sio)
         foreach(sio) | [this] (auto& m) { m.symbol().member_access(*this) = m.value(); };
       else
-        con_("INSERT into " + table_name_ + " (key, created_at) VALUES (?)")(key, date());
+        con_("INSERT into " + table_name_ + " (key) VALUES (?)")(key);
 
-      if (created_at_ - )
-	{}
+      // if (created_at_ - )
+      //   {}
     }
 
     data_type& data() { return *static_cast<data_type*>(this); }
@@ -58,7 +59,7 @@ namespace sl
     //private:
     std::string key_;
     std::string table_name_;
-    C con_;
+    C& con_;
   };
 
   // Session middleware.
@@ -67,7 +68,7 @@ namespace sl
   {
     template <typename... O>
     sql_session_middleware(const std::string& table_name, O... opts)
-      : expires_(D(opts...).get(_expires, 10000)),
+      : expires_(iod::D(opts...).get(_expires, 10000)),
 	table_name_(table_name)
     {
     }
@@ -77,7 +78,7 @@ namespace sl
       std::stringstream ss;
       ss << "CREATE TABLE if not exists " <<  table_name_ << " ("
          << "key CHAR(32) PRIMARY KEY NOT NULL,";
-         << "created_at DATE NOT NULL,";
+      //<< "created_at DATE NOT NULL,";
 
       bool first = true;
       foreach(D().sio_info()) | [&] (auto& m)
@@ -93,7 +94,7 @@ namespace sl
     typedef sql_session<C, D> session_type;
     session_type instantiate(tracking_cookie& token, C& con)
     {
-      return session_type(token.id(), table_name_, con);
+      return session_type(token.id(), table_name_, con, 10000);
     }
 
     int expires_;

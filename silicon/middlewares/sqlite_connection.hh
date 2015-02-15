@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <mutex>
 #include <cstring>
 #include <unordered_map>
 
@@ -13,7 +14,7 @@
 
 namespace sl
 {
-  
+
   void free_sqlite3_statement(void* s)
   {
     sqlite3_finalize((sqlite3_stmt*) s);
@@ -24,9 +25,9 @@ namespace sl
     typedef std::shared_ptr<sqlite3_stmt> stmt_sptr;
 
     sqlite_statement() {}
-    
+
     sqlite_statement(sqlite3* db, sqlite3_stmt* s) : db_(db), stmt_(s),
-                                   stmt_sptr_(stmt_sptr(s, free_sqlite3_statement))
+                                                     stmt_sptr_(stmt_sptr(s, free_sqlite3_statement))
     {
     }
 
@@ -54,7 +55,7 @@ namespace sl
         };
       }
     }
-  
+
     template <typename... A>
     int operator>>(iod::sio<A...>& o) {
 
@@ -83,6 +84,8 @@ namespace sl
     template <typename... T>
     auto& operator()(T&&... args)
     {
+      sqlite3_reset(stmt_);
+      sqlite3_clear_bindings(stmt_);
       int i = 1;
       foreach(std::forward_as_tuple(args...)) | [&] (auto& m)
       {
@@ -135,11 +138,12 @@ namespace sl
       auto n = sqlite3_column_bytes(stmt_, pos);
       v = std::move(std::string((const char*) str, n));
     }
-    template <typename C, typename D>
-    void read_column(int pos, std::chrono::time_point<C, D>& v)
-    {
-      v = std::chrono::time_point<C, D>(sqlite3_column_int(stmt_, pos)); 
-    }
+    // Todo: Date types
+    // template <typename C, typename D>
+    // void read_column(int pos, std::chrono::time_point<C, D>& v)
+    // {
+    //   v = std::chrono::time_point<C, D>(sqlite3_column_int(stmt_, pos));
+    // }
 
     int bind(sqlite3_stmt* stmt, int pos, double d) const { return sqlite3_bind_double(stmt, pos, d); }
     int bind(sqlite3_stmt* stmt, int pos, int d) const { return sqlite3_bind_int(stmt, pos, d); }
@@ -148,7 +152,7 @@ namespace sl
       return sqlite3_bind_text(stmt, pos, s.data(), s.size(), nullptr); }
     int bind(sqlite3_stmt* stmt, int pos, const blob& b) const {
       return sqlite3_bind_blob(stmt, pos, b.data(), b.size(), nullptr); }
-    
+
     sqlite3* db_;
     sqlite3_stmt* stmt_;
     stmt_sptr stmt_sptr_;
@@ -163,8 +167,11 @@ namespace sl
   struct sqlite_connection
   {
     typedef std::shared_ptr<sqlite3> db_sptr;
+    typedef std::unordered_map<std::string, sqlite_statement> stmt_map;
+    typedef std::shared_ptr<std::unordered_map<std::string, sqlite_statement>> stmt_map_ptr;
+    typedef std::shared_ptr<std::mutex> mutex_ptr;
 
-    sqlite_connection() : db_(nullptr)
+    sqlite_connection() : db_(nullptr), stm_cache_(new stmt_map()), cache_mutex_(new std::mutex()) // FIXME
     {
     }
 
@@ -186,20 +193,22 @@ namespace sl
       err << a;
       format_error(err, args...);
     }
-    
-    sqlite_statement& operator()(const std::string& req)
+
+    sqlite_statement operator()(const std::string& req)
     {
-      auto it = stm_cache_.find(req);
-      if (it != stm_cache_.end()) return it->second;
+      auto it = stm_cache_->find(req);
+      if (it != stm_cache_->end()) return it->second;
 
       sqlite3_stmt* stmt;
-      
+
       int err = sqlite3_prepare_v2(db_, req.c_str(), req.size(), &stmt, nullptr);
       if (err != SQLITE_OK)
         throw std::runtime_error(std::string("Sqlite error during prepare: ") + sqlite3_errmsg(db_) + " statement was: " + req);
 
-      stm_cache_[req] = sqlite_statement(db_, stmt);
-      return stm_cache_[req];
+      cache_mutex_->lock();
+      auto it2 = stm_cache_->insert(it, std::make_pair(req, sqlite_statement(db_, stmt)));
+      cache_mutex_->unlock();
+      return it2->second;
     }
 
 
@@ -209,10 +218,11 @@ namespace sl
     inline std::string type_to_string(const T&, std::enable_if_t<std::is_floating_point<T>::value>* = 0) { return "REAL"; }
     inline std::string type_to_string(const std::string&) { return "TEXT"; }
     inline std::string type_to_string(const blob&) { return "BLOB"; }
-    
+
+    mutex_ptr cache_mutex_;
     sqlite3* db_;
     db_sptr db_sptr_;
-    std::unordered_map<std::string, sqlite_statement> stm_cache_;
+    stmt_map_ptr stm_cache_;
   };
 
   struct sqlite_database

@@ -11,8 +11,8 @@
 using namespace sl;
 
 // User database type
-typedef decltype(D(@id(@primary_key) = int(),
-                        @name = std::string()
+typedef decltype(D(@id(@auto_increment, @primary_key) = int(),
+                       @name = std::string()
                    )) User;
 
 // ==================================================
@@ -80,7 +80,7 @@ struct authenticator
   }
 
   session sess;
-  sqlite_connection con;
+  sqlite_connection& con;
 };
 
 int main()
@@ -136,5 +136,13 @@ int main()
   assert(who_r.status == 200);
   assert(who_r.response.name == "John Doe");
 
+  auto logout_r = c.logout();
+  std::cout << json_encode(logout_r) << std::endl;
+  assert(logout_r.status == 200);
+
+  auto who_r2 = c.who_am_I();
+  std::cout << json_encode(who_r2) << std::endl;
+  assert(who_r2.status == 401);
+  
   exit(0);
 }

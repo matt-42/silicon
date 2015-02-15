@@ -2,11 +2,16 @@
 
 #include <iod/di.hh>
 #include <iod/utils.hh>
+#include <silicon/middlewares/sql_orm.hh>
 
 namespace sl
 {
   using namespace iod;
 
+  template <typename O, typename F>
+  using handler_deps = di::dependencies_of_<tuple_remove_elements_t<callable_arguments_tuple_t<F>,
+                                                                    O, O&, const O&>>;
+  
   template <typename ORM, typename... T>
   auto sql_crud(T&&... _opts)
   {
@@ -15,12 +20,12 @@ namespace sl
     typedef typename ORMI::object_type O; // O without primary keys for create procedure.
     typedef typename ORMI::PKS PKS; // Object with only the primary keys for the delete procedure.
 
-    typedef decltype(sql_orm_internals::remove_read_only_fields(std::declval<O>())) update_type;
-    typedef decltype(sql_orm_internals::remove_auto_increment_t(std::declval<update_type>())) insert_type;
+    typedef sql_orm_internals::remove_read_only_fields_t<O> update_type;
+    typedef sql_orm_internals::remove_auto_increment_t<update_type> insert_type;
     
     auto call_callback = [] (auto& f, O& o, auto& deps)
     {
-      return apply(f, forward(o), deps.deps, di_call);
+      return di_call(f, o, deps.deps);
     };
 
     auto opts = D(_opts...);
@@ -35,10 +40,11 @@ namespace sl
     auto before_create = opts.get(_before_create, [] () {});
     //auto before_destroy = opts.get(_before_destroy, [] () {});
 
+
     return D(
 
       _get_by_id(_id = int()) = [=] (auto params, ORMI& orm,
-                                     di::dependencies_of<decltype(read_access)>& ra_deps)
+                                     handler_deps<O, decltype(read_access)>& ra_deps)
     {
       O o;
       if (!orm.find_by_id(params.id, o))
@@ -51,10 +57,10 @@ namespace sl
       ,
       
       _create = [=] (insert_type obj, ORMI& orm,
-                     di::dependencies_of<decltype(validate)>& v_deps,
-                     di::dependencies_of<decltype(on_create_success)>& oc_deps,
-                     di::dependencies_of<decltype(write_access)>& wa_deps,
-                     di::dependencies_of<decltype(before_create)>& bc_deps)
+                     handler_deps<O, decltype(validate)>& v_deps,
+                     handler_deps<O, decltype(on_create_success)>& oc_deps,
+                     handler_deps<O, decltype(write_access)>& wa_deps,
+                     handler_deps<O, decltype(before_create)>& bc_deps)
     {
       O o;
       o = obj;
@@ -71,10 +77,10 @@ namespace sl
     },
 
       _update = [=] (update_type obj, ORMI& orm,
-                     di::dependencies_of<decltype(validate)>& v_deps,
-                     di::dependencies_of<decltype(on_update_success)>& ou_deps,
-                     di::dependencies_of<decltype(write_access)>& wa_deps,
-                     di::dependencies_of<decltype(before_update)>& bu_deps)
+                     handler_deps<O, decltype(validate)>& v_deps,
+                     handler_deps<O, decltype(on_update_success)>& ou_deps,
+                     handler_deps<O, decltype(write_access)>& wa_deps,
+                     handler_deps<O, decltype(before_update)>& bu_deps)
     {
       O o;
       if (!orm.find_by_id(obj.id, o))
@@ -95,8 +101,8 @@ namespace sl
 
       _destroy = [=] (PKS params,
                       ORMI& orm,
-                      di::dependencies_of<decltype(on_destroy_success)>& od_deps,
-                      di::dependencies_of<decltype(write_access)>& wa_deps)
+                      handler_deps<O, decltype(on_destroy_success)>& od_deps,
+                      handler_deps<O, decltype(write_access)>& wa_deps)
     {
       O o;
       if (!orm.find_by_id(params.id, o))

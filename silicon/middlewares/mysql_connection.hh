@@ -154,18 +154,19 @@ namespace sl
       b.length = real_length;
     }
 
+    
     template <typename A>
-    static constexpr int number_of_fields(const A&) { return 1; }
+    static constexpr auto number_of_fields(const A&) { return std::integral_constant<int, 1>(); }
     template <typename... A>
-    static constexpr int number_of_fields(const sio<A...>&) { return sizeof...(A); }
+    static constexpr auto number_of_fields(const sio<A...>&) { return std::integral_constant<int, sizeof...(A)>(); }
     template <typename... A>
-    static constexpr int number_of_fields(const std::tuple<A...>&) { return sizeof...(A); }
+    static constexpr auto number_of_fields(const std::tuple<A...>&) { return std::integral_constant<int, sizeof...(A)>(); }
 
     template <typename T>
     int operator>>(T&& o) {
 
-      unsigned long real_lengths[number_of_fields(o)];
-      MYSQL_BIND bind[number_of_fields(o)];
+      unsigned long real_lengths[decltype(number_of_fields(o))::value];
+      MYSQL_BIND bind[decltype(number_of_fields(o))::value];
       memset(bind, 0, sizeof(bind));
 
       prepare_fetch(bind, real_lengths, o);
@@ -190,15 +191,15 @@ namespace sl
           typedef std::remove_reference_t<std::tuple_element_t<0, tp2>> T;
           T o;
 
-          unsigned long real_lengths[number_of_fields(T())];
-          MYSQL_BIND bind[number_of_fields(T())];
+          unsigned long real_lengths[decltype(number_of_fields(T()))::value];
+          MYSQL_BIND bind[decltype(number_of_fields(T()))::value];
           memset(bind, 0, sizeof(bind));
       
-          prepare_fetch(bind, real_lengths, o);
+          this->prepare_fetch(bind, real_lengths, o);
       
-          while (fetch() != MYSQL_NO_DATA)
+          while (this->fetch() != MYSQL_NO_DATA)
           {
-            finalize_fetch(bind, real_lengths, o);
+            this->finalize_fetch(bind, real_lengths, o);
             f(o);
           }
           mysql_stmt_free_result(stmt_);
@@ -211,11 +212,11 @@ namespace sl
           MYSQL_BIND bind[std::tuple_size<tp>::value];
           memset(bind, 0, sizeof(bind));
       
-          prepare_fetch(bind, real_lengths, o);
+          this->prepare_fetch(bind, real_lengths, o);
       
-          while (fetch() != MYSQL_NO_DATA)
+          while (this->fetch() != MYSQL_NO_DATA)
           {
-            finalize_fetch(bind, real_lengths, o);
+            this->finalize_fetch(bind, real_lengths, o);
             apply(o, f);
           }
           mysql_stmt_free_result(stmt_);

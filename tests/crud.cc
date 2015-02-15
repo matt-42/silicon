@@ -6,22 +6,31 @@
 #include <silicon/backends/mimosa_serve.hh>
 #include <silicon/middlewares/sqlite_connection.hh>
 #include <silicon/middlewares/sqlite_orm.hh>
-#include <silicon/sql_crud.hh>
 #include <silicon/clients/client.hh>
 
-typedef decltype(iod::D(@id(@auto_increment) = int(),
+typedef decltype(iod::D(@id(@auto_increment, @primary_key) = int(),
                         @name = std::string(),
                         @age = int(),
-                        @address = std::string()
+                        @address = std::string(),
+                        @city(@read_only) = std::string()
                    )) User;
+
+#include <silicon/sql_crud.hh>
 
 int main()
 {
   using namespace sl;
 
+  auto f = [] (User& u) { u.city = "Paris"; };
+  User u;
+  di_call(f, u);
+  std::cout << u.city << std::endl;
+  
   auto api = make_api(
     
-    @user = sql_crud<sqlite_orm_middleware<User>>() // Crud for the User object.
+    @user = sql_crud<sqlite_orm_middleware<User>>(
+      // _before_create = [] (User& u) { u.city = "Paris"; }
+      ) // Crud for the User object.
     )
     .bind_middlewares(
       sqlite_connection_middleware("/tmp/sl_test_crud.sqlite", @synchronous = 1), // sqlite middleware.
