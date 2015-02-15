@@ -63,7 +63,7 @@ namespace sl
 
     int find_by_id(int id, O& o)
     {
-      return con_("SELECT * from " + table_name_ + " where id == ?")(id) >> o;
+      return con_("SELECT * from " + table_name_ + " where id = ?")(id) >> o;
     }
 
     // save all fields except auto increment.
@@ -115,7 +115,7 @@ namespace sl
       auto pks_values = foreach(pk) | [&] (auto& m) {
         if (!first) ss << " and ";
         first = false;
-        ss << m.symbol().name() << " == ? ";
+        ss << m.symbol().name() << " = ? ";
         return m.symbol() = m.value();
       };
 
@@ -134,7 +134,7 @@ namespace sl
       auto values = foreach(PKS()) | [&] (auto& m) {
         if (!first) ss << " and ";
         first = false;
-        ss << m.symbol().name() << " == ? ";
+        ss << m.symbol().name() << " = ? ";
         return m.symbol() = o[m.symbol()];
       };
 
@@ -142,7 +142,7 @@ namespace sl
     }
     
     std::string table_name_;
-    sqlite_connection con_;
+    C con_;
   };
 
 
@@ -174,8 +174,11 @@ namespace sl
         
         if (std::is_same<C, mysql_connection>::value and
             m.attributes().has(_auto_increment))
-          ss << " AUTO INCREMENT ";
+          ss << " AUTO_INCREMENT NOT NULL ";
 
+        if (m.attributes().has(_primary_key))
+          ss << " PRIMARY KEY ";
+        
         // To activate when pgsql_connection is implemented.
         // if (std::is_same<C, pgsql_connection>::value and
         //     m.attributes().has(_auto_increment))

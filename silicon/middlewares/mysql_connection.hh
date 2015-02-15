@@ -58,14 +58,13 @@ namespace sl
     {
       metadata_ = mysql_stmt_result_metadata(stmt_);
 
-      metadata_sptr_ = std::shared_ptr<MYSQL_RES>(metadata_, mysql_free_result);
-      stmt_sptr_ = std::shared_ptr<MYSQL_STMT>(stmt_, mysql_stmt_close);
-
-      if (!metadata_)
-        throw std::runtime_error(std::string("mysql_stmt_result_metadata error: ") + mysql_stmt_error(stmt_));
-
-      fields_ = mysql_fetch_fields(metadata_);
-      num_fields_ = mysql_num_fields(metadata_);
+      if (metadata_)
+      {
+        metadata_sptr_ = std::shared_ptr<MYSQL_RES>(metadata_, mysql_free_result);
+        stmt_sptr_ = std::shared_ptr<MYSQL_STMT>(stmt_, mysql_stmt_close);
+        fields_ = mysql_fetch_fields(metadata_);
+        num_fields_ = mysql_num_fields(metadata_);
+      }
     }
 
     template <typename... T>
@@ -165,8 +164,9 @@ namespace sl
     template <typename T>
     int operator>>(T&& o) {
 
-      unsigned long real_lengths[decltype(number_of_fields(o))::value];
-      MYSQL_BIND bind[decltype(number_of_fields(o))::value];
+      constexpr int size = decltype(number_of_fields(o))::value;
+      unsigned long real_lengths[size];
+      MYSQL_BIND bind[size];
       memset(bind, 0, sizeof(bind));
 
       prepare_fetch(bind, real_lengths, o);

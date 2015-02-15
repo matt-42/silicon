@@ -55,7 +55,7 @@ int main()
     User res;
 
     double t = get_time_in_seconds();
-    int K = 20000;
+    int K = 200;
 
     auto rq = c("SELECT * from users where name = ? and age = ? LIMIT 1");
     for (int i = 0; i < K; i++)
@@ -108,6 +108,7 @@ int main()
     {
       std::cout << name << " " << age << std::endl;
     };
+    c("INSERT into users(name, age) VALUES (?, ?)")("John", 42);
   }
   catch(const std::exception& e)
   {
