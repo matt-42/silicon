@@ -1,5 +1,6 @@
 ---
 layout: post
+title: SQL generic CReate Update Delete procedures
 ---
 
 SQL generic CReate Update Delete procedures
@@ -9,7 +10,7 @@ SQL generic CReate Update Delete procedures
 
 ```c++
 // Given a object type
-typedef decltype(iod::D(_id(_primary_key) = int(),
+typedef decltype(iod::D(_id(_auto_increment, _primary_key) = int(),
                         _name = std::string(),
                         _age = int(),
                         _address = std::string()

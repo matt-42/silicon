@@ -3,7 +3,6 @@ layout: post
 title: symbols
 ---
 
-
 Symbols and  Statically Introspectable Objects (SIOs)
 =============================
 
@@ -68,53 +67,14 @@ foreach(o) | [] (auto& m) { std::cout << m.symbol().name() << ":"
 
 ```
 
-## Automatic declaration of symbols with the @ syntaxic sugar [optional]
+## Automatic declaration of symbols
 
-Silicon makes heavy use of iod symbols. To encounter the burden of
-predeclaring every symbols and prefixing them with s::, IOD provides a
-small compiler that implements the following syntaxic sugar:
+Silicon makes heavy use of iod symbols. To automate the declaration of
+every symbols, IOD provides a symbol definition generator. It looks
+for variables starting underscore and write their definition in a
+C++ header:
 
-
-```c++
-#include <iod/symbol.hh>
-
-int main()
-{
-  @test;
-}
 ```
-
-is equivalent to the following thanks to the iodc compiler:
-
-```c++
-#include <iod/symbol.hh>
-
-#ifndef IOD_SYMBOL_TEST
-#define IOD_SYMBOL_TEST
-iod_define_symbol(test);
-#endif
-
-
-int main()
-{
-  s::_test;
-}
-```
-
-The cmake add_iod_executable automate the compilation of programs using
-the @ construct:
-
-```cmake
-// A CMakeLists.txt to compile a silicon server with the microhttpd backend.
-cmake_minimum_required(VERSION 2.8)
-
-find_package(Iod REQUIRED)
-find_package(Silicon REQUIRED)
-
-include(${IOD_USE_FILE})
-
-include_directories(${IOD_INCLUDE_DIR} ${SILICON_INCLUDE_DIR})
-
-add_iod_executable(hello_world main.cc)
-target_link_libraries(hello_world microhttpd)
+$ iod_generate_symbols
+Usage: iod_generate_symbols input_cpp_file1, ..., input_cpp_fileN, output_cpp_header_file
 ```

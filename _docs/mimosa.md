@@ -1,6 +1,6 @@
 ---
 layout: post
-title: mimosa
+title: Mimosa backend
 ---
 
 Mimosa
@@ -9,6 +9,7 @@ Mimosa
 This backend wraps [the Mimosa library](https://github.com/abique/mimosa) to serve Silicon APIs:
 
 ```c++
+#include <silicon/backends/mimosa.hh>
 mimosa_json_serve(api, port);
 ```
 

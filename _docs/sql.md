@@ -1,12 +1,12 @@
 ---
 layout: post
-title: sql
+title: SQL middlewares
 ---
 
 SQL middlewares
 ========================
 
-Silicon provides middlewares a fast access to sql databases. It
+Silicon middlewares provides a fast access to sql databases. It
 leverages SQL prepared statements to speedup the execution of
 queries. It also caches prepared statements so that one request is
 only prepared once per sql session, even if it is called from different

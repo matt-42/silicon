@@ -1,8 +1,9 @@
 ---
 layout: post
+title: Hello world benchmark
 ---
 
-Hello World Benchmark
+Hello world benchmark
 ===========================
 
 This benchmark compares the performances of several frameworks on a

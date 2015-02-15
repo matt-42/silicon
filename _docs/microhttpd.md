@@ -1,9 +1,9 @@
 ---
 layout: post
-title: microhttpd
+title: Microhttpd backend
 ---
 
-Microhttpd
+Microhttpd backend
 =====================
 
 This backend wraps [the Microhttpd library](http://www.gnu.org/software/libmicrohttpd/) to serve Silicon APIs:

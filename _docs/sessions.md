@@ -1,9 +1,9 @@
 ---
 layout: post
-title: sessions
+title: Session middlewares
 ---
 
-Sessions
+Session middlewares
 ======================
 
 There are several silicon middlewares helping the managment of the
@@ -18,9 +18,20 @@ Given D the object representing the session of one user:
  - ```sqlite_session<D>```: Store the session data in a sqlite table.
  - ```hashmap_session<D>```: Store the session data in an in-memory hash map.
 
-## SQL Session
+The headers are located under the ```middlewares``` directory:
 
 ```c++
+#include <silicon/middlewares/mysql_session.hh>
+#include <silicon/middlewares/sqlite_session.hh>
+#include <silicon/middlewares/hashmap_session.hh>
+```
+
+## SQL Session
+
+The following example shows how to implement a simple sqlite sessions.
+
+```c++
+// session_data handles the session data.
 struct session_data
 {
   // The constructor must create a empty session.
@@ -120,19 +131,7 @@ int main()
 }
 ```
 
-### ```hashmap_session_middleware``` options:
-
-#### ```expires = N``` 
-
-Default: 10000
-
-Set the session to timeout after N seconds.
-
-Example:
-```c++
-hashmap_session_middleware(_expires = 3600)
-```
-
+<!--
 ### Options:
 
 All the session middlewares take the following options:
@@ -148,3 +147,4 @@ Example:
 ```c++
 sqlite_session_middleware("db.sqlite", _expires = 3600);
 ```
+-->

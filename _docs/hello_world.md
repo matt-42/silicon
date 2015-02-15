@@ -1,9 +1,9 @@
 ---
 layout: post
-title: Hello World
+title: Hello world example
 ---
 
-Hello World
+Hello world example
 =========================
 
 Here is a simple hello world example serving the string {"message":"hello world."} at the route /hello.
@@ -11,11 +11,16 @@ Here is a simple hello world example serving the string {"message":"hello world.
 
 ```c++
 #include <silicon/api.hh>
-#include <silicon/mhd_serve.hh>
+#include <silicon/backends/mhd.hh>
 
 // Declare the iod symbols.
+#ifndef IOD_SYMBOL_message
 iod_define_symbol(message);
+#endif
+
+#ifndef IOD_SYMBOL_hello
 iod_define_symbol(hello);
+#endif
 
 using namespace sl; // Silicon namespace
 using namespace s; // Symbols namespace
@@ -66,5 +71,5 @@ The hello_world project requires:
   - the microhttpd lib
 
 ```
-g++/clang++ -std=c++14 main.cc -lmicrohttpd
+g++ -std=c++14 -I __path_to_silicon__ -I __path_to_iod__ mdh_test.cc -l microhttpd
 ```
