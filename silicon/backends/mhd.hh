@@ -36,11 +36,11 @@ namespace sl
     typedef mhd_response response_type;
 
     template <typename T>
-    auto deserialize(const request_type& r, T& res) const
+    auto deserialize(request_type* r, T& res) const
     {
       try
       {
-        json_decode(res, r.body);
+        json_decode(res, r->body);
       }
       catch (const std::runtime_error& e)
       {
@@ -49,26 +49,31 @@ namespace sl
 
     }
 
-    void serialize(response_type& r, const std::string res) const
+    void serialize2(response_type* r, const std::string res) const
     {
-      r.status = 200;
-      r.body = res;
+      r->status = 200;
+      r->body = res;
     }
 
-    void serialize(response_type& r, const char* res) const
+    void serialize2(response_type* r, const char* res) const
     {
-      r.status = 200;
-      r.body = res;
+      r->status = 200;
+      r->body = res;
     }
     
     template <typename T>
-    auto serialize(response_type& r, const T& res) const
+    auto serialize2(response_type* r, const T& res) const
     {
       std::string str = json_encode(res);
-      r.status = 200;
-      r.body = str;
+      r->status = 200;
+      r->body = str;      
     }
 
+    template <typename T>
+    auto serialize(response_type* r, const T& res) const
+    {
+      serialize2(r, res);
+    }
     
   };
 
@@ -138,7 +143,7 @@ namespace sl
 
     try
     {
-      service(url, rq, resp);
+      service(url, &rq, &resp);
     }
     catch(const error::error& e)
     {
@@ -192,7 +197,7 @@ namespace sl
     int thread_pool_size = options.get(_nthreads, get_nprocs());
 
     auto api2 = api.bind_factories(mhd_session_cookie());
-    auto s = service<mhd_json_service_utils, decltype(api2)>(api2);
+    auto s = service<mhd_json_service_utils, decltype(api2), mhd_request*, mhd_response*>(api2);
     typedef decltype(s) S;
       
     struct MHD_Daemon * d;

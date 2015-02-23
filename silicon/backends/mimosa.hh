@@ -70,12 +70,12 @@ namespace sl
     typedef mimosa::http::ResponseWriter response_type;
 
     template <typename T>
-    auto deserialize(request_type& r, T& res) const
+    auto deserialize(request_type* r, T& res) const
     {
       std::string body;
       char buf[1024];
       int n;
-      while ((n = r.read(buf, 1024))) { body.append(buf, n); }
+      while ((n = r->read(buf, 1024))) { body.append(buf, n); }
       try
       {
         json_decode(res, body);
@@ -87,18 +87,24 @@ namespace sl
 
     }
 
-    auto serialize(response_type& r, const std::string& str) const
+    auto serialize2(response_type* r, const std::string& str) const
     {
-      r.write(str.data(), str.size());
+      r->write(str.data(), str.size());
     }
     
     template <typename T>
-    auto serialize(response_type& r, const T& res) const
+    auto serialize2(response_type* r, const T& res) const
     {
       std::string str = json_encode(res);
-      r.write(str.data(), str.size());
+      r->write(str.data(), str.size());
     }
-
+ 
+    template <typename T>
+    auto serialize(response_type* r, const T& res) const
+    {
+      serialize2(r, res);
+    }
+   
   };
     
   template <typename S>
@@ -115,7 +121,7 @@ namespace sl
       auto _this = const_cast<mimosa_handler<S>*>(this);
       try
       {
-        _this->service_(request.location(), request, response);
+        _this->service_(request.location(), &request, &response);
       }
       catch(const error::error& e)
       {
@@ -142,7 +148,9 @@ namespace sl
   void mimosa_json_serve(const A& api, int port)
   {
     auto api2 = api.bind_factories(mimosa_session_cookie_factory());
-    service<mimosa_silicon, decltype(api2)> s(api2);
+    service<mimosa_silicon, decltype(api2),
+            mimosa::http::RequestReader*,
+            mimosa::http::ResponseWriter*> s(api2);
     mimosa_handler<decltype(s)> handler(s);
     mimosa::http::Server::Ptr server = new mimosa::http::Server;
     server->setHandler(&handler);

@@ -68,11 +68,11 @@ namespace sl
     typedef RS response_type;
 
     template <typename T>
-    auto deserialize(const request_type& r, T& res) const
+    auto deserialize(request_type* r, T& res) const
     {
       try
       {
-        json_decode(res, r.body);
+        json_decode(res, r->body);
       }
       catch (const std::runtime_error& e)
       {
@@ -82,10 +82,10 @@ namespace sl
     }
 
     template <typename T>
-    auto serialize(response_type& r, const T& res) const
+    auto serialize(response_type* r, const T& res) const
     {
       std::string str = json_encode(res);
-      r = response_type::stock_reply(response_type::ok, str);
+      *r = response_type::stock_reply(response_type::ok, str);
     }
 
   };
@@ -104,7 +104,7 @@ namespace sl
 
       try
       {
-        service_(std::string(request.destination), request, response);
+        service_(std::string(request.destination), &request, &response);
       }
       catch(const error::error& e)
       {
@@ -136,7 +136,9 @@ namespace sl
     typedef boost::network::http::basic_request<cppnet_server_tag> RQ;
     typedef boost::network::http::basic_response<cppnet_server_tag> RS;
 
-    auto s = service<cppnet_json_service_utils<RQ, RS>, A>(api);
+    auto s = service<cppnet_json_service_utils<RQ, RS>, A,
+                     cppnet_request_type*,
+                     cppnet_response_type*>(api);
     typedef decltype(s) S;
     typedef cppnet_handler<S, RQ, RS> H;
     typedef bnh::server<H> server_type;

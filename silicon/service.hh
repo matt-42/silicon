@@ -14,12 +14,8 @@ namespace sl
   template <typename M, typename S, typename... ARGS>
   struct ws_handler_base
   {
-    typedef typename S::request_type request_type;
-    typedef typename S::response_type response_type;
-    
     ws_handler_base() {}
     virtual void operator()(M& middlewares, S& s,
-                            request_type& request, response_type& response,
                             ARGS&...) = 0;
 
   };
@@ -31,27 +27,26 @@ namespace sl
     typedef R return_type;
     typedef F function_type;
     
-    typedef typename S::request_type request_type;
-    typedef typename S::response_type response_type;
-    
     ws_handler(F f) : f_(f) {}
 
-    virtual void operator()(M& middlewares, S& s,
-                            request_type& request, response_type& response, ARGS&... args)
+    virtual void operator()(M& middlewares, S& s, ARGS&... args)
     {
       // Decode arguments
       arguments_type arguments;
-      s.deserialize(request, arguments);
+      auto method = &S::template deserialize<arguments_type>;
+      di_call_method(s, method, arguments, args...);
 
       // Call the procedure and serialize its result.
       typedef iod::callable_arguments_tuple_t<F> T;
       static_if<std::is_same<callable_return_type_t<F>, void>::value>(
-        [&, this] (auto& response) { // If the procedure does not return a value just call it.
-          di_factories_call(f_, middlewares, &request, &response, arguments, args...);
+        [&, this] (auto& arguments) { // If the procedure does not return a value just call it.
+          di_factories_call(f_, middlewares, arguments, args...);
         },
-        [&, this] (auto& response) { // If the procedure returns a value, serialize it.
-          s.serialize(response, di_factories_call(f_, middlewares, &request, &response, arguments, args...));
-        }, response);
+        [&, this] (auto& arguments) { // If the procedure returns a value, serialize it.
+          auto ret = di_factories_call(f_, middlewares, arguments, args...);
+          auto method = &S::template serialize<decltype(ret)>;
+          di_call_method(s, method, ret, args...);
+        }, arguments);
     }
     
   private:
@@ -62,8 +57,6 @@ namespace sl
   template <typename S, typename A, typename... ARGS>
   struct service
   {
-    typedef typename S::request_type request_type;
-    typedef typename S::response_type response_type;
     typedef typename A::middlewares_type middlewares_type;
     
     service(const A& api)
@@ -98,13 +91,11 @@ namespace sl
     auto& api() { return api_; }
 
     void operator()(const std::string& route,
-                    request_type& request,
-                    response_type& response,
-                    ARGS&... args)
+                    ARGS... args)
     {
       auto it = routing_table_.find(route);
       if (it != routing_table_.end())
-        it->second->operator()(api_.middlewares(), s_, request, response, args...);
+        it->second->operator()(api_.middlewares(), s_, args...);
       else
         throw error::not_found("Route ", route, " does not exist.");
     }

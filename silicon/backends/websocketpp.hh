@@ -19,18 +19,21 @@ namespace sl
   using ::s::_id;
 
   typedef websocketpp::server<websocketpp::config::asio> wspp_server;
-  
+
+  struct wspp_response { std::string body; };
+  struct wspp_request { std::string body; };
+
   struct websocketpp_json_service_utils
   {
-    typedef std::string request_type;
-    typedef std::string response_type;
+    typedef wspp_request request_type;
+    typedef wspp_response response_type;
 
     template <typename T>
-    auto deserialize(const request_type& r, T& res) const
+    auto deserialize(request_type* r, T& res) const
     {
       try
       {
-        json_decode(res, r);
+        json_decode(res, r->body);
       }
       catch (const std::runtime_error& e)
       {
@@ -39,17 +42,23 @@ namespace sl
 
     }
 
-    inline auto serialize(response_type& r, const std::string& res) const
+    inline auto serialize2(response_type* r, const std::string& res) const
     {
-      r = res;
+      r->body = res;
     }
     
     template <typename T>
-    auto serialize(response_type& r, const T& res) const
+    auto serialize2(response_type* r, const T& res) const
     {
-      r = json_encode(res);
+      r->body = json_encode(res);
     }
 
+    template <typename T>
+    auto serialize(response_type* r, const T& res) const
+    {
+      serialize2(r, res);
+    }
+    
   };
 
   template <typename A1, typename A2, typename... OPTS>
@@ -67,8 +76,12 @@ namespace sl
 
     wspp_server server;
 
-    auto ws_service = service<websocketpp_json_service_utils, A1, client_type, wspp_connection>(server_api);
-    auto http_service = service<websocketpp_json_service_utils, decltype(http_api)>(http_api);
+    auto ws_service = service<websocketpp_json_service_utils, A1,
+                              wspp_request*, wspp_response*,
+                              client_type, wspp_connection>(server_api);
+    auto http_service = service<websocketpp_json_service_utils,
+                                decltype(http_api),
+                                wspp_request*, wspp_response*>(http_api);
 
     std::mutex connections_mutex;
     std::mutex messages_mutex;
@@ -103,10 +116,11 @@ namespace sl
       wspp_server::connection_ptr con = server.get_con_from_hdl(hdl);
       try
       {
-        std::string request, response;
-        http_service(con->get_resource(), request, response);
+        wspp_request request;
+        wspp_response response;
+        http_service(con->get_resource(), &request, &response);
         con->set_status(websocketpp::http::status_code::ok);
-        con->set_body(response);
+        con->set_body(response.body);
       }
       catch(const error::error& e)
       {
@@ -137,7 +151,8 @@ namespace sl
         while (str[j] != ':' and j < str.size()) j++;
         
         std::string location = str.substr(i + 1, j - i - 1);
-        std::string request = str.substr(j + 1, str.size() - j - 1);
+        wspp_request request;
+        request.body = str.substr(j + 1, str.size() - j - 1);
 
         auto send_response = [&] (int status, std::string body) {
           std::stringstream ss;
@@ -146,10 +161,10 @@ namespace sl
         };
         try
         {
-          std::string response;
-          ws_service(location, request, response, rclient, connection);
-          if (response.size() != 0)
-            send_response(200, response);
+          wspp_response response;
+          ws_service(location, &request, &response, rclient, connection);
+          if (response.body.size() != 0)
+            send_response(200, response.body);
         }
         catch(const error::error& e)
         {
