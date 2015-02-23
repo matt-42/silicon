@@ -2,7 +2,9 @@
 #include <fstream>
 
 #include <silicon/api.hh>
-#include <silicon/microhttpd_serve.hh>
+#include <silicon/backends/mhd.hh>
+
+#include "symbols.hh"
 
 int main()
 {
@@ -12,10 +14,10 @@ int main()
   // Create an api
   auto api = make_api(
 
-    @hello(@name) = [] (auto p) { return D(@message = "hello " + p.name); }
+    _hello(_name) = [] (auto p) { return D(_message = "hello " + p.name); }
 
     );
 
   // Serve it using cppnetlib and the json protocol.
-  microhttpd_json_serve(api, 9999);
+  mhd_json_serve(api, 9999);
 }
