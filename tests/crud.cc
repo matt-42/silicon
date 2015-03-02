@@ -28,7 +28,7 @@ int main()
   auto api = make_api(
     
     _user = sql_crud<sqlite_orm<User>>(
-      _before_create = [] (User& u) { u.city = "Paris"; }
+      _before_create = [] (User& u, sqlite_connection& c) { u.city = "Paris"; }
       ) // Crud for the User object.
     )
     .bind_factories(

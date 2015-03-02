@@ -41,6 +41,8 @@ namespace sl
       static_if<std::is_same<callable_return_type_t<F>, void>::value>(
         [&, this] (auto& arguments) { // If the procedure does not return a value just call it.
           di_factories_call(f_, middlewares, arguments, args...);
+          auto method = &S::template serialize<const std::string>;
+          di_call_method(s, method, std::string(""), args...);
         },
         [&, this] (auto& arguments) { // If the procedure returns a value, serialize it.
           auto ret = di_factories_call(f_, middlewares, arguments, args...);

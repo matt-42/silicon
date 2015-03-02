@@ -3,6 +3,7 @@
 #include <iod/di.hh>
 #include <iod/utils.hh>
 #include <silicon/middlewares/sql_orm.hh>
+#include <silicon/error.hh>
 
 namespace sl
 {
@@ -11,6 +12,12 @@ namespace sl
   template <typename O, typename F>
   using handler_deps = di::dependencies_of_<tuple_remove_elements_t<callable_arguments_tuple_t<F>,
                                                                     O, O&, const O&>>;
+
+  template <typename F, typename O, typename... D>
+  auto sql_crud_call_callback(F& f, O& o, std::tuple<D...>& deps)
+  {
+    return di_call(f, o, tuple_get_by_type<D>(deps)...);
+  }
   
   template <typename ORMI, typename... T>
   auto sql_crud(T&&... _opts)
@@ -23,7 +30,8 @@ namespace sl
     
     auto call_callback = [] (auto& f, O& o, auto& deps)
     {
-      return di_call(f, o, deps.deps);
+      return sql_crud_call_callback(f, o, deps.deps);
+      //return iod::apply(f, o, deps.deps, o, di_call(f, o, deps.deps, di_call);
     };
 
     auto opts = D(_opts...);
@@ -63,8 +71,7 @@ namespace sl
       O o;
       o = obj;
       call_callback(before_create, o, bc_deps);
-      if (call_callback(write_access, o, wa_deps) and
-          call_callback(validate, o, v_deps))
+      if (call_callback(validate, o, v_deps))
       {
         int new_id = orm.insert(o);
         call_callback(on_create_success, o, oc_deps);

@@ -82,10 +82,22 @@ namespace sl
     }
 
     template <typename T>
-    auto serialize(response_type* r, const T& res) const
+    auto serialize2(response_type* r, const std::string& res) const
+    {
+      *r = response_type::stock_reply(response_type::ok, res);
+    }
+    
+    template <typename T>
+    auto serialize2(response_type* r, const T& res) const
     {
       std::string str = json_encode(res);
       *r = response_type::stock_reply(response_type::ok, str);
+    }
+    
+    template <typename T>
+    void serialize(response_type* r, const T& res) const
+    {
+      serialize2(r, res);
     }
 
   };

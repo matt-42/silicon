@@ -168,17 +168,20 @@ namespace sl
         if (!first) ss << ", ";
         ss << m.symbol().name() << " " << c.type_to_string(m.value());
 
-        if (std::is_same<C, sqlite_connection>::value and
-            m.attributes().has(_auto_increment))
-          ss << " PRIMARY KEY ";
+        if (std::is_same<C, sqlite_connection>::value)
+        {
+          if (m.attributes().has(_auto_increment) || m.attributes().has(_primary_key))
+            ss << " PRIMARY KEY ";
+        }
         
-        if (std::is_same<C, mysql_connection>::value and
-            m.attributes().has(_auto_increment))
-          ss << " AUTO_INCREMENT NOT NULL ";
+        if (std::is_same<C, mysql_connection>::value)
+        {
+          if (m.attributes().has(_auto_increment))
+            ss << " AUTO_INCREMENT NOT NULL";
+          if (m.attributes().has(_primary_key))
+            ss << " PRIMARY KEY ";
+        }
 
-        if (m.attributes().has(_primary_key))
-          ss << " PRIMARY KEY ";
-        
         // To activate when pgsql_connection is implemented.
         // if (std::is_same<C, pgsql_connection>::value and
         //     m.attributes().has(_auto_increment))

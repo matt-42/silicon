@@ -1,5 +1,6 @@
 #pragma once
 
+#include <sstream>
 #include <memory>
 #include <mutex>
 #include <cstring>
@@ -14,6 +15,7 @@
 
 namespace sl
 {
+  using namespace s;
 
   void free_sqlite3_statement(void* s)
   {
@@ -148,6 +150,8 @@ namespace sl
     int bind(sqlite3_stmt* stmt, int pos, double d) const { return sqlite3_bind_double(stmt, pos, d); }
     int bind(sqlite3_stmt* stmt, int pos, int d) const { return sqlite3_bind_int(stmt, pos, d); }
     void bind(sqlite3_stmt* stmt, int pos, null_t) { sqlite3_bind_null(stmt, pos); }
+    int bind(sqlite3_stmt* stmt, int pos, const char* s) const {
+      return sqlite3_bind_text(stmt, pos, s, strlen(s), nullptr); }
     int bind(sqlite3_stmt* stmt, int pos, const std::string& s) const {
       return sqlite3_bind_text(stmt, pos, s.data(), s.size(), nullptr); }
     int bind(sqlite3_stmt* stmt, int pos, const blob& b) const {
