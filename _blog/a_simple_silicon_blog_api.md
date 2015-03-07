@@ -1,6 +1,6 @@
 ---
 layout: blog
-title: The Silicon Web Framework
+title: A quick tour of the Silicon web framework: A simple blog API in 85 C++ lines.
 ---
 
 # A quick tour of the Silicon web framework: A simple blog API in 85 C++ lines
