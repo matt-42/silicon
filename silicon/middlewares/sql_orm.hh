@@ -88,7 +88,17 @@ namespace sl
       auto req = con_(ss.str());
       apply(values, req);
       return req.last_insert_id();
+
     };
+
+    // Iterate on all the rows of the table.
+    template <typename F>
+    void forall(F f)
+    {
+      std::stringstream ss;
+      ss << "SELECT * from " << table_name_ << ";";
+      con_(ss.str()) | f;
+    }
 
     // Update N's members except auto increment members.
     // N must have at least one primary key.
