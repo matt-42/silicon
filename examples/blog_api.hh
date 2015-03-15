@@ -57,6 +57,7 @@ struct restricted_area
   }
 };
 
+
 auto blog_api = make_api(
 			   
   _login(_login, _password) = [] (auto p, session& s, sqlite_connection& c)
@@ -90,19 +91,20 @@ auto blog_api = make_api(
 
   _post = sql_crud<post_orm>(
 
-    _validate = [] (post& p, restricted_area&) {
+    _validate = [] (post& p) {
       return p.title.size() > 0 and p.body.size() > 0;
     },
-      
-    _before_create = [] (post& p, session& s, restricted_area&) {
+
+    _before_create = [] (post& p, session& s, restricted_area) {
       p.user_id = s.user_id;
     },
 
-    _write_access = [] (post& p, session& s, restricted_area&) {
+    _write_access = [] (post& p, session& s, restricted_area) {
       return p.user_id == s.user_id;
     }
 
-    )).bind_factories(sqlite_connection_factory("blog.sqlite"),
+    )
+  ).bind_factories(sqlite_connection_factory("blog.sqlite"),
                       user_orm_factory("blog_users"),
                       post_orm_factory("blog_posts"),
                       hashmap_session_factory<session>());

@@ -10,6 +10,7 @@
 #include <silicon/error.hh>
 #include <silicon/service.hh>
 #include <silicon/middlewares/tracking_cookie.hh>
+#include <silicon/middlewares/get_parameters.hh>
 #include <iod/json.hh>
 
 namespace sl
@@ -78,12 +79,13 @@ namespace sl
   };
 
   template <typename F>
-  int mdh_keyvalue_iterator(void *cls,
+  int mhd_keyvalue_iterator(void *cls,
                             enum MHD_ValueKind kind,
                             const char *key, const char *value)
   {
     F& f = *(F*)cls;
     f(key, value);
+    return MHD_YES;
   }
 
   struct mhd_session_cookie
@@ -106,6 +108,19 @@ namespace sl
       return tracking_cookie(token);
     }
 
+  };
+
+  struct mhd_get_parameters_factory
+  {
+    auto instantiate(MHD_Connection* connection)
+    {
+      get_parameters map;
+      auto add = [&] (const char* k, const char* v) { map[k] = v; };
+      MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND,
+				&mhd_keyvalue_iterator<decltype(add)>,
+				&add);
+      return std::move(map);
+    }
   };
   
   template <typename S>
@@ -143,7 +158,7 @@ namespace sl
 
     try
     {
-      service(url, &rq, &resp);
+      service(url, &rq, &resp, connection);
     }
     catch(const error::error& e)
     {
@@ -196,8 +211,8 @@ namespace sl
 
     int thread_pool_size = options.get(_nthreads, get_nprocs());
 
-    auto api2 = api.bind_factories(mhd_session_cookie());
-    auto s = service<mhd_json_service_utils, decltype(api2), mhd_request*, mhd_response*>(api2);
+    auto api2 = api.bind_factories(mhd_session_cookie(), mhd_get_parameters_factory());
+    auto s = service<mhd_json_service_utils, decltype(api2), mhd_request*, mhd_response*, MHD_Connection*>(api2);
     typedef decltype(s) S;
       
     struct MHD_Daemon * d;
