@@ -96,8 +96,8 @@ namespace sl
     void forall(F f)
     {
       std::stringstream ss;
-      ss << "SELECT * from " << table_name_ << ";";
-      con_(ss.str()) | f;
+      ss << "SELECT * from " << table_name_;
+      con_(ss.str())() | f;
     }
 
     // Update N's members except auto increment members.
