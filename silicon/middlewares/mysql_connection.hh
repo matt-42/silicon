@@ -389,6 +389,8 @@ namespace sl
       if (!con_)
         throw error::internal_server_error("Cannot connect to the database");
 
+      mysql_set_character_set(con_, "utf8");
+      
       std::unique_lock<std::mutex> l(*pool_mutex_);
       pool_[std::this_thread::get_id()] = con_;
       return mysql_connection(con_);
