@@ -10,25 +10,25 @@ file(READ ${CMAKE_SOURCE_DIR}/client_templates/websocket.js JAVASCRIPT_WS_CLIENT
 configure_file(${CMAKE_SOURCE_DIR}/silicon/clients/templates/javascript_websocket.hh.in
                ${CMAKE_SOURCE_DIR}/silicon/clients/templates/javascript_websocket.hh)
 
-export(PACKAGE Silicon)
+#export(PACKAGE Silicon)
 
-set(SILICON_INCLUDE_DIR "include")
-set(CMAKE_CONFIG_DEST "share/silicon")
+#set(SILICON_INCLUDE_DIR "include")
+#set(CMAKE_CONFIG_DEST "share/silicon")
 
-include(CMakePackageConfigHelpers)
-configure_package_config_file (                         
-        ${CMAKE_SOURCE_DIR}/SiliconConfig.cmake.in
-        ${CMAKE_BINARY_DIR}/SiliconConfig.cmake
-        INSTALL_DESTINATION ${CMAKE_CONFIG_DEST}
-        PATH_VARS SILICON_INCLUDE_DIR CMAKE_CONFIG_DEST)
+#include(CMakePackageConfigHelpers)
+#configure_package_config_file (                         
+#        ${CMAKE_SOURCE_DIR}/SiliconConfig.cmake.in
+#        ${CMAKE_BINARY_DIR}/SiliconConfig.cmake
+#        INSTALL_DESTINATION ${CMAKE_CONFIG_DEST}
+#        PATH_VARS SILICON_INCLUDE_DIR CMAKE_CONFIG_DEST)
 
-configure_file(SiliconConfigVersion.cmake.in
-  "${PROJECT_BINARY_DIR}/SiliconConfigVersion.cmake" @ONLY)
+#configure_file(SiliconConfigVersion.cmake.in
+#  "${PROJECT_BINARY_DIR}/SiliconConfigVersion.cmake" @ONLY)
 
-install(FILES
-  "${PROJECT_BINARY_DIR}/SiliconConfig.cmake"
-  "${PROJECT_BINARY_DIR}/SiliconConfigVersion.cmake"
-  DESTINATION share/silicon)
+#install(FILES
+#  "${PROJECT_BINARY_DIR}/SiliconConfig.cmake"
+#  "${PROJECT_BINARY_DIR}/SiliconConfigVersion.cmake"
+#  DESTINATION share/silicon)
 
 install(DIRECTORY silicon DESTINATION include
   FILES_MATCHING PATTERN "*.hh")
