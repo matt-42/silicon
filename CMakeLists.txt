@@ -5,13 +5,13 @@ IF(BIICODE)
   #
 
 
-  file(READ ${CMAKE_SOURCE_DIR}/client_templates/javascript.js JAVASCRIPT_CLIENT_TEMPLATE)
-  configure_file(${CMAKE_SOURCE_DIR}/silicon/clients/templates/javascript.hh.in
-                 ${CMAKE_BINARY_DIR}/silicon/clients/templates/javascript.hh)
+  file(READ ${CMAKE_CURRENT_SOURCE_DIR}/client_templates/javascript.js JAVASCRIPT_CLIENT_TEMPLATE)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/silicon/clients/templates/javascript.hh.in
+                 ${CMAKE_CURRENT_BINARY_DIR}/silicon/clients/templates/javascript.hh)
 
-  file(READ ${CMAKE_SOURCE_DIR}/client_templates/websocket.js JAVASCRIPT_WS_CLIENT_TEMPLATE)
-  configure_file(${CMAKE_SOURCE_DIR}/silicon/clients/templates/javascript_websocket.hh.in
-                 ${CMAKE_BINARY_DIR}/silicon/clients/templates/javascript_websocket.hh)
+  file(READ ${CMAKE_CURRENT_SOURCE_DIR}/client_templates/websocket.js JAVASCRIPT_WS_CLIENT_TEMPLATE)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/silicon/clients/templates/javascript_websocket.hh.in
+                 ${CMAKE_CURRENT_BINARY_DIR}/silicon/clients/templates/javascript_websocket.hh)
 
   ADD_BIICODE_TARGETS()
 
