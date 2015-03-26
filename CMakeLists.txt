@@ -1,8 +1,8 @@
 IF(BIICODE)
 
-#
-# biicode rules.
-#
+  #
+  # biicode rules.
+  #
 
 
   file(READ ${CMAKE_SOURCE_DIR}/client_templates/javascript.js JAVASCRIPT_CLIENT_TEMPLATE)
