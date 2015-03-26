@@ -7,7 +7,7 @@ IF(BIICODE)
 
   file(READ ${CMAKE_SOURCE_DIR}/client_templates/javascript.js JAVASCRIPT_CLIENT_TEMPLATE)
   configure_file(${CMAKE_SOURCE_DIR}/silicon/clients/templates/javascript.hh.in
-                 ${CMAKE_BINARY   _DIR}/silicon/clients/templates/javascript.hh)
+                 ${CMAKE_BINARY_DIR}/silicon/clients/templates/javascript.hh)
 
   file(READ ${CMAKE_SOURCE_DIR}/client_templates/websocket.js JAVASCRIPT_WS_CLIENT_TEMPLATE)
   configure_file(${CMAKE_SOURCE_DIR}/silicon/clients/templates/javascript_websocket.hh.in
