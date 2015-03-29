@@ -1,6 +1,7 @@
 #pragma once
 
 #include <mutex>
+#include <deque>
 #include <sstream>
 #include <map>
 #include <unordered_map>
@@ -325,6 +326,19 @@ namespace sl
     {
     }
 
+    template <typename POOL>
+    mysql_connection(MYSQL* con,
+                     std::shared_ptr<std::mutex>& pool_mutex,
+                     POOL& pool)
+      : con_(con)
+    {
+      sptr_ = std::shared_ptr<int>((int*)42, [&] (int* p)
+                                   {
+                                     std::unique_lock<std::mutex> l(*pool_mutex);
+                                     pool.push_back(con_);
+                                   });
+    }
+    
     int last_insert_rowid()
     {
       return mysql_insert_id(con_);
@@ -355,16 +369,17 @@ namespace sl
 
     std::unordered_map<std::string, mysql_statement> stm_cache_;
     MYSQL* con_;
+    std::shared_ptr<int> sptr_;
   };
 
   struct mysql_connection_factory
   {
     template <typename... O>
     mysql_connection_factory(const std::string& host,
-                                const std::string& user,
-                                const std::string& passwd,
-                                const std::string& database,
-                                O... options)
+                             const std::string& user,
+                             const std::string& passwd,
+                             const std::string& database,
+                             O... options)
       : host_(host),
         user_(user),
         passwd_(passwd),
@@ -379,26 +394,33 @@ namespace sl
 
     mysql_connection instantiate()
     {
-      auto it = pool_.find(std::this_thread::get_id());
-      if (it != pool_.end())
-        return mysql_connection(it->second);
-
       MYSQL* con_ = nullptr;
-      con_ = mysql_init(con_);
-      con_ = mysql_real_connect(con_, host_.c_str(), user_.c_str(), passwd_.c_str(), database_.c_str() ,0,NULL,0);
+      {
+        std::unique_lock<std::mutex> l(*pool_mutex_);
+        if (!pool_.empty())
+        {
+          con_ = pool_.back();
+          pool_.pop_back();
+        }
+      }
+
       if (!con_)
-        throw error::internal_server_error("Cannot connect to the database");
+      {
+        con_ = mysql_init(con_);
+        con_ = mysql_real_connect(con_, host_.c_str(), user_.c_str(), passwd_.c_str(), database_.c_str() ,0,NULL, 0);
+        if (!con_)
+          throw error::internal_server_error("Cannot connect to the database");
 
-      mysql_set_character_set(con_, "utf8");
-      
-      std::unique_lock<std::mutex> l(*pool_mutex_);
-      pool_[std::this_thread::get_id()] = con_;
-      return mysql_connection(con_);
+        mysql_set_character_set(con_, "utf8");
+        return mysql_connection(con_, pool_mutex_, pool_);
+      }
+      else
+        return mysql_connection(con_, pool_mutex_, pool_);
     }
-
+    
     std::shared_ptr<std::mutex> pool_mutex_;
     std::string host_, user_, passwd_, database_;
-    std::map<std::thread::id, MYSQL*> pool_;
+    std::deque<MYSQL*> pool_;
   };
 
 }
