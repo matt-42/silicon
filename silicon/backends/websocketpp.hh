@@ -66,7 +66,7 @@ namespace sl
   {
     using websocketpp::connection_hdl;
     typedef wspp_server::message_ptr message_ptr;
-    auto rclient = make_ws_remote_client(remote_client_api);
+    auto rclient = make_wspp_remote_client(remote_client_api);
     typedef decltype(rclient) client_type;
 
     auto options = D(opts...);
@@ -79,6 +79,7 @@ namespace sl
     auto ws_service = service<websocketpp_json_service_utils, A1,
                               wspp_request*, wspp_response*,
                               client_type, wspp_connection>(server_api);
+
     auto http_service = service<websocketpp_json_service_utils,
                                 decltype(http_api),
                                 wspp_request*, wspp_response*>(http_api);
@@ -180,7 +181,8 @@ namespace sl
       }
     };
 
-    
+
+    server.clear_access_channels(websocketpp::log::alevel::all);
     server.init_asio();
 
     // Register handler callbacks
