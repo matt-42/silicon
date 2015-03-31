@@ -1,6 +1,6 @@
 ---
 layout: post
-title: symbols
+title: IOD Symbols and Statically Introspectable Objects
 ---
 
 Symbols and  Statically Introspectable Objects (SIOs)

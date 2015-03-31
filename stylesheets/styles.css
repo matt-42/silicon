@@ -33,3 +33,34 @@ ul.menu a:hover {
     margin-bottom: 20px;
     margin-top: 50px;
 }
+
+.blog-container
+{
+    font-size: 13pt;
+    font-weight: 400;
+    line-height: 180%;
+}
+
+.blog-container p
+{
+    text-align: justify;
+    margin-bottom: 30px;
+}
+
+.blog-container .highlight
+{
+    margin-bottom: 30px;
+}
+
+.blog-container h1
+{
+    margin-bottom: 50px;
+    margin-top: 50px;
+}
+
+
+.blog-container h2
+{
+    margin-bottom: 40px;
+    margin-top: 60px;
+}

@@ -1,6 +1,6 @@
 ---
+title: Introduction
 layout: post
-title: The Silicon Web Framework
 ---
 
 The Silicon Web Framework
