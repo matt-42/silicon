@@ -15,14 +15,34 @@
     iod_define_symbol(body)
 #endif
 
+#ifndef IOD_SYMBOL_broadcast
+#define IOD_SYMBOL_broadcast
+    iod_define_symbol(broadcast)
+#endif
+
 #ifndef IOD_SYMBOL_hello
 #define IOD_SYMBOL_hello
     iod_define_symbol(hello)
 #endif
 
+#ifndef IOD_SYMBOL_home
+#define IOD_SYMBOL_home
+    iod_define_symbol(home)
+#endif
+
+#ifndef IOD_SYMBOL_http_api
+#define IOD_SYMBOL_http_api
+    iod_define_symbol(http_api)
+#endif
+
 #ifndef IOD_SYMBOL_id
 #define IOD_SYMBOL_id
     iod_define_symbol(id)
+#endif
+
+#ifndef IOD_SYMBOL_js_client
+#define IOD_SYMBOL_js_client
+    iod_define_symbol(js_client)
 #endif
 
 #ifndef IOD_SYMBOL_login
@@ -45,9 +65,14 @@
     iod_define_symbol(name)
 #endif
 
-#ifndef IOD_SYMBOL_pass
-#define IOD_SYMBOL_pass
-    iod_define_symbol(pass)
+#ifndef IOD_SYMBOL_on_close
+#define IOD_SYMBOL_on_close
+    iod_define_symbol(on_close)
+#endif
+
+#ifndef IOD_SYMBOL_on_open
+#define IOD_SYMBOL_on_open
+    iod_define_symbol(on_open)
 #endif
 
 #ifndef IOD_SYMBOL_password
@@ -68,6 +93,11 @@
 #ifndef IOD_SYMBOL_read_only
 #define IOD_SYMBOL_read_only
     iod_define_symbol(read_only)
+#endif
+
+#ifndef IOD_SYMBOL_text
+#define IOD_SYMBOL_text
+    iod_define_symbol(text)
 #endif
 
 #ifndef IOD_SYMBOL_title

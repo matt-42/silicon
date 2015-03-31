@@ -97,16 +97,23 @@ namespace sl
     };
     
   }
-  
-  template <typename A>
-  auto make_wspp_remote_client(const A& api)
+
+  template <typename... P>
+  auto make_wspp_remote_client(const P&... procedures)
   {
+    auto api = make_remote_api(procedures...);
     std::shared_ptr<wspp_remote_client_ctx> c(new wspp_remote_client_ctx());
     auto accessor = D(_silicon_ctx = c);
     auto rc = iod::cat(generate_wspp_remote_client_methods(c, api.procedures()), accessor);
-    return wspp_remote_client<decltype(rc)>(rc);
-  }
 
+    return [rc] (wspp_connection c) {
+      wspp_remote_client<decltype(rc)> client(rc);
+      client.silicon_ctx->connection = c.hdl;
+      client.silicon_ctx->server = c.server;
+      return client;
+    };
+  }
+  
   template <typename API>
   using wspp_client = decltype(make_wspp_remote_client(std::declval<API>()));
 

@@ -61,13 +61,11 @@ namespace sl
     
   };
 
-  template <typename A1, typename A2, typename... OPTS>
-  void wspp_json_serve(const A1& server_api, const A2& remote_client_api, int port, OPTS&&... opts)
+  template <typename A1, typename... OPTS>
+  void wspp_json_serve(const A1& server_api, int port, OPTS&&... opts)
   {
     using websocketpp::connection_hdl;
     typedef wspp_server::message_ptr message_ptr;
-    auto rclient = make_wspp_remote_client(remote_client_api);
-    typedef decltype(rclient) client_type;
 
     auto options = D(opts...);
     auto on_close_handler = options.get(_on_close, [] () {});
@@ -78,7 +76,7 @@ namespace sl
 
     auto ws_service = service<websocketpp_json_service_utils, A1,
                               wspp_request*, wspp_response*,
-                              client_type, wspp_connection>(server_api);
+                              wspp_connection>(server_api);
 
     auto http_service = service<websocketpp_json_service_utils,
                                 decltype(http_api),
@@ -163,7 +161,7 @@ namespace sl
         try
         {
           wspp_response response;
-          ws_service(location, &request, &response, rclient, connection);
+          ws_service(location, &request, &response, connection);
           if (response.body.size() != 0)
             send_response(200, response.body);
         }
