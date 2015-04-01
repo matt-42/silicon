@@ -26,7 +26,7 @@ relies on the Websocket protocol to automatically forward messages to
 all the connected users.
 
 The complete source code of this tutorial is hosted on [the github repository]
-(https://github.com/matt-42/silicon/blob/master/examples/ws_broadcast_server.hh).
+(https://github.com/matt-42/silicon/blob/master/examples/ws_broadcast_server.cc).
 
 Despite HTTP and Websockets being two different modes of
 communication, the way we use both in Silicon share the same core
