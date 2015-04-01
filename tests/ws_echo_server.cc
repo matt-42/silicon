@@ -8,7 +8,7 @@ using namespace s;
 int main(int argc, char* argv[])
 {
   using namespace sl;
-  auto rclient = make_wspp_remote_api(_echo(_text));
+  auto rclient = make_wspp_remote_client(_echo(_text));
 
   auto server_api = make_api(_echo(_text) = [rclient] (auto p, wspp_connection& con)
   {
