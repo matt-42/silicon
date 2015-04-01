@@ -1,6 +1,7 @@
 ---
 layout: blog
 title: A C++ Real-Time Broadcast App with Silicon and Websockets
+date: 2015-04-01
 ---
 
 # A C++ Real-Time Broadcast App with Silicon and Websockets
@@ -15,16 +16,17 @@ standardized and [implemented in all the major
 web browsers](http://caniuse.com/#feat=websockets). It defines
 bidirectional communication between the client and the server. In
 other words, a websocket server is able to initialize a communication to
-push messages to the clients. This enable implementations of real-time
+push messages to the clients. This allows implementations of real-time
 applications where the clients need to receive notifications as soon as
 there are available.
 
-We will see in this blog post how to leverage the Silicon web
+I will show in this blog post how to leverage the Silicon web
 framework to implement one of them: a real-time broadcast chat. It
 relies on the Websocket protocol to automatically forward messages to
 all the connected users.
 
-FIXME LINK TO THE SOURCE CODE.
+The complete source code of this tutorial is hosted on [the github repository]
+(https://github.com/matt-42/silicon/blob/master/examples/ws_broadcast_server.hh).
 
 Despite HTTP and Websockets being two different modes of
 communication, the way we use both in Silicon share the same core
@@ -39,14 +41,14 @@ there are few novelties:
      yet initiated a websocket connection
 
 
-Let's fist define the set of connected users:
+Let's first define the set of connected users:
 
 ```c++
 std::set<wspp_connection> users;
 ```
 
 This set will be updated at every creation and destruction of a
-websocket connection.  Because Silicon spread the processing of these
+websocket connection.  Because Silicon spreads the processing of these
 events in concurrent threads, we need a mutex to avoid race conditions:
 
 ```c++
@@ -59,7 +61,7 @@ the ```make_wspp_remote_client``` allows us to easily declare the
 signatures of these remote functions.
 
 The bodies of these functions are available client side and executed
-as soon as a message transit from the server to the client. Here we
+as soon as a message transits from the server to the client. Here we
 only have to define one remote function: the function ```message```
 taking as argument the new message to display.
 
@@ -84,14 +86,14 @@ and [here](https://github.com/matt-42/iod/blob/master/README.md).
 
 We now have everything to define the server API. It contains one
 broadcast procedure that each client will call as soon as a user
-enter a message. The role of this procedure is to broadcast the message
-to all clients contained in the ```users``` set via ```rclient```.
+enters a message. The role of this procedure is to broadcast the message
+to all clients contained in the ```users``` set via the ```rclient``` helper.
 
 ```c++
 auto server_api = make_api(
 
     _broadcast(_message) = [&] (auto p) {
-      for (const wspp_connection& c : users) rclient(c).message(p.message);
+      for (wspp_connection& c : users) rclient(c).message(p.message);
     }
 );
 ```
@@ -103,7 +105,7 @@ javascript class ```silicon_json_websocket``` generated server side:
 std::string js_client = generate_javascript_websocket_client(server_api);
 ```
 
-After loading this javascript class, the client will be able to open
+After loading this javascript class, the client is be able to open
 the websocket and call the broadcast with two simple lines of
 javascript:
 
@@ -112,12 +114,12 @@ var ws = new silicon_json_websocket('ws://' + window.location.host);
 ws.broadcast({message: "Hello remote server, please broadcast my message to all the connected users." });
 ```
 
-We are now able to launch the websocket backend. However we still have
+We are now able to launch the websocket server. However we still have
 to pass it three options: First, via the ```_on_open``` option, we set the
 handler registering every new clients. Then, we pass to the
 ```_on_close``` option the function removing disconnected clients. And
 finally, we serve the generated js client and html page via a fallback
-http api (via the ```_http_api``` options).
+HTTP api (via the ```_http_api``` options).
 
 ```c++
 
@@ -181,21 +183,26 @@ not error prone: no explicit use of pointer, dynamic memory
 management, dynamic inheritance or virtual classes. In short, most of
 the errors will be easily detected and reported by the compiler.
 
-
-There has been many myths about C++ being low level / rigid / verbose
+There have been many myths about C++ being low level / rigid / verbose
 and not suitable for web programming. I have been writing C++ for 10
 years and my point of view is that it was true with C++98 and
 C++11. However, while being very close to C++11, C++14 enables us to
 write amazing abstractions without impacting the performances of the
 language (see the [IOD library](https://github.com/matt-42/iod) for
-more details). As I showed in this post, productive high performance
+more details about the abstractions used by Silicon). As I showed in
+this post, productive high performance
 web programming is now possible in C++: The Silicon framework
-leverages the new C++ to help you write web apps almost as quickly as
-you would develop in other dynamic language, but with the performance
-of the equivalent written in plain C.
+leverages the last standard to help you write web apps almost as quickly as
+you would develop in other dynamic languages, but with the performance
+of the equivalent written in plain C. The other good news is the large
+number of open source C/C++ libraries available: Almost every databases
+already have a C driver and C networking libraries already implements
+the vast majority of the web communication protocols. Silicon aims
+to wrap them together in a flexible and easy to use framework.
 
 The only downside of this approach is compilation time. This simple
 example takes approximately 14 seconds to compile on a desktop
 computer. It is due to the meta programming code providing the
-flexibility. However, the upcoming optimizations in the framework and
-in the C++ compilers are likely to speedup compilation.
+flexibility and the safety of Silicon. However, the upcoming
+optimizations in the framework and in the C++ compilers are likely to
+speedup compilation.

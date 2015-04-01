@@ -1,3 +1,6 @@
+name: The Silicon Web Framework
+url: http://siliconframework.org
+
 highlighter: pygments
 
 markdown: redcarpet

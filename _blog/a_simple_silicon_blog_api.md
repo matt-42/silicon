@@ -1,6 +1,7 @@
 ---
 layout: blog
-title: A simple blog API in 85 C++ lines.
+title: A simple blog API in 85 C++ lines
+date: 2015-03-06
 ---
 
 # A quick tour of the Silicon web framework: A simple blog API in 85 C++ lines
@@ -12,10 +13,8 @@ world application. In this blog post, I'll show how to write a such an
 application with the framework. Like most modern web apps, it relies
 on a database to store data, and sessions to authenticate its users.
 
-The source code of this article is hosted on the Silicon github
-repository:
-[https://github.com/matt-42/silicon/blob/master/examples/blog_api.hh]
-(https://github.com/matt-42/silicon/blob/master/examples/blog_api.hh)
+The source code of this article is hosted on the [Silicon github
+repository](https://github.com/matt-42/silicon/blob/master/examples/blog_api.hh).
 
 
 ## The ```user``` and ```post``` models

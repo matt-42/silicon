@@ -64,3 +64,35 @@ ul.menu a:hover {
     margin-bottom: 40px;
     margin-top: 60px;
 }
+
+ul.blog-index
+{
+    margin-top: 100px;
+    list-style-type: none;
+}
+
+.blog-index .title
+{
+    font-size: 16pt;
+    color: rgb(51,51,51);
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif
+}
+
+.blog-index .date
+{
+    font-size: 10pt;
+    color: rgb(51,51,51);
+    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif
+}
+
+.blog-index a:hover
+{
+    text-decoration: none;
+}
+
+.blog-index li
+{
+    margin-top: 20px;
+    padding-bottom: 20px;
+    border-bottom: 1px #ccc solid;
+}
