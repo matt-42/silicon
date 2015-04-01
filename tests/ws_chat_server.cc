@@ -61,10 +61,7 @@ int main(int argc, char* argv[])
   using namespace sl;
 
   // The remote client api accessible from this server.
-  auto client_api = make_remote_api(   _broadcast(_from, _text), _pm(_from, _text)  );
-  
-  // The type of a client to call the remote api.
-  typedef ws_client<decltype(client_api)> client;
+  auto rclient = make_wspp_remote_client(   _broadcast(_from, _text), _pm(_from, _text)  );
 
   // The server api accessible by the client.
   auto server_api = make_api(
@@ -77,13 +74,13 @@ int main(int argc, char* argv[])
     },
 
     // Broadcast a message to all clients.
-    _broadcast(_message) = [] (auto p, wspp_connection hdl, client& rclient, chat_room& room) {
+    _broadcast(_message) = [&] (auto p, wspp_connection hdl, chat_room& room) {
       auto from = room.find_user(hdl);
       room.foreach([&] (wspp_connection h) { rclient(h).broadcast(from.nickname, p.message); });      
     },
 
     // Private message.
-    _pm(_to, _message) = [] (auto p, wspp_connection hdl, client& rclient, chat_room& room) {
+    _pm(_to, _message) = [&] (auto p, wspp_connection hdl, chat_room& room) {
 
       user from = room.find_user(hdl);
       rclient(room.find_connection(p.to)).pm(from.nickname, p.message);
@@ -95,7 +92,7 @@ int main(int argc, char* argv[])
   auto on_open_handler = [] (wspp_connection& hdl, chat_room& r) { r.add(hdl); };
   auto on_close_handler = [] (wspp_connection hdl, chat_room& r) { r.remove(hdl); };
 
-  wspp_json_serve(server_api, client_api, atoi(argv[1]),
+  wspp_json_serve(server_api, atoi(argv[1]),
                   _on_open = on_open_handler,
                   _on_close = on_close_handler);
 
