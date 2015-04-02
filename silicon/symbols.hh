@@ -6,6 +6,12 @@
     iod_define_symbol(auto_increment)
 #endif
 
+
+#ifndef IOD_SYMBOL_content_type
+#define IOD_SYMBOL_content_type
+    iod_define_symbol(content_type)
+#endif
+    
 #ifndef IOD_SYMBOL_before_create
 #define IOD_SYMBOL_before_create
     iod_define_symbol(before_create)

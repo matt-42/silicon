@@ -11,8 +11,9 @@ auto hello_api = make_api(
 
   _test = [] () { return D(_message = "hello world."); },
   _test2(_name) = [] (const auto& p) { return D(_message = "hello " + p.name); },
-  _test3 = [] () { return "hello world."; }
-
+  _test3 = [] () { return "hello world."; },
+  _test4 = [] () { return response(_content_type = "text/html", _body = D(_message = "hello world.")); }
+  
 );
 
 int main(int argc, char* argv[])

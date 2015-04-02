@@ -9,6 +9,7 @@
 #include <silicon/symbols.hh>
 #include <silicon/error.hh>
 #include <silicon/service.hh>
+#include <silicon/response.hh>
 #include <silicon/middlewares/tracking_cookie.hh>
 #include <silicon/middlewares/get_parameters.hh>
 #include <iod/json.hh>
@@ -29,6 +30,7 @@ namespace sl
     int status;
     std::string body;
     std::vector<std::pair<std::string, std::string>> cookies;
+    std::vector<std::pair<std::string, std::string>> headers;
   };
     
   struct mhd_json_service_utils
@@ -74,6 +76,14 @@ namespace sl
     auto serialize(response_type* r, const T& res) const
     {
       serialize2(r, res);
+    }
+
+    template <typename T>
+    auto serialize2(response_type* r, const response_<T>& res) const
+    {
+      serialize2(r, res.body);
+      if (res.has(_content_type))
+        r->headers.push_back(std::make_pair("Content-Type", res.get(_content_type, "")));
     }
     
   };
@@ -178,6 +188,15 @@ namespace sl
                                              (void*) str.c_str(),
                                              MHD_NO,
                                              MHD_YES);
+
+    for(auto kv : resp.headers)
+    {
+      if (MHD_NO == MHD_add_response_header (response,
+                                             kv.first.c_str(),
+                                             kv.second.c_str()))
+        throw error::internal_server_error("Failed to set http header");
+    }
+
     // Set cookies.
     for(auto kv : resp.cookies)
     {
@@ -188,6 +207,10 @@ namespace sl
         throw error::internal_server_error("Failed to set session cookie header");
     }
     
+    MHD_add_response_header (response,
+                             MHD_HTTP_HEADER_SERVER,
+                             "silicon");
+
     ret = MHD_queue_response(connection,
                              resp.status,
                              response);
