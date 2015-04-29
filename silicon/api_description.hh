@@ -12,6 +12,12 @@ namespace sl
   const char* type_string(const int*) { return "int"; }
   const char* type_string(const float*) { return "float"; }
   const char* type_string(const double*) { return "double"; }
+  template <typename T>
+  std::string type_string(const std::vector<T>*) {
+    std::stringstream res;
+    res << "vector of " << type_string(static_cast<const T*>(nullptr));
+    return std::move(res.str());
+  }
 
   template <typename... T>
   std::string type_string(const sio<T...>* o)
