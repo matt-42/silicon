@@ -1,6 +1,6 @@
 #pragma once
 
-#include <sys/sysinfo.h>
+#include <thread>
 #include <microhttpd.h>
 #include <stdlib.h>
 #include <string.h>
@@ -232,7 +232,7 @@ namespace sl
     else if (options.has(_linux_epoll))
       flags = MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY;
 
-    int thread_pool_size = options.get(_nthreads, get_nprocs());
+    int thread_pool_size = options.get(_nthreads, std::thread::hardware_concurrency());
 
     auto api2 = api.bind_factories(mhd_session_cookie(), mhd_get_parameters_factory());
     auto s = service<mhd_json_service_utils, decltype(api2), mhd_request*, mhd_response*, MHD_Connection*>(api2);
