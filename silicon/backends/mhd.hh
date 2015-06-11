@@ -248,7 +248,7 @@ namespace sl
         NULL,
         &mhd_handler<S>,
         &s,
-        MHD_OPTION_THREAD_POOL_SIZE, get_nprocs(),
+        MHD_OPTION_THREAD_POOL_SIZE, thread_pool_size,
         MHD_OPTION_END);
     else
       d = MHD_start_daemon(
