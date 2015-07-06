@@ -10,6 +10,7 @@ int main()
 {
 
   using namespace sl;
+  using namespace s;
 
   // Create an api
   auto api = make_api(

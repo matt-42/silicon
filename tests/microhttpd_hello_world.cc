@@ -19,7 +19,7 @@ auto hello_api = make_api(
 int main(int argc, char* argv[])
 {
   if (argc == 2)
-    sl::mhd_json_serve(hello_api, atoi(argv[1]));
+    sl::mhd_json_serve(hello_api, atoi(argv[1]), _nthreads=1, _select);
   else
     std::cerr << "Usage: " << argv[0] << " port" << std::endl;
 }

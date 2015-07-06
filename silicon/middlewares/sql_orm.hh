@@ -200,7 +200,16 @@ namespace sl
         first = false;
       };
       ss << ");";
-      c(ss.str())();
+      try
+      {
+        c(ss.str())();
+      }
+      catch (std::exception e)
+      {
+        std::cout << "Warning: Silicon could not create the " << table_name_ << " sql table." << std::endl
+                  << "You can ignore this message if the table already exists."
+                  << "The sql error is: " << e.what() << std::endl;
+      }
     }
     
     sql_orm<C, O> instantiate(C& con) {
