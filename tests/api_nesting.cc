@@ -23,9 +23,6 @@ auto hello_api = make_api(
 
 int main(int argc, char* argv[])
 {
-  std::thread t([&] () { mimosa_json_serve(hello_api, 12345); });
-  usleep(.1e6);
-
   if (argc == 2)
     sl::mhd_json_serve(hello_api, atoi(argv[1]));
   else

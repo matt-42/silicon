@@ -40,7 +40,13 @@ auto hello_api = make_api(
     std::stringstream ss;
     ss << "hello " << params.test;
     return D(_message = ss.str());
+  },
+
+  _test2 = [] () {
+
+    return D(_message = "hello world");
   }
+  
 
   ).template global_middlewares<request_logger>();
 
