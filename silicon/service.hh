@@ -5,6 +5,8 @@
 #include <silicon/api.hh>
 #include <silicon/error.hh>
 #include <silicon/di_factories.hh>
+#include <silicon/optional.hh>
+#include <silicon/dynamic_routing_table.hh>
 #include <iod/di.hh>
 
 namespace sl
@@ -20,25 +22,24 @@ namespace sl
 
   };
   
-  template <typename A, typename R, typename F, typename M, typename S, typename... ARGS>
+  template <typename P, typename M, typename S, typename... ARGS>
   struct ws_handler : public ws_handler_base<M, S, ARGS...>
   {
-    typedef A arguments_type;
-    typedef R return_type;
-    typedef F function_type;
+    typedef typename P::arguments_type arguments_type;
+    typedef typename P::return_type return_type;
+    typedef typename P::function_type function_type;
     
-    ws_handler(F f) : f_(f) {}
+    ws_handler(P proc) : procedure_(proc), f_(proc.function()) {}
 
     virtual void operator()(M& middlewares, S& s, ARGS&... args)
     {
       // Decode arguments
-      arguments_type arguments;
-      auto method = &S::template deserialize<arguments_type>;
-      di_call_method(s, method, arguments, args...);
+      arguments_type arguments = procedure_.default_arguments();
+      auto method = &S::template deserialize<P, arguments_type>;
+      di_call_method(s, method, arguments, procedure_, args...);
 
       // Call the procedure and serialize its result.
-      typedef iod::callable_arguments_tuple_t<F> T;
-      static_if<std::is_same<callable_return_type_t<F>, void>::value>(
+      static_if<std::is_same<return_type, void>::value>(
         [&, this] (auto& arguments) { // If the procedure does not return a value just call it.
           di_factories_call(f_, middlewares, arguments, args...);
           auto method = &S::template serialize<const std::string>;
@@ -52,7 +53,8 @@ namespace sl
     }
     
   private:
-    F f_;
+    P procedure_;
+    function_type f_;
   };
 
 
@@ -71,23 +73,23 @@ namespace sl
     template <typename O>
     void index_api(O o, std::string prefix = "")
     {
+      std::cout << "index_api_start." << std::endl;
       foreach(o) | [this, prefix] (auto& f)
       {
-        static_if<is_sio<decltype(f.value())>::value>(
+        static_if<is_tuple<decltype(f.content)>::value>(
           [&] (auto _this, auto f) { // If sio, recursion.
-            _this->index_api(f.value(),
-                             prefix + f.symbol().name() + std::string("/"));
+            _this->index_api(f.content,
+                             prefix + f.route.path_as_string(false));
           },
           [&] (auto _this, auto f) { // Else, register the procedure.
-            typedef std::remove_reference_t<decltype(f.value())> F;
-            typedef typename F::arguments_type AT;
-            typedef typename F::return_type R;
-            typedef typename F::function_type FN;
-            std::string name = std::string("/") + prefix + f.symbol().name();
+            typedef std::remove_reference_t<decltype(f.content)> P;
+            std::string name = f.route.verb_as_string() + prefix + f.route.path_as_string(false);
+            std::cout << "index_api: " << name << std::endl;
             _this->routing_table_[name] =
-              new ws_handler<AT, R, FN, middlewares_type, S, ARGS...>(f.value().function());
+              new ws_handler<P, middlewares_type, S, ARGS...>(f.content);
           }, this, f);
       };
+      std::cout << "index_api_end." << std::endl;
     }
 
     auto& api() { return api_; }
@@ -104,7 +106,8 @@ namespace sl
 
     A api_;
     S s_;
-    std::map<std::string, ws_handler_base<middlewares_type, S, ARGS...>*> routing_table_;
+    //std::map<std::string, ws_handler_base<middlewares_type, S, ARGS...>*> routing_table_;
+    dynamic_routing_table<std::string, ws_handler_base<middlewares_type, S, ARGS...>*> routing_table_;
   };
 
 }

@@ -35,7 +35,12 @@ private:
 
 auto hello_api = make_api(
 
-  _test = [] () { return D(_message = "hello world."); }
+  _test / _test[int()] = [] (const auto& params) {
+
+    std::stringstream ss;
+    ss << "hello " << params.test;
+    return D(_message = ss.str());
+  }
 
   ).template global_middlewares<request_logger>();
 

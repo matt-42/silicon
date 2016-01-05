@@ -6,23 +6,25 @@
 #include <string.h>
 #include <stdio.h>
 
+#include <iod/json.hh>
+#include <iod/utils.hh>
+
 #include <silicon/symbols.hh>
 #include <silicon/error.hh>
 #include <silicon/service.hh>
 #include <silicon/response.hh>
+#include <silicon/optional.hh>
 #include <silicon/middlewares/tracking_cookie.hh>
 #include <silicon/middlewares/get_parameters.hh>
-#include <iod/json.hh>
 
 namespace sl
 {
 
   struct mhd_request
   {
-    mhd_request(MHD_Connection* con, const std::string b) : connection(con), body(b) {}
-
     MHD_Connection* connection;
     std::string body;
+    std::string url;
   };
 
   struct mhd_response
@@ -32,18 +34,96 @@ namespace sl
     std::vector<std::pair<std::string, std::string>> cookies;
     std::vector<std::pair<std::string, std::string>> headers;
   };
-    
+
+  template <typename F>
+  int mhd_keyvalue_iterator(void *cls,
+                            enum MHD_ValueKind kind,
+                            const char *key, const char *value)
+  {
+    F& f = *(F*)cls;
+    f(key, value);
+    return MHD_YES;
+  }
+  
   struct mhd_json_service_utils
   {
     typedef mhd_request request_type;
     typedef mhd_response response_type;
 
-    template <typename T>
-    auto deserialize(request_type* r, T& res) const
+    template <typename S, typename O, typename C>
+    void decode_get_arguments(O& res, C* req) const
+    {
+      std::map<std::string, std::string> map;
+      auto add = [&] (const char* k, const char* v) { map[k] = v; };
+      MHD_get_connection_values(req->connection, MHD_GET_ARGUMENT_KIND,
+                                &mhd_keyvalue_iterator<decltype(add)>,
+                                &add);
+
+      foreach(S()) | [&] (auto m)
+      {
+        auto it = map.find(m.symbol().name());
+        if (it != map.end())
+        {
+          try
+          {
+            res[m.symbol()] = boost::lexical_cast<std::decay_t<decltype(res[m.symbol()])>>(it->second);
+          }
+          catch (const std::exception& e)
+          {
+            throw error::bad_request(std::string("Error while decoding the GET parameter ") +
+                                     m.symbol().name() + ": " + e.what());
+          }
+        }
+        else
+        {
+          if(!m.attributes().has(_optional))
+            throw std::runtime_error(std::string("Missing required GET parameter ") + m.symbol().name());
+        }
+      };
+    }
+
+    template <typename P, typename O, typename C>
+    void decode_url_arguments(O& res, const C& url) const
+    {
+      if (!url[0])
+        throw std::runtime_error("Cannot parse url arguments, empty url");
+
+      int c = 0;
+
+      foreach(P()) | [&] (auto m)
+      {
+        c++;
+        iod::static_if<is_symbol<decltype(m)>::value>(
+          [&] (auto m2) { while (url[c] and url[c] != '/') c++; }, // skip.
+          [&] (auto m2) {
+            int s = c;
+            while (url[c] and url[c] != '/') c++;
+            if (s == c)
+              throw std::runtime_error(std::string("Missing url parameter ") + m2.symbol_name());
+
+            try
+            {
+              res[m2.symbol()] = boost::lexical_cast<std::decay_t<decltype(m2.value())>>
+              (std::string(&url[s], c - s));
+            }
+            catch (const std::exception& e)
+            {
+              throw error::bad_request(std::string("Error while decoding the url parameter ") +
+                                       m.symbol().name() + ": " + e.what());
+            }
+            
+          }, m);
+      };
+    }
+    
+    template <typename P, typename T>
+    auto deserialize(request_type* r, P procedure, T& res) const
     {
       try
       {
-        json_decode(res, r->body);
+        decode_url_arguments<typename P::path_type>(res, r->url);
+        decode_get_arguments<typename P::get_arguments_type>(res, r);
+        json_decode<typename P::post_arguments_type>(res, r->body);
       }
       catch (const std::runtime_error& e)
       {
@@ -88,16 +168,6 @@ namespace sl
     
   };
 
-  template <typename F>
-  int mhd_keyvalue_iterator(void *cls,
-                            enum MHD_ValueKind kind,
-                            const char *key, const char *value)
-  {
-    F& f = *(F*)cls;
-    f(key, value);
-    return MHD_YES;
-  }
-
   struct mhd_session_cookie
   {
     
@@ -120,18 +190,18 @@ namespace sl
 
   };
 
-  struct mhd_get_parameters_factory
-  {
-    auto instantiate(MHD_Connection* connection)
-    {
-      get_parameters map;
-      auto add = [&] (const char* k, const char* v) { map[k] = v; };
-      MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND,
-				&mhd_keyvalue_iterator<decltype(add)>,
-				&add);
-      return std::move(map);
-    }
-  };
+  // struct mhd_get_parameters_factory
+  // {
+  //   auto instantiate(MHD_Connection* connection)
+  //   {
+  //     get_parameters map;
+  //     auto add = [&] (const char* k, const char* v) { map[k] = v; };
+  //     MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND,
+  //       			&mhd_keyvalue_iterator<decltype(add)>,
+  //       			&add);
+  //     return map;
+  //   }
+  // };
   
   template <typename S>
   int mhd_handler(void * cls,
@@ -163,12 +233,12 @@ namespace sl
 
     auto& service = * (S*)cls;
 
-    mhd_request rq(connection, *pp);
+    mhd_request rq{connection, *pp, url};
     mhd_response resp;
 
     try
     {
-      service(url, &rq, &resp, connection);
+      service(std::string("/") + std::string(method) + url, &rq, &resp, connection);
     }
     catch(const error::error& e)
     {
@@ -234,7 +304,7 @@ namespace sl
 
     int thread_pool_size = options.get(_nthreads, std::thread::hardware_concurrency());
 
-    auto api2 = api.bind_factories(mhd_session_cookie(), mhd_get_parameters_factory());
+    auto api2 = api.bind_factories(mhd_session_cookie()/*, mhd_get_parameters_factory()*/);
     auto s = service<mhd_json_service_utils, decltype(api2), mhd_request*, mhd_response*, MHD_Connection*>(api2);
     typedef decltype(s) S;
       

@@ -245,6 +245,12 @@
     iod_define_symbol(test4)
 #endif
 
+
+#ifndef IOD_SYMBOL_test5
+#define IOD_SYMBOL_test5
+    iod_define_symbol(test5)
+#endif
+      
 #ifndef IOD_SYMBOL_text
 #define IOD_SYMBOL_text
     iod_define_symbol(text)

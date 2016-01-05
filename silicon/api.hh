@@ -9,48 +9,46 @@
 #include <iod/di.hh>
 #include <iod/bind_method.hh>
 #include <silicon/di_factories.hh>
+#include <silicon/http_route.hh>
 
 namespace sl
 {
   using namespace iod;
   using iod::D;
 
-  template <typename A, typename R, typename F>
+  template <typename U, typename G, typename P>
+  struct procedure_args
+  {
+    // return
+    auto to_sio() {}
+  };
+  
+  template <typename Ro, typename A, typename Ret, typename F>
   struct procedure
   {
     typedef A arguments_type;
-    typedef R return_type;
+    typedef Ro route_type;
+    typedef Ret return_type;
     typedef F function_type;
 
-    procedure(F f) : f_(f) {}
+    typedef typename Ro::get_parameters_type get_arguments_type;
+    typedef typename Ro::post_parameters_type post_arguments_type;
+    typedef typename Ro::path_type path_type;
 
-    auto function() const {return f_; }
+    procedure(F f, Ro route)
+      : f_(f), default_args_(route.all_params()), route_(route)
+    {}
+
+    auto function() const { return f_; }
+    auto default_arguments() const { return default_args_; }
+    auto path() const { return route_.path; }
 
   private:
     F f_;
+    A default_args_;
+    Ro route_;
   };
-  
-  template <typename U, bool>
-  struct add_missing_string_value_types { typedef U type; };
-  template <typename U>
-  struct add_missing_string_value_types<U, true> {
-    typedef typename U::template variable_type<std::string> type;
-  };
-  
-  template <typename T>
-  struct set_default_string_parameter
-  {
-    typedef T type;
-  };
-
-  template <typename... T>
-  struct set_default_string_parameter<sio<T...>>
-  {
-    typedef sio<typename add_missing_string_value_types<T, std::is_base_of<symbol<T>, T>::value>::type...> type;
-  };
-  template <typename T>
-  using set_default_string_parameter_t = typename set_default_string_parameter<T>::type;
-  
+    
   // Bind procedure arguments.
   template <typename F, typename... U>
   auto bind_procedure2(F f, std::tuple<U...>*)
@@ -65,7 +63,8 @@ namespace sl
   template <typename F, typename... A>
   auto bind_procedure_arguments(F f, sio<A...>)
   {
-    typedef set_default_string_parameter_t<sio<A...>> params_type;
+    typedef sio<A...> params_type;
+    //typedef set_default_string_parameter_t<sio<A...>> params_type;
     return bind_procedure2(f, (callable_arguments_tuple_t<decltype(&F::template operator()<params_type>)>*)0);
   }
 
@@ -103,69 +102,76 @@ namespace sl
   template <typename T>
   using first_sio_of_tuple_t = typename first_sio_of_tuple<T>::type;
 
-  template <typename S, typename F>
-  auto make_procedure(void*, S, F fun)
+  template <typename F, typename Ro>
+  auto make_procedure2(F fun, Ro route)
   {
     static_assert(is_callable<F>::value, "F must be callable.");
 
     typedef first_sio_of_tuple_t<std::remove_reference_t<callable_arguments_tuple_t<F>>> A;
-    typedef std::remove_reference_t<callable_return_type_t<F>> R;
-    return procedure<A, R, F>(fun);
+    typedef std::remove_reference_t<callable_return_type_t<F>> Ret;
+    return procedure<Ro, A, Ret, F>(fun, route);
   }
 
   // If m.attributes not empty, bind procedure arguments.
-  template <typename M>
-  auto make_procedure(std::enable_if_t<!is_callable<decltype(std::declval<M>().value())>::value>*, M m)
+  template <typename R, typename F>
+  auto make_procedure(std::enable_if_t<!is_callable<decltype(std::declval<F>())>::value>*,
+                      R r, F f)
   {
-    auto f = bind_procedure_arguments(m.value(), m.attributes());
-    return make_procedure(0, m.symbol(), f);
+    auto binded_f = bind_procedure_arguments(f, r.all_params());
+    return make_procedure2(binded_f, r);
   }
 
   // If m.value is callable (i.e. not templated), just forward it.
-  template <typename M>
-  auto make_procedure(std::enable_if_t<is_callable<decltype(std::declval<M>().value())>::value >*, M m)
+  template <typename R, typename F>
+  auto make_procedure(std::enable_if_t<is_callable<decltype(std::declval<F>())>::value>*,
+                      R r, F f)
   {
-    return make_procedure(0, m.symbol(), m.value());
+    return make_procedure2(f, r);
   }
 
-  template <typename... T>
-  auto api_set_default_string_parameters(sio<T...> api)
+  template <typename R, typename P>
+  struct api_node
   {
-    return foreach(api) | [] (auto m)
-    {
-      set_default_string_parameter_t<decltype(m.attributes())> args;
-      return apply(args, m.symbol()) = m.value();
-    };
+    R route;
+    P content;
+  };
+
+  template <typename R, typename C>
+  auto make_api_node(R route, C content)
+  {
+    return api_node<R, C>{route, content};
   }
 
+  // parse_api: Transform the api object into a tree of route / procedures.
   template <typename... T>
-  auto parse_api(sio<T...> api)
+  auto parse_api(std::tuple<T...> api)
   {
-    return foreach(api) | [] (auto m)
+    return foreach(api) | [] (auto m) // m should be iod::assign_exp
     {
-      return static_if<is_sio<decltype(m.value())>::value>(
+      return static_if<is_tuple<decltype(m.right)>::value>(
         [] (auto m) { // If sio, recursion.
-          return m.symbol() = parse_api(m.value());
+          return make_api_node(make_http_route(m.left), parse_api(m.right));
         },
         [] (auto m) { // Else, register the procedure.
-          return m.symbol() = make_procedure(0, m);
+          return make_api_node(make_http_route(m.left), make_procedure(0, make_http_route(m.left), m.right));
         }, m);
     };
   }
-
-  template <typename P, typename... PA, typename... GA>
-  auto apply_global_middleware2(P proc, std::tuple<PA...>*, std::tuple<GA...>*)
+  
+  template <typename R, typename P, typename... PA, typename... GA>
+  auto apply_global_middleware2(R route, P proc, std::tuple<PA...>*, std::tuple<GA...>*)
   {
-    return [=] (PA&&... pa, GA... ga)
+    return make_procedure(0, route, [=] (PA&&... pa, const GA&... ga)
     {
-      return proc(pa...);
-    };
+      return proc.function()(pa...);
+    });
   }
 
-  template <typename P, typename F>
-  auto apply_global_middleware(P proc, F m_tuple)
+  template <typename R, typename P, typename F>
+  auto apply_global_middleware(R route, P proc, F m_tuple)
   {
-    return apply_global_middleware2(proc, (callable_arguments_tuple_t<P>*)0,
+    return apply_global_middleware2(route, proc,
+                                    (callable_arguments_tuple_t<typename P::function_type>*)0,
                                     m_tuple);
   }
 
@@ -174,13 +180,15 @@ namespace sl
   {
     return foreach(procedures) | [&] (auto m)
     {
-      return static_if<is_sio<decltype(m.value())>::value>(
+      return static_if<is_sio<decltype(m.content)>::value>(
         [&] (auto m) { // If sio, recursion.
-          return m.symbol() = apply_global_middleware_rec(m.value(), m_tuple);
+          return make_api_node(m.route, apply_global_middleware_rec(m.content, m_tuple));
+          //return m.symbol() = apply_global_middleware_rec(m.content, m_tuple);
         },
         [&] (auto m) { // Else, register the procedure.
-          return m.symbol() = make_procedure(0, m.symbol(),
-                                             apply_global_middleware(m.value().function(), m_tuple));
+          return make_api_node(m.route, apply_global_middleware(m.route, m.content, m_tuple));
+          // return m.route = make_procedure(0, m.route,
+          //                                 apply_global_middleware(m.content, m_tuple));
         }, m);
     };
   }
@@ -189,6 +197,7 @@ namespace sl
   struct api
   {
     typedef M middlewares_type;
+    typedef P procedures_type;
 
     api(const P& procs,
         const M& middlewares)
@@ -272,7 +281,7 @@ namespace sl
   template <typename... P>
   auto make_api(P... procs)
   {
-    auto a = parse_api(D(procs...));
+    auto a = parse_api(std::make_tuple(procs...));
     return api<decltype(a), std::tuple<>>(a, std::tuple<>());
   }
 
