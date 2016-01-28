@@ -1,5 +1,10 @@
 #pragma once
 
+#ifndef IOD_SYMBOL_optional
+#define IOD_SYMBOL_optional
+iod_define_symbol(optional)
+#endif
+
 namespace sl
 {
   template <typename T>

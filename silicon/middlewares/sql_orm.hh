@@ -43,6 +43,8 @@ namespace sl
     using remove_read_only_fields_t = decltype(remove_members_with_attribute(std::declval<T>(), _read_only));
     template <typename T>
     using extract_primary_keys_t = decltype(extract_members_with_attribute(std::declval<T>(), _primary_key));
+    template <typename T>
+    using remove_primary_keys_t = decltype(remove_members_with_attribute(std::declval<T>(), _primary_key));
 
   }
   

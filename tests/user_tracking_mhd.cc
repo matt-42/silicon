@@ -2,7 +2,7 @@
 #include <iostream>
 #include <silicon/backends/mhd.hh>
 #include <silicon/api.hh>
-#include <silicon/clients/client.hh>
+#include <silicon/clients/libcurl_client.hh>
 #include "symbols.hh"
 
 using namespace s;
@@ -24,7 +24,7 @@ int main()
   usleep(.1e6);
 
   // Test.
-  auto c = json_client(api, "127.0.0.1", 12345);
+  auto c = libcurl_json_client(api, "127.0.0.1", 12345);
 
   auto r1 = c.my_tracking_id();
   auto r2 = c.my_tracking_id();

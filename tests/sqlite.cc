@@ -11,7 +11,7 @@ int main()
 
   auto api = make_api(
     
-    _get_user(_id = int()) = [] (auto p, sqlite_connection& c)
+    _get_user / _id[int()] = [] (auto p, sqlite_connection& c)
     {
       auto res = D(_name = std::string(), _age = int());
       if (!(c("SELECT name, age from users where id = ?")(p.id) >> res))

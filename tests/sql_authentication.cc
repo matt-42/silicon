@@ -2,11 +2,11 @@
 #include <iostream>
 
 #include <silicon/api.hh>
-#include <silicon/backends/mimosa.hh>
+#include <silicon/backends/mhd.hh>
 #include <silicon/middlewares/sqlite_connection.hh>
 #include <silicon/middlewares/sqlite_session.hh>
 #include <silicon/middlewares/sqlite_orm.hh>
-#include <silicon/clients/client.hh>
+#include <silicon/clients/libcurl_client.hh>
 #include "symbols.hh"
 
 using namespace s;
@@ -96,7 +96,7 @@ int main()
       return user.user_data();
     },
 
-    _signin(_name) = [] (auto params, authenticator& auth)
+    _signin * post_parameters(_name = std::string()) = [] (auto params, authenticator& auth)
     {
       if (!auth.authenticate(params.name))
         throw error::bad_request("Invalid user name");
@@ -112,12 +112,12 @@ int main()
       sqlite_connection_factory("/tmp/sl_test_authentication.sqlite"), // sqlite middleware.
       sqlite_orm_factory<User>("users"), // Orm middleware for users.
       sqlite_session_factory<session_data>("sessions"),
-      mimosa_session_cookie_factory()
+      mhd_session_cookie()
       );
 
   
   // Start server.
-  std::thread t([&] () { mimosa_json_serve(api, 12345); });
+  std::thread t([&] () { mhd_json_serve(api, 12345); });
   usleep(.1e6);
   
   { // Setup database for testing.
@@ -126,10 +126,10 @@ int main()
   }
 
   // Test.
-  auto c = json_client(api, "127.0.0.1", 12345);
+  auto c = libcurl_json_client(api, "127.0.0.1", 12345);
 
   // Signin.
-  auto signin_r = c.signin("John Doe");
+  auto signin_r = c.signin(_name = "John Doe");
   std::cout << json_encode(signin_r) << std::endl;
   
   assert(signin_r.status == 200);

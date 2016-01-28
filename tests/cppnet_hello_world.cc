@@ -9,7 +9,7 @@ using namespace s;
 auto hello_api = make_api(
 
   _test = [] () { return D(_message = "hello world."); },
-  _test2(_name) = [] (const auto& p) { return D(_message = "hello " + p.name); }
+  _test2 * get_parameters(_name) = [] (const auto& p) { return D(_message = "hello " + p.name); }
 
 );
 

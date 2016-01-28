@@ -34,18 +34,28 @@ namespace sl
   }
 
   template <typename P>
-  std::string procedure_description(P& m, std::string scope = "")
+  std::string procedure_description(P& m)
   {
     std::stringstream res;
 
-    res << scope << m.symbol().name() << '(';
-    typedef std::remove_reference_t<decltype(m.value().function())> F;
+
+    foreach(m.route.path) | [&] (auto e)
+    {
+      static_if<is_symbol<decltype(e)>::value>(
+        [&] (auto e2) { res << std::string("/") + e2.name(); },
+        [&] (auto e2) { res << std::string("/[") << e2.symbol().name() << ": "
+                            << type_string(&e2.value()) << "]"; }, e);
+    };
+    
+    res << "(";
+    typedef std::remove_reference_t<decltype(m.content.function())> F;
     typedef callable_return_type_t<F> ret_type;
     first_sio_of_tuple_t<callable_arguments_tuple_t<F>> args;
 
-    //void* x = m.value();
+    auto get_post_args = iod::cat(m.route.get_params, m.route.post_params);
+    
     bool first = true;
-    foreach(args) | [&] (auto& a) {
+    foreach(get_post_args) | [&] (auto& a) {
       if (!first) res << ", ";
       first = false;
       res << a.symbol().name() << ": " << type_string(&a.value());
@@ -55,17 +65,17 @@ namespace sl
   }
   
   template <typename A>
-  std::string api_description2(A& api, std::string scope = "")
+  std::string api_description2(A& api)
   {
     std::stringstream res;
     foreach(api) | [&] (auto& m)
     {
-      static_if<is_sio<decltype(m.value())>::value>(
+      static_if<is_tuple<decltype(m.content)>::value>(
         [&] (auto m) { // If sio, recursion.
-          res << api_description2(m.value(), scope + m.symbol().name() + ".");
+          res << api_description2(m.content);
         },
         [&] (auto m) { // Else, register the procedure.
-          res << procedure_description(m, scope) << std::endl;
+          res << procedure_description(m) << std::endl;
         }, m);
       
     };

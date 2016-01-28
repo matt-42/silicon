@@ -1,11 +1,16 @@
 #include <iostream>
 #include <silicon/backends/mhd.hh>
 #include <silicon/api.hh>
+#include <silicon/clients/libcurl_client.hh>
 #include "symbols.hh"
 
 using namespace s;
 
 using namespace sl;
+
+
+int start_count = 0;
+int end_count = 0;
 
 struct request_logger
 {
@@ -13,11 +18,13 @@ struct request_logger
   {
     time = get_time();
     std::cout << "Request start!" << std::endl;
+    start_count++;
   }
 
   ~request_logger()
   {
     std::cout << "Request took " << (get_time() - time) << " microseconds." << std::endl;
+    end_count++;
   }
 
   inline double get_time()
@@ -52,8 +59,25 @@ auto hello_api = make_api(
 
 int main(int argc, char* argv[])
 {
-  if (argc == 2)
-    sl::mhd_json_serve(hello_api, atoi(argv[1]));
-  else
-    std::cerr << "Usage: " << argv[0] << " port" << std::endl;
+  std::thread t([&] () { mhd_json_serve(hello_api, 12345); });
+  usleep(.1e6);
+
+  // Test.
+  auto c = libcurl_json_client(hello_api, "127.0.0.1", 12345);
+
+  c.test2();
+
+  assert(start_count == 1);
+  assert(end_count == 1);
+
+  c.test2();
+  assert(start_count == 2);
+  assert(end_count == 2);
+
+  c.test(_test = 12);
+  assert(start_count == 3);
+  assert(end_count == 3);
+
+  
+  exit(0);
 }

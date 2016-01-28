@@ -14,23 +14,24 @@ namespace sl
                                                                     O, O&, const O&>>;
 
   template <typename F, typename O, typename... D>
-  auto sql_crud_call_callback(F& f, O& o, std::tuple<D...>& deps)
+  auto sql_rest_call_callback(F& f, O& o, std::tuple<D...>& deps)
   {
     return di_call(f, o, tuple_get_by_type<D>(deps)...);
   }
   
   template <typename ORMI, typename... T>
-  auto sql_crud(T&&... _opts)
+  auto sql_rest(T&&... _opts)
   {    
     typedef typename ORMI::object_type O; // O without primary keys for create procedure.
     typedef typename ORMI::PKS PKS; // Object with only the primary keys for the delete procedure.
 
-    typedef sql_orm_internals::remove_read_only_fields_t<O> update_type;
+    typedef sql_orm_internals::remove_read_only_fields_t<O> update_type_;
+    typedef sql_orm_internals::remove_primary_keys_t<update_type_> update_type;
     typedef sql_orm_internals::remove_auto_increment_t<update_type> insert_type;
     
     auto call_callback = [] (auto& f, O& o, auto& deps)
     {
-      return sql_crud_call_callback(f, o, deps.deps);
+      return sql_rest_call_callback(f, o, deps.deps);
       //return iod::apply(f, o, deps.deps, o, di_call(f, o, deps.deps, di_call);
     };
 
@@ -54,8 +55,10 @@ namespace sl
     typedef handler_deps<O, decltype(before_update)> bu_deps_t;
 
     return std::make_tuple(
-      _get_by_id * get_parameters(_id = int()) = [=] (auto params, ORMI& orm,
-                                                      handler_deps<O, decltype(read_access)>& ra_deps)
+
+      // Find by id.
+     GET / _id[int()] = [=] (auto params, ORMI& orm,
+                             handler_deps<O, decltype(read_access)>& ra_deps)
     {
       O o;
       if (!orm.find_by_id(params.id, o))
@@ -64,10 +67,11 @@ namespace sl
         return o;
       else
         throw error::unauthorized("Not enough priviledges to edit this object");
-    }
-      ,
-      
-      _create * post_parameters(insert_type()) =
+    },
+
+
+     // Create
+     POST * post_parameters(insert_type()) =
       [=] (auto obj, ORMI& orm,
            v_deps_t& v_deps,
            oc_deps_t& oc_deps,
@@ -88,11 +92,12 @@ namespace sl
         throw error::unauthorized("Not enough priviledges to edit this object");
     },
 
-      _update * post_parameters(update_type()) = [=] (auto obj, ORMI& orm,
-                                                    v_deps_t& v_deps,
-                                                    ou_deps_t& ou_deps,
-                                                    wa_deps_t& wa_deps,
-                                                    bu_deps_t& bu_deps)
+     // Update
+     PUT / _id[int()] * post_parameters(update_type()) = [=] (auto obj, ORMI& orm,
+                                                              v_deps_t& v_deps,
+                                                              ou_deps_t& ou_deps,
+                                                              wa_deps_t& wa_deps,
+                                                              bu_deps_t& bu_deps)
     {
       O o;
       if (!orm.find_by_id(obj.id, o))
@@ -111,10 +116,11 @@ namespace sl
       call_callback(on_update_success, o, ou_deps);
     },
 
-      _destroy * post_parameters(PKS()) = [=] (auto params,
-                      ORMI& orm,
-                      handler_deps<O, decltype(on_destroy_success)>& od_deps,
-                      wa_deps_t& wa_deps)
+     // Delete
+     DELETE / _id[int()] = [=] (auto params,
+                              ORMI& orm,
+                              handler_deps<O, decltype(on_destroy_success)>& od_deps,
+                              wa_deps_t& wa_deps)
     {
       O o;
       if (!orm.find_by_id(params.id, o))

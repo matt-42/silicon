@@ -143,17 +143,19 @@ namespace sl
   }
 
   // parse_api: Transform the api object into a tree of route / procedures.
-  template <typename... T>
-  auto parse_api(std::tuple<T...> api)
+  template <typename R, typename... T>
+  auto parse_api(std::tuple<T...> api, R route)
   {
-    return foreach(api) | [] (auto m) // m should be iod::assign_exp
+    return foreach(api) | [&] (auto m) // m should be iod::assign_exp
     {
       return static_if<is_tuple<decltype(m.right)>::value>(
-        [] (auto m) { // If sio, recursion.
-          return make_api_node(make_http_route(m.left), parse_api(m.right));
+        [&] (auto m) { // If sio, recursion.
+          auto r = internal::make_http_route(route, m.left);
+          return make_api_node(r, parse_api(m.right, r));
         },
-        [] (auto m) { // Else, register the procedure.
-          return make_api_node(make_http_route(m.left), make_procedure(0, make_http_route(m.left), m.right));
+        [&] (auto m) { // Else, register the procedure.
+          auto r = internal::make_http_route(route, m.left);
+          return make_api_node(r, make_procedure(0, r, m.right));
         }, m);
     };
   }
@@ -281,7 +283,7 @@ namespace sl
   template <typename... P>
   auto make_api(P... procs)
   {
-    auto a = parse_api(std::make_tuple(procs...));
+    auto a = parse_api(std::make_tuple(procs...), http_route<>());
     return api<decltype(a), std::tuple<>>(a, std::tuple<>());
   }
 

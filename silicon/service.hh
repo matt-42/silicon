@@ -73,23 +73,21 @@ namespace sl
     template <typename O>
     void index_api(O o, std::string prefix = "")
     {
-      std::cout << "index_api_start." << std::endl;
       foreach(o) | [this, prefix] (auto& f)
       {
         static_if<is_tuple<decltype(f.content)>::value>(
           [&] (auto _this, auto f) { // If sio, recursion.
             _this->index_api(f.content,
-                             prefix + f.route.path_as_string(false));
+                             f.route.path_as_string(false));
           },
           [&] (auto _this, auto f) { // Else, register the procedure.
             typedef std::remove_reference_t<decltype(f.content)> P;
-            std::string name = f.route.verb_as_string() + prefix + f.route.path_as_string(false);
-            std::cout << "index_api: " << name << std::endl;
+            std::string name = f.route.verb_as_string() + f.route.path_as_string(false);
+            //std::cout << name << std::endl;
             _this->routing_table_[name] =
               new ws_handler<P, middlewares_type, S, ARGS...>(f.content);
           }, this, f);
       };
-      std::cout << "index_api_end." << std::endl;
     }
 
     auto& api() { return api_; }
@@ -97,11 +95,17 @@ namespace sl
     void operator()(const std::string& route,
                     ARGS... args)
     {
-      auto it = routing_table_.find(route);
+      // skip the last / of the url.
+      std::string route2;
+      if (route.size() != 0 and route[route.size() - 1] == '/')
+        route2 = route.substr(0, route.size() - 1);
+      else
+        route2 = route;
+      auto it = routing_table_.find(route2);
       if (it != routing_table_.end())
         it->second->operator()(api_.middlewares(), s_, args...);
       else
-        throw error::not_found("Route ", route, " does not exist.");
+        throw error::not_found("Route ", route2, " does not exist.");
     }
 
     A api_;

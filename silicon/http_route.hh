@@ -30,6 +30,11 @@ namespace sl
   }
 
   template <typename... P>
+  auto post_parameters(sio<P...> o) {
+    return post_params_t<sio<P...>>(o);
+  }
+  
+  template <typename... P>
   auto get_parameters(P... p) {
     typedef decltype(D(std::declval<P>()...)) sio_type;
     return get_params_t<sio_type>(D(p...));
@@ -61,7 +66,9 @@ namespace sl
   // -------------------------------------------
 
   
-  template <typename T> struct http_verb : public T {};
+  template <typename T> struct http_verb : public T, public iod::assignable<http_verb<T>>, public iod::Exp<http_verb<T>> {
+    using iod::assignable<http_verb<T>>::operator=;
+  };
   struct http_get {};    static http_verb<http_get> GET;
   struct http_post {};   static http_verb<http_post> POST;
   struct http_put {};    static http_verb<http_put> PUT;
@@ -82,8 +89,8 @@ namespace sl
     typedef P3 post_parameters_type;
     
     http_route() {}
-    http_route(S s, P1 p1, P2 p2, P3 p3)
-      : path(s),
+    http_route(P1 p1, P2 p2, P3 p3)
+      : //path(s),
         url_params(p1),
         get_params(p2),
         post_params(p3)
@@ -92,7 +99,7 @@ namespace sl
     template <typename NS, typename NP1, typename NP2, typename NP3>
     auto http_route_builder(NS s, NP1 p1, NP2 p2, NP3 p3)
     {
-      return http_route<V, NS, NP1, NP2, NP3>(s, p1, p2, p3);
+      return http_route<V, NS, NP1, NP2, NP3>(p1, p2, p3);
     }
     
     // Add a path symbol.
@@ -157,7 +164,7 @@ namespace sl
     template <typename NV>
     auto set_verb(const http_verb<NV>&)
     {
-      return http_route<NV, S, P1, P2, P3>(path, url_params, get_params, post_params);
+      return http_route<NV, S, P1, P2, P3>(url_params, get_params, post_params);
     }
     
     auto all_params() const

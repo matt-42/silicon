@@ -105,6 +105,12 @@
     iod_define_symbol(linux_epoll)
 #endif
 
+    
+#ifndef IOD_SYMBOL_methods
+#define IOD_SYMBOL_methods
+    iod_define_symbol(methods)
+#endif
+
 #ifndef IOD_SYMBOL_module
 #define IOD_SYMBOL_module
     iod_define_symbol(module)
@@ -210,6 +216,11 @@
     iod_define_symbol(silicon_ctx)
 #endif
 
+#ifndef IOD_SYMBOL_silicon_root___
+#define IOD_SYMBOL_silicon_root___
+    iod_define_symbol(silicon_root___)
+#endif
+
 #ifndef IOD_SYMBOL_status
 #define IOD_SYMBOL_status
     iod_define_symbol(status)
@@ -228,6 +239,12 @@
 #ifndef IOD_SYMBOL_url
 #define IOD_SYMBOL_url
     iod_define_symbol(url)
+#endif
+
+    
+#ifndef IOD_SYMBOL_root
+#define IOD_SYMBOL_root
+    iod_define_symbol(root)
 #endif
 
 #ifndef IOD_SYMBOL_validate

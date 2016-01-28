@@ -17,7 +17,7 @@ int main(int argc, char* argv[])
 
     _test = [] () { return D(_message = "hello world."); },
     _test2 = [] () { return D(_message = "hello world."); },
-    _my_scope = D(_test2(_name) = [] (auto p) {
+    _my_scope = std::make_tuple(_test2/_name[std::string] = [] (auto p) {
       return D(_message = "hello " + p.name);
       }),
 
@@ -28,7 +28,7 @@ int main(int argc, char* argv[])
   js_client = generate_javascript_client(hello_api);
 
   if (argc == 2)
-    sl::mimosa_json_serve(hello_api, atoi(argv[1]));
+    sl::mhd_json_serve(hello_api, atoi(argv[1]));
   else
     std::cerr << "Usage: " << argv[0] << " port" << std::endl;
   

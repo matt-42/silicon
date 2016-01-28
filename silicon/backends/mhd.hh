@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <thread>
 #include <microhttpd.h>
 #include <stdlib.h>
@@ -41,8 +42,13 @@ namespace sl
                             const char *key, const char *value)
   {
     F& f = *(F*)cls;
-    f(key, value);
-    return MHD_YES;
+    if (key and value and *key and *value)
+    {
+      f(key, value);
+      return MHD_YES;
+    }
+    //else return MHD_NO;
+      return MHD_YES;
   }
   
   struct mhd_json_service_utils
@@ -109,7 +115,7 @@ namespace sl
             catch (const std::exception& e)
             {
               throw error::bad_request(std::string("Error while decoding the url parameter ") +
-                                       m.symbol().name() + ": " + e.what());
+                                       m2.symbol().name() + ": " + e.what());
             }
             
           }, m);
@@ -183,7 +189,9 @@ namespace sl
         resp->cookies.push_back(std::make_pair(key, token));
       }
       else
+      {
         token = token_;
+      }
 
       return tracking_cookie(token);
     }
@@ -254,10 +262,9 @@ namespace sl
     }
 
     const std::string& str = resp.body;
-    response = MHD_create_response_from_data(str.size(),
-                                             (void*) str.c_str(),
-                                             MHD_NO,
-                                             MHD_YES);
+    response = MHD_create_response_from_buffer(str.size(),
+                                               (void*) str.c_str(),
+                                               MHD_RESPMEM_MUST_COPY);
 
     for(auto kv : resp.headers)
     {
@@ -270,7 +277,7 @@ namespace sl
     // Set cookies.
     for(auto kv : resp.cookies)
     {
-      std::string set_cookie_string = kv.first + '=' + kv.second;
+      std::string set_cookie_string = kv.first + '=' + kv.second + "";
       if (MHD_NO == MHD_add_response_header (response,
                                              MHD_HTTP_HEADER_SET_COOKIE,
                                              set_cookie_string.c_str()))
@@ -289,8 +296,18 @@ namespace sl
     return ret;
   }
 
+  template <typename S>
+  struct silicon_mhd_ctx
+  {
+    silicon_mhd_ctx(MHD_Daemon* d, S* s) : daemon_(d), service_(s) {}
+    ~silicon_mhd_ctx() { MHD_stop_daemon(daemon_); }
+
+    MHD_Daemon* daemon_;
+    std::shared_ptr<S> service_;
+  };
+
   template <typename A, typename... O>
-  void mhd_json_serve(const A& api, int port, O&&... opts)
+  auto mhd_json_serve(const A& api, int port, O&&... opts)
   {
 
     int flags = MHD_USE_SELECT_INTERNALLY;
@@ -305,10 +322,11 @@ namespace sl
     int thread_pool_size = options.get(_nthreads, std::thread::hardware_concurrency());
 
     auto api2 = api.bind_factories(mhd_session_cookie()/*, mhd_get_parameters_factory()*/);
-    auto s = service<mhd_json_service_utils, decltype(api2), mhd_request*, mhd_response*, MHD_Connection*>(api2);
-    typedef decltype(s) S;
+    using service_t = service<mhd_json_service_utils, decltype(api2), mhd_request*, mhd_response*, MHD_Connection*>;
+    
+    auto s = new service_t(api2);
       
-    struct MHD_Daemon * d;
+    MHD_Daemon* d;
 
     if (flags != MHD_USE_THREAD_PER_CONNECTION)
       d = MHD_start_daemon(
@@ -316,8 +334,8 @@ namespace sl
         port,
         NULL,
         NULL,
-        &mhd_handler<S>,
-        &s,
+        &mhd_handler<service_t>,
+        s,
         MHD_OPTION_THREAD_POOL_SIZE, thread_pool_size,
         MHD_OPTION_END);
     else
@@ -326,16 +344,16 @@ namespace sl
         port,
         NULL,
         NULL,
-        &mhd_handler<S>,
-        &s,
+        &mhd_handler<service_t>,
+        s,
         MHD_OPTION_END);
       
     
     if (d == NULL)
-      return;
+      throw std::runtime_error("Cannot start the microhttpd daemon");
 
-    while (getc (stdin) != 'q');
-    MHD_stop_daemon(d);
+    return silicon_mhd_ctx<service_t>
+      (d, s);
   }
   
 
