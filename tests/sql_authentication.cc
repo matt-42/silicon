@@ -117,8 +117,7 @@ int main()
 
   
   // Start server.
-  std::thread t([&] () { mhd_json_serve(api, 12345); });
-  usleep(.1e6);
+  auto server = mhd_json_serve(api, 12345);
   
   { // Setup database for testing.
     auto orm = api.template instantiate_factory<sqlite_orm<User>>();

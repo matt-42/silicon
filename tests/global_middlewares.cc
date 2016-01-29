@@ -59,8 +59,7 @@ auto hello_api = make_api(
 
 int main(int argc, char* argv[])
 {
-  std::thread t([&] () { mhd_json_serve(hello_api, 12345); });
-  usleep(.1e6);
+  auto server = mhd_json_serve(hello_api, 12345);
 
   // Test.
   auto c = libcurl_json_client(hello_api, "127.0.0.1", 12345);

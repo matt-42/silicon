@@ -39,9 +39,7 @@ int main()
   std::cout << api_description(api) << std::endl;
   
   // Start server.
-  std::thread t([&] () { mhd_json_serve(api, 12345); });
-  usleep(.1e6);
-
+  auto server = mhd_json_serve(api, 12345);
 
   // Test.
   auto c = libcurl_json_client(api, "127.0.0.1", 12345);
