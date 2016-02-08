@@ -11,8 +11,8 @@ using namespace sl;
 auto hello_api = http_api(
 
   
-  //GET / _test = [] () { return D(_message = "hello world."); },
-  PUT / _test = [] () { return; }
+  GET / _test = [] () { return D(_message = "hello world."); }
+  //PUT / _test = [] () { return; }
 
   // GET / _test2 * get_parameters(_name = optional(std::string("John")))  =
   // [] (const auto& p) { return D(_message = "hello " + p.name); },
@@ -43,7 +43,7 @@ int main(int argc, char* argv[])
     );
 
   auto c = libcurl_json_client(hello_api, "127.0.0.1", 12345);
-  auto r1 = c.http_put.test();
+  auto r1 = c.http_get.test();
   
   std::cout << iod::json_encode(r1) << std::endl;
 }
