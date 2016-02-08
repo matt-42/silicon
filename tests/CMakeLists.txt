@@ -8,7 +8,7 @@ find_package( Threads )
 find_package( Iod )
 find_package( Boost COMPONENTS system thread date_time program_options filesystem chrono)
 
-include(${IOD_USE_FILE})
+#include(${IOD_USE_FILE})
 
 set(CMAKE_VERBOSE_MAKEFILE ON)
 if (OPENSSL_FOUND)
@@ -66,7 +66,7 @@ target_link_libraries(libcurl_client  ${MHD_LIBS} curl)
 # target_link_libraries(mimosa_hello_world ${MIMOSA_LIBS})
 
 add_executable(microhttpd_hello_world microhttpd_hello_world.cc)
-target_link_libraries(microhttpd_hello_world ${MHD_LIBS})
+target_link_libraries(microhttpd_hello_world ${MHD_LIBS} curl)
 
 add_executable(sqlite sqlite.cc)
 target_link_libraries(sqlite ${MHD_LIBS} sqlite3)

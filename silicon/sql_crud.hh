@@ -53,8 +53,8 @@ namespace sl
     typedef handler_deps<O, decltype(on_update_success)> ou_deps_t;
     typedef handler_deps<O, decltype(before_update)> bu_deps_t;
 
-    return std::make_tuple(
-      _get_by_id * get_parameters(_id = int()) = [=] (auto params, ORMI& orm,
+    return http_api(
+      GET / _get_by_id * get_parameters(_id = int()) = [=] (auto params, ORMI& orm,
                                                       handler_deps<O, decltype(read_access)>& ra_deps)
     {
       O o;
@@ -67,7 +67,7 @@ namespace sl
     }
       ,
       
-      _create * post_parameters(insert_type()) =
+      POST / _create * post_parameters(insert_type()) =
       [=] (auto obj, ORMI& orm,
            v_deps_t& v_deps,
            oc_deps_t& oc_deps,
@@ -88,7 +88,7 @@ namespace sl
         throw error::unauthorized("Not enough priviledges to edit this object");
     },
 
-      _update * post_parameters(update_type()) = [=] (auto obj, ORMI& orm,
+      POST / _update * post_parameters(update_type()) = [=] (auto obj, ORMI& orm,
                                                     v_deps_t& v_deps,
                                                     ou_deps_t& ou_deps,
                                                     wa_deps_t& wa_deps,
@@ -111,7 +111,7 @@ namespace sl
       call_callback(on_update_success, o, ou_deps);
     },
 
-      _destroy * post_parameters(PKS()) = [=] (auto params,
+      POST / _destroy * post_parameters(PKS()) = [=] (auto params,
                       ORMI& orm,
                       handler_deps<O, decltype(on_destroy_success)>& od_deps,
                       wa_deps_t& wa_deps)

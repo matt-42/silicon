@@ -96,11 +96,15 @@ namespace sl
 
       int c = 0;
 
+      P path;
+
       foreach(P()) | [&] (auto m)
       {
         c++;
         iod::static_if<is_symbol<decltype(m)>::value>(
-          [&] (auto m2) { while (url[c] and url[c] != '/') c++; }, // skip.
+          [&] (auto m2) {
+            while (url[c] and url[c] != '/') c++;
+          }, // skip.
           [&] (auto m2) {
             int s = c;
             while (url[c] and url[c] != '/') c++;
@@ -115,7 +119,7 @@ namespace sl
             catch (const std::exception& e)
             {
               throw error::bad_request(std::string("Error while decoding the url parameter ") +
-                                       m2.symbol().name() + ": " + e.what());
+                                       m2.symbol().name() + " with value " + std::string(&url[s], c - s) + ": " + e.what());
             }
             
           }, m);
@@ -306,8 +310,9 @@ namespace sl
     std::shared_ptr<S> service_;
   };
 
-  template <typename A, typename... O>
-  auto mhd_json_serve(const A& api, int port, O&&... opts)
+  template <typename A, typename M, typename... O>
+  auto mhd_json_serve(const A& api, const M& middleware_factories,
+                      int port, O&&... opts)
   {
 
     int flags = MHD_USE_SELECT_INTERNALLY;
@@ -321,10 +326,14 @@ namespace sl
 
     int thread_pool_size = options.get(_nthreads, std::thread::hardware_concurrency());
 
-    auto api2 = api.bind_factories(mhd_session_cookie()/*, mhd_get_parameters_factory()*/);
-    using service_t = service<mhd_json_service_utils, decltype(api2), mhd_request*, mhd_response*, MHD_Connection*>;
+    auto m2 = std::tuple_cat(std::make_tuple(mhd_session_cookie()),
+                                             middleware_factories);
     
-    auto s = new service_t(api2);
+    using service_t = service<mhd_json_service_utils, A,
+                              decltype(m2),
+                              mhd_request*, mhd_response*, MHD_Connection*>;
+    
+    auto s = new service_t(api, m2);
       
     MHD_Daemon* d;
 
@@ -356,5 +365,10 @@ namespace sl
       (d, s);
   }
   
+  template <typename A, typename... O>
+  auto mhd_json_serve(const A& api, int port, O&&... opts)
+  {
+    return mhd_json_serve(api, std::make_tuple(), port, opts...);
+  }
 
 }

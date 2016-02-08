@@ -75,6 +75,11 @@ namespace sl
   struct http_delete {}; static http_verb<http_delete> DELETE;
   struct http_verb_any {}; static http_verb<http_verb_any> ANY;
 
+  auto http_verb_to_symbol(http_get) { return _http_get; }
+  auto http_verb_to_symbol(http_post) { return _http_post; }
+  auto http_verb_to_symbol(http_put) { return _http_put; }
+  auto http_verb_to_symbol(http_delete) { return _http_delete; }
+  
   template <typename V = http_verb_any,
             typename S = std::tuple<>,
             typename P1 = iod::sio<>,
@@ -90,21 +95,33 @@ namespace sl
     
     http_route() {}
     http_route(P1 p1, P2 p2, P3 p3)
-      : //path(s),
-        url_params(p1),
+      : url_params(p1),
         get_params(p2),
         post_params(p3)
     {}
 
     template <typename NS, typename NP1, typename NP2, typename NP3>
-    auto http_route_builder(NS s, NP1 p1, NP2 p2, NP3 p3)
+    auto http_route_builder(NS s, NP1 p1, NP2 p2, NP3 p3) const
     {
       return http_route<V, NS, NP1, NP2, NP3>(p1, p2, p3);
     }
-    
+
+    template <typename OV, typename OS, typename OP1, typename OP2, typename OP3>
+    auto append(const http_route<OV, OS, OP1, OP2, OP3>& o) const
+    {
+      auto verb = static_if<std::is_same<http_verb_any, OV>::value>(
+        [] () { return http_verb<V>(); },
+        [] () { return http_verb<OV>(); });
+        
+      return http_route_builder(std::tuple_cat(path, OS()),
+                                  iod::cat(url_params, o.url_params),
+                                  iod::cat(get_params, o.get_params),
+                                  iod::cat(post_params, o.post_params)).set_verb(verb);
+    }
+
     // Add a path symbol.
     template <typename T>
-    auto path_append(const iod::symbol<T>& s)
+    auto path_append(const iod::symbol<T>& s) const
     {
       auto new_path = std::tuple_cat(path, std::make_tuple(T()));
       return http_route_builder(new_path, url_params, get_params, post_params);
@@ -112,7 +129,7 @@ namespace sl
 
     // Add a parameter.
     template <typename T, typename U>
-    auto path_append(const iod::array_subscript_exp<T, U>& v)
+    auto path_append(const iod::array_subscript_exp<T, U>& v) const
     {
       auto var = typename T::template variable_type<U>(v.member);
       auto new_path = std::tuple_cat(path, std::make_tuple(var));
@@ -121,7 +138,7 @@ namespace sl
     }
 
     template <typename P>
-    auto format_params(const P& params)
+    auto format_params(const P& params) const
     {
       // Forward default values and set default string parameters.
       auto params2 = foreach(params.params) | [&] (auto& m) {
@@ -149,20 +166,20 @@ namespace sl
     
     // Set post params.
     template <typename P>
-    auto set_params(const post_params_t<P>& new_post_params)
+    auto set_params(const post_params_t<P>& new_post_params) const
     {
       return http_route_builder(path, url_params, get_params, format_params(new_post_params));
     }
 
     // Set get params.
     template <typename P>
-    auto set_params(const get_params_t<P>& new_get_params)
+    auto set_params(const get_params_t<P>& new_get_params) const
     {
       return http_route_builder(path, url_params, format_params(new_get_params), post_params);
     }
 
     template <typename NV>
-    auto set_verb(const http_verb<NV>&)
+    auto set_verb(const http_verb<NV>&) const
     {
       return http_route<NV, S, P1, P2, P3>(url_params, get_params, post_params);
     }
@@ -195,6 +212,11 @@ namespace sl
           [&] (auto) { s += std::string("/*"); }, e);
       };
       return s;
+    }
+
+    std::string string_id() const
+    {
+      return path_as_string();
     }
 
     V verb;

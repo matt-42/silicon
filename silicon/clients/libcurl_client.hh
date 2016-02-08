@@ -102,7 +102,7 @@ namespace sl
       // Pass the url to libcurl.
       curl_easy_setopt(curl_, CURLOPT_URL, url_ss.str().c_str());
 
-      std::cout << url_ss.str() << std::endl;
+      //std::cout << url_ss.str() << std::endl;
       // Set the HTTP verb.
       if (std::is_same<decltype(route.verb), http_post>::value) curl_easy_setopt(curl_, CURLOPT_POST, 1);
       if (std::is_same<decltype(route.verb), http_get>::value) curl_easy_setopt(curl_, CURLOPT_HTTPGET, 1);
@@ -266,11 +266,13 @@ namespace sl
   template <typename C, typename A, typename PR>
   auto generate_client_methods(C& c, A api, PR parent_route)
   {
+    static_assert(is_tuple<decltype(api)>::value, "api should be a tuple.");
+
     auto tu = foreach(api) | [&c] (auto m) {
 
       return static_if<is_tuple<decltype(m.content)>::value>(
 
-        [&c] (auto m) { // If sio, recursion.
+        [&c] (auto m) { // If tuple, recursion.
           return generate_client_methods(c, m.content, m.route);
         },
 
@@ -281,13 +283,15 @@ namespace sl
 
           auto cc = create_client_call<callable_return_type_t<F>>(c, m.route);
           auto st = filter_symbols_from_tuple(m.route.path);
+          auto st2 = std::tuple_cat(std::make_tuple(http_verb_to_symbol(m.route.verb)), st);
+
           return static_if<(std::tuple_size<decltype(st)>() !=
                             std::tuple_size<typename PR::path_type>())>(
             [&] () {
-              return symbol_tuple_to_sio(&st, cc);
+              return symbol_tuple_to_sio(&st2, cc);
             },
             [&] () {
-              auto p = std::tuple_cat(st, std::make_tuple(_silicon_root___));
+              auto p = std::tuple_cat(st2, std::make_tuple(_silicon_root___));
               return symbol_tuple_to_sio(&p, cc);
             });
         }, m);
@@ -305,6 +309,6 @@ namespace sl
   {
     std::shared_ptr<libcurl_http_client> c(new libcurl_http_client());
     c->connect(host, port);
-    return generate_client_methods(c, api.procedures(), http_route<>());
+    return generate_client_methods(c, api, http_route<>());
   }
 }

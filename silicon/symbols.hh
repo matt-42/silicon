@@ -35,11 +35,6 @@
     iod_define_symbol(body)
 #endif
 
-#ifndef IOD_SYMBOL_computed
-#define IOD_SYMBOL_computed
-    iod_define_symbol(computed)
-#endif
-
 #ifndef IOD_SYMBOL_content_type
 #define IOD_SYMBOL_content_type
     iod_define_symbol(content_type)
@@ -70,19 +65,9 @@
     iod_define_symbol(expires)
 #endif
 
-#ifndef IOD_SYMBOL_get
-#define IOD_SYMBOL_get
-    iod_define_symbol(get)
-#endif
-
 #ifndef IOD_SYMBOL_get_by_id
 #define IOD_SYMBOL_get_by_id
     iod_define_symbol(get_by_id)
-#endif
-
-#ifndef IOD_SYMBOL_handler_id
-#define IOD_SYMBOL_handler_id
-    iod_define_symbol(handler_id)
 #endif
 
 #ifndef IOD_SYMBOL_http_api
@@ -90,9 +75,29 @@
     iod_define_symbol(http_api)
 #endif
 
+#ifndef IOD_SYMBOL_http_delete
+#define IOD_SYMBOL_http_delete
+    iod_define_symbol(http_delete)
+#endif
+
+#ifndef IOD_SYMBOL_http_get
+#define IOD_SYMBOL_http_get
+    iod_define_symbol(http_get)
+#endif
+
 #ifndef IOD_SYMBOL_http_only
 #define IOD_SYMBOL_http_only
     iod_define_symbol(http_only)
+#endif
+
+#ifndef IOD_SYMBOL_http_post
+#define IOD_SYMBOL_http_post
+    iod_define_symbol(http_post)
+#endif
+
+#ifndef IOD_SYMBOL_http_put
+#define IOD_SYMBOL_http_put
+    iod_define_symbol(http_put)
 #endif
 
 #ifndef IOD_SYMBOL_id
@@ -105,15 +110,9 @@
     iod_define_symbol(linux_epoll)
 #endif
 
-    
 #ifndef IOD_SYMBOL_methods
 #define IOD_SYMBOL_methods
     iod_define_symbol(methods)
-#endif
-
-#ifndef IOD_SYMBOL_module
-#define IOD_SYMBOL_module
-    iod_define_symbol(module)
 #endif
 
 #ifndef IOD_SYMBOL_nthreads
@@ -151,6 +150,11 @@
     iod_define_symbol(one_thread_per_connection)
 #endif
 
+#ifndef IOD_SYMBOL_optional
+#define IOD_SYMBOL_optional
+    iod_define_symbol(optional)
+#endif
+
 #ifndef IOD_SYMBOL_options
 #define IOD_SYMBOL_options
     iod_define_symbol(options)
@@ -164,16 +168,6 @@
 #ifndef IOD_SYMBOL_path
 #define IOD_SYMBOL_path
     iod_define_symbol(path)
-#endif
-
-#ifndef IOD_SYMBOL_post
-#define IOD_SYMBOL_post
-    iod_define_symbol(post)
-#endif
-
-#ifndef IOD_SYMBOL_prefix
-#define IOD_SYMBOL_prefix
-    iod_define_symbol(prefix)
 #endif
 
 #ifndef IOD_SYMBOL_primary_key
@@ -194,6 +188,11 @@
 #ifndef IOD_SYMBOL_response
 #define IOD_SYMBOL_response
     iod_define_symbol(response)
+#endif
+
+#ifndef IOD_SYMBOL_root
+#define IOD_SYMBOL_root
+    iod_define_symbol(root)
 #endif
 
 #ifndef IOD_SYMBOL_save
@@ -221,6 +220,11 @@
     iod_define_symbol(silicon_root___)
 #endif
 
+#ifndef IOD_SYMBOL_size
+#define IOD_SYMBOL_size
+    iod_define_symbol(size)
+#endif
+
 #ifndef IOD_SYMBOL_status
 #define IOD_SYMBOL_status
     iod_define_symbol(status)
@@ -234,17 +238,6 @@
 #ifndef IOD_SYMBOL_update
 #define IOD_SYMBOL_update
     iod_define_symbol(update)
-#endif
-
-#ifndef IOD_SYMBOL_url
-#define IOD_SYMBOL_url
-    iod_define_symbol(url)
-#endif
-
-    
-#ifndef IOD_SYMBOL_root
-#define IOD_SYMBOL_root
-    iod_define_symbol(root)
 #endif
 
 #ifndef IOD_SYMBOL_validate

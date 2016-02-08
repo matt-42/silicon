@@ -142,6 +142,42 @@ namespace sl
     return api_node<R, C>{route, content};
   }
 
+  // // parse_api: Transform the api object into a tree of route / procedures.
+  // template <typename R, typename... T>
+  // auto parse_api(std::tuple<T...> api, R route)
+  // {
+  //   return foreach(api) | [&] (auto m) // m should be iod::assign_exp
+  //   {
+  //     return static_if<is_tuple<decltype(m.right)>::value>(
+  //       [&] (auto m) { // If sio, recursion.
+  //         auto r = internal::make_http_route(route, m.left);
+  //         return make_api_node(r, parse_api(m.right, r));
+  //       },
+  //       [&] (auto m) { // Else, register the procedure.
+  //         auto r = internal::make_http_route(route, m.left);
+  //         return make_api_node(r, make_procedure(0, r, m.right));
+  //       }, m);
+  //   };
+  // }
+
+  // parse_api: Transform the api object into a tree of route / procedures.
+  template <typename R, typename... T>
+  auto prefix_api(R route, std::tuple<T...> api)
+  {
+    return foreach(api) | [&] (auto m)
+    {
+      return static_if<is_tuple<decltype(m.content)>::value>(
+        [&] (auto m) { // If tuple, plug it under route.
+          auto r = route.append(m.route);
+          return make_api_node(r, prefix_api(r, m.content));
+        },
+        [&] (auto m) { // Else, register the procedure.
+          auto r = route.append(m.route);
+          return make_api_node(r, make_procedure(0, r, m.content.function()));
+        }, m);
+    };
+  }
+  
   // parse_api: Transform the api object into a tree of route / procedures.
   template <typename R, typename... T>
   auto parse_api(std::tuple<T...> api, R route)
@@ -149,9 +185,9 @@ namespace sl
     return foreach(api) | [&] (auto m) // m should be iod::assign_exp
     {
       return static_if<is_tuple<decltype(m.right)>::value>(
-        [&] (auto m) { // If sio, recursion.
+        [&] (auto m) { // If api_node, plug it under route.
           auto r = internal::make_http_route(route, m.left);
-          return make_api_node(r, parse_api(m.right, r));
+          return make_api_node(r, prefix_api(r, m.right));
         },
         [&] (auto m) { // Else, register the procedure.
           auto r = internal::make_http_route(route, m.left);
@@ -160,131 +196,23 @@ namespace sl
     };
   }
   
-  template <typename R, typename P, typename... PA, typename... GA>
-  auto apply_global_middleware2(R route, P proc, std::tuple<PA...>*, std::tuple<GA...>*)
+  template <typename T, typename M>
+  decltype(auto) instantiate_factory(M& middlewares_tuple)
   {
-    return make_procedure(0, route, [=] (PA&&... pa, const GA&... ga)
-    {
-      return proc.function()(pa...);
-    });
+    return di_factories_call([](T t) { return t; },
+                             middlewares_tuple);
   }
 
-  template <typename R, typename P, typename F>
-  auto apply_global_middleware(R route, P proc, F m_tuple)
+  template <typename R, typename... P>
+  auto api(R root, P... procs)
   {
-    return apply_global_middleware2(route, proc,
-                                    (callable_arguments_tuple_t<typename P::function_type>*)0,
-                                    m_tuple);
+    return parse_api(std::make_tuple(procs...), root);
   }
 
-  template <typename P, typename F>
-  auto apply_global_middleware_rec(P procedures, F m_tuple)
+  template <typename... P>
+  auto http_api(P... procs)
   {
-    return foreach(procedures) | [&] (auto m)
-    {
-      return static_if<is_sio<decltype(m.content)>::value>(
-        [&] (auto m) { // If sio, recursion.
-          return make_api_node(m.route, apply_global_middleware_rec(m.content, m_tuple));
-          //return m.symbol() = apply_global_middleware_rec(m.content, m_tuple);
-        },
-        [&] (auto m) { // Else, register the procedure.
-          return make_api_node(m.route, apply_global_middleware(m.route, m.content, m_tuple));
-          // return m.route = make_procedure(0, m.route,
-          //                                 apply_global_middleware(m.content, m_tuple));
-        }, m);
-    };
-  }
-
-  template <typename P, typename M>
-  struct api
-  {
-    typedef M middlewares_type;
-    typedef P procedures_type;
-
-    api(const P& procs,
-        const M& middlewares)
-      : procedures_(procs),
-        middlewares_(middlewares)
-    {
-    }
-    
-    const auto& procedures() const
-    {
-      return procedures_;
-    }
-
-    auto& middlewares()
-    {
-      return middlewares_;
-    }
-
-    template <typename... X>
-    auto bind_factories(X... m) const
-    {
-      auto nm = std::tuple_cat(middlewares_, std::make_tuple(m...));
-      return api<P, decltype(nm)>(procedures_, nm);
-    }
-
-    template <typename... F>
-    auto global_middlewares() const
-    {
-      auto new_procs = apply_global_middleware_rec(procedures_, (std::tuple<F...>*)0);
-      return api<decltype(new_procs), M>(new_procs, middlewares_);
-    }
-    
-    template <typename N>
-    struct has_initialize_method
-    {
-      template <typename X>
-      static char test(decltype(&X::initialize));
-
-      template <typename X>
-      static int test(...);
-
-      static const int value = (sizeof(test<std::remove_reference_t<N>>(0)) == sizeof(char));
-    };
-
-    template <typename T>
-    auto instantiate_factory()
-    {
-      return di_factories_call([] (T t) { return t; }, middlewares_);
-    }
-
-    auto initialize_factories()
-    {
-      foreach(middlewares_) | [this] (auto& m)
-      {
-        typedef std::remove_reference_t<decltype(m)> X;
-        static_if<has_initialize_method<X>::value>(
-          [this] (auto& m) {
-            typedef std::remove_reference_t<decltype(m)> X_;
-            di_factories_call(bind_method(m, &X_::initialize), middlewares_);
-          },
-          [] (auto& m) {}, m);
-      };
-    }
-
-    P procedures_;
-    M middlewares_;
-  };
-
-  template <typename T, typename A>
-  auto instantiate_factory(A& api)
-  {
-    return api.template instantiate_factory<T>();
-  }
-
-  inline auto make_api()
-  {
-    auto a = sio<>();
-    return api<decltype(a), std::tuple<>>(a, std::tuple<>());
+    return parse_api(std::make_tuple(procs...), http_route<>());
   }
   
-  template <typename... P>
-  auto make_api(P... procs)
-  {
-    auto a = parse_api(std::make_tuple(procs...), http_route<>());
-    return api<decltype(a), std::tuple<>>(a, std::tuple<>());
-  }
-
 }

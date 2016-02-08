@@ -38,11 +38,11 @@ int main()
 
     auto c = libcurl_json_client(api, "127.0.0.1", 12345);
 
-    auto r1 = c.hello_world(_name = "John==&", _age = 32, _city = "Paris");
+    auto r1 = c.post.hello_world(_name = "John==&", _age = 32, _city = "Paris");
     assert(r1.response.message == "Hello John==& 32 Paris");
     assert(r1.status == 200);
     
-    auto r2 = c.scope.test2(_name = "John", _age = 42, _city = "Nantes");
+    auto r2 = c.post.scope.test2(_name = "John", _age = 42, _city = "Nantes");
     assert(r2.response.message == "test2: Hello John 42 Nantes");
 
     exit(0);
