@@ -11,9 +11,9 @@ using namespace sl;
 
 int main()
 {
-  auto api = make_api(
+  auto api = http_api(
 
-    _my_tracking_id = [] (tracking_cookie c) {
+    GET / _my_tracking_id = [] (tracking_cookie c) {
       return D(_id = c.id());
     }
     
@@ -26,9 +26,9 @@ int main()
   {
     auto c = libcurl_json_client(api, "127.0.0.1", 12345);
   
-    auto r1 = c.my_tracking_id();
-    auto r2 = c.my_tracking_id();
-    auto r3 = c.my_tracking_id();
+    auto r1 = c.http_get.my_tracking_id();
+    auto r2 = c.http_get.my_tracking_id();
+    auto r3 = c.http_get.my_tracking_id();
 
     std::cout << r1.response.id << std::endl;
     std::cout << r2.response.id << std::endl;

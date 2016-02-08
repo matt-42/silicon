@@ -38,6 +38,7 @@ namespace sl
   {
     std::stringstream res;
 
+    res << m.route.verb_as_string() << ": ";
 
     foreach(m.route.path) | [&] (auto e)
     {
@@ -65,14 +66,14 @@ namespace sl
   }
   
   template <typename A>
-  std::string api_description2(A& api)
+  std::string api_description(A& api)
   {
     std::stringstream res;
     foreach(api) | [&] (auto& m)
     {
       static_if<is_tuple<decltype(m.content)>::value>(
         [&] (auto m) { // If sio, recursion.
-          res << api_description2(m.content);
+          res << api_description(m.content);
         },
         [&] (auto m) { // Else, register the procedure.
           res << procedure_description(m) << std::endl;
@@ -80,12 +81,6 @@ namespace sl
       
     };
     return res.str();
-  }
-
-  template <typename A, typename M>
-  std::string api_description(api<A, M>& api)
-  {
-    return api_description2(api.procedures());
   }
   
 }

@@ -40,40 +40,44 @@ private:
   double time;
 };
 
-auto hello_api = make_api(
-
-  _test / _test[int()] = [] (const auto& params) {
-
-    std::stringstream ss;
-    ss << "hello " << params.test;
-    return D(_message = ss.str());
-  },
-
-  _test2 = [] () {
-
-    return D(_message = "hello world");
-  }
-  
-
-  ).template global_middlewares<request_logger>();
-
 int main(int argc, char* argv[])
 {
-  auto server = mhd_json_serve(hello_api, 12345);
+
+
+  auto hello_api = http_api(
+
+    GET / _test / _test[int()] = [] (const auto& params) {
+
+      std::stringstream ss;
+      ss << "hello " << params.test;
+      return D(_message = ss.str());
+    },
+
+    GET / _test2 = [] () {
+
+      return D(_message = "hello world");
+    }
+  
+
+    );
+
+  auto hello_api_ga = add_global_middlewares<request_logger>::to(hello_api);
+  
+  auto server = mhd_json_serve(hello_api_ga, 12345, _nthreads = 1);
 
   // Test.
   auto c = libcurl_json_client(hello_api, "127.0.0.1", 12345);
 
-  c.test2();
+  c.http_get.test2();
 
   assert(start_count == 1);
   assert(end_count == 1);
 
-  c.test2();
+  c.http_get.test2();
   assert(start_count == 2);
   assert(end_count == 2);
 
-  c.test(_test = 12);
+  c.http_get.test(_test = 12);
   assert(start_count == 3);
   assert(end_count == 3);
 

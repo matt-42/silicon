@@ -54,7 +54,7 @@ namespace sl
     typedef handler_deps<O, decltype(on_update_success)> ou_deps_t;
     typedef handler_deps<O, decltype(before_update)> bu_deps_t;
 
-    return std::make_tuple(
+    return http_api(
 
       // Find by id.
      GET / _id[int()] = [=] (auto params, ORMI& orm,

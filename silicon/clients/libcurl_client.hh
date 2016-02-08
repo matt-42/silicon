@@ -1,3 +1,4 @@
+#include <iostream>
 #include <memory>
 #include <sstream>
 #include <map>
@@ -44,6 +45,7 @@ namespace sl
   struct libcurl_http_client;
 
   inline size_t curl_write_callback(char *ptr, size_t size, size_t nmemb, void *userdata);
+  inline size_t curl_read_callback(void *ptr, size_t size, size_t nmemb, void *stream);
 
   struct libcurl_http_client
   {
@@ -102,30 +104,51 @@ namespace sl
       // Pass the url to libcurl.
       curl_easy_setopt(curl_, CURLOPT_URL, url_ss.str().c_str());
 
-      //std::cout << url_ss.str() << std::endl;
-      // Set the HTTP verb.
-      if (std::is_same<decltype(route.verb), http_post>::value) curl_easy_setopt(curl_, CURLOPT_POST, 1);
-      if (std::is_same<decltype(route.verb), http_get>::value) curl_easy_setopt(curl_, CURLOPT_HTTPGET, 1);
-      if (std::is_same<decltype(route.verb), http_put>::value) curl_easy_setopt(curl_, CURLOPT_PUT, 1);
-      
       // POST parameters.
+      req_body_buffer_.str("");
       std::string rq_body;
       char* rq_body_encoded = nullptr;
       static_if<(route.post_params._size > 0)>(
         [&] (auto args) {
-         auto post_params = iod::intersect(args, route.post_params);
-         rq_body = json_encode(post_params);
-         rq_body_encoded = curl_easy_escape(curl_ , rq_body.c_str(), rq_body.size());
-         curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, rq_body.c_str());
+          auto post_params = iod::intersect(args, route.post_params);
+          rq_body = json_encode(post_params);
+          rq_body_encoded = curl_easy_escape(curl_ , rq_body.c_str(), rq_body.size());
+          req_body_buffer_.str(rq_body);
         },
         [&] (auto args) {}, args);
 
+      //std::cout << url_ss.str() << std::endl;
+
+      // HTTP POST
+      if (std::is_same<decltype(route.verb), http_post>::value)
+      {
+        curl_easy_setopt(curl_, CURLOPT_POST, 1);
+        curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, rq_body.c_str());        
+      }
+
+      // HTTP GET
+      if (std::is_same<decltype(route.verb), http_get>::value) curl_easy_setopt(curl_, CURLOPT_HTTPGET, 1);
+
+      // HTTP PUT
+      if (std::is_same<decltype(route.verb), http_put>::value)
+      {
+        curl_easy_setopt(curl_, CURLOPT_UPLOAD, 1L);
+        curl_easy_setopt(curl_, CURLOPT_READFUNCTION, curl_read_callback);
+        curl_easy_setopt(curl_, CURLOPT_READDATA, this);
+      }
+
+      // HTTP DELETE
+      if (std::is_same<decltype(route.verb), http_delete>::value)
+        curl_easy_setopt(curl_, CURLOPT_CUSTOMREQUEST, "DELETE");
+
+      // Cookies
       curl_easy_setopt(curl_, CURLOPT_COOKIEJAR, 0); // Enable cookies but do no write a cookiejar.
 
       body_buffer_.clear();
       curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, curl_write_callback);
       curl_easy_setopt(curl_, CURLOPT_WRITEDATA, this);
-      
+
+      // Send the request.
       char errbuf[CURL_ERROR_SIZE];
       if (curl_easy_perform(curl_) != CURLE_OK)
       {
@@ -134,6 +157,7 @@ namespace sl
         throw std::runtime_error(errss.str());
       }
 
+      // Read response code.
       long response_code;
       curl_easy_getinfo(curl_, CURLINFO_RESPONSE_CODE, &response_code);
 
@@ -147,10 +171,17 @@ namespace sl
     {
       body_buffer_.append(ptr, size);
     }
+
+    size_t write(char* ptr, int size)
+    {
+      size_t ret = req_body_buffer_.sgetn(ptr, size);
+      return ret;
+    }
     
     CURL* curl_;
     std::map<std::string, std::string> cookies_;
     std::string body_buffer_;
+    std::stringbuf req_body_buffer_;
     std::string host_;
     int port_;
   };
@@ -170,6 +201,12 @@ namespace sl
     R route;
   };
 
+  inline size_t curl_read_callback(void *ptr, size_t size, size_t nmemb, void *userdata)
+  {
+    libcurl_http_client* client = (libcurl_http_client*)userdata;
+    return client->write((char*) ptr, size * nmemb);
+  }
+  
   size_t curl_write_callback(char *ptr, size_t size, size_t nmemb, void *userdata)
   {
     libcurl_http_client* client = (libcurl_http_client*)userdata;
@@ -268,25 +305,25 @@ namespace sl
   {
     static_assert(is_tuple<decltype(api)>::value, "api should be a tuple.");
 
-    auto tu = foreach(api) | [&c] (auto m) {
+    auto tu = foreach(api) | [&] (auto m) {
 
       return static_if<is_tuple<decltype(m.content)>::value>(
 
-        [&c] (auto m) { // If tuple, recursion.
-          return generate_client_methods(c, m.content, m.route);
+        [&] (auto m) { // If tuple, recursion.
+          return generate_client_methods(c, m.content, parent_route.append(m.route));
         },
 
-        [&c] (auto m) { // Else, register the procedure.
+        [&] (auto m) { // Else, register the procedure.
           typedef std::remove_reference_t<decltype(m.content)> V;
           typedef typename V::function_type F;
           typename V::arguments_type arguments;
 
-          auto cc = create_client_call<callable_return_type_t<F>>(c, m.route);
-          auto st = filter_symbols_from_tuple(m.route.path);
-          auto st2 = std::tuple_cat(std::make_tuple(http_verb_to_symbol(m.route.verb)), st);
+          auto route = m.route;
+          auto cc = create_client_call<callable_return_type_t<F>>(c, route);
+          auto st = filter_symbols_from_tuple(route.path);
+          auto st2 = std::tuple_cat(std::make_tuple(http_verb_to_symbol(route.verb)), st);
 
-          return static_if<(std::tuple_size<decltype(st)>() !=
-                            std::tuple_size<typename PR::path_type>())>(
+          return static_if<(std::tuple_size<decltype(m.route.path)>() != 0)>(
             [&] () {
               return symbol_tuple_to_sio(&st2, cc);
             },

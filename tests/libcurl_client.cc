@@ -12,7 +12,7 @@ int main()
     using namespace sl;
     using namespace s;
 
-    auto api = make_api(
+    auto api = http_api(
       POST / _hello_world / _age[int()] * get_parameters(_name) * post_parameters(_city) = [] (auto p)
       {
         std::stringstream ss;
@@ -20,7 +20,7 @@ int main()
         return D(_message = ss.str());
       },
 
-      _scope = std::make_tuple(
+      _scope = http_api(
 
         POST / _test2 / _age[int()] / _city[std::string()] * get_parameters(_name) = [] (auto p)
         {
@@ -34,15 +34,15 @@ int main()
  
     std::cout << api_description(api) << std::endl;
 
-    std::thread t([&] () { mhd_json_serve(api, 12345); });
+    auto server = mhd_json_serve(api, 12345);
 
     auto c = libcurl_json_client(api, "127.0.0.1", 12345);
 
-    auto r1 = c.post.hello_world(_name = "John==&", _age = 32, _city = "Paris");
+    auto r1 = c.http_post.hello_world(_name = "John==&", _age = 32, _city = "Paris");
     assert(r1.response.message == "Hello John==& 32 Paris");
     assert(r1.status == 200);
     
-    auto r2 = c.post.scope.test2(_name = "John", _age = 42, _city = "Nantes");
+    auto r2 = c.http_post.scope.test2(_name = "John", _age = 42, _city = "Nantes");
     assert(r2.response.message == "test2: Hello John 42 Nantes");
 
     exit(0);

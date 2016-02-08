@@ -11,31 +11,29 @@ using namespace sl;
 auto hello_api = http_api(
 
   
-  GET / _test = [] () { return D(_message = "hello world."); },
+  //GET / _test = [] () { return D(_message = "hello world."); },
+  PUT / _test = [] () { return; }
 
-  GET / _test2 * get_parameters(_name = optional(std::string("John")))  =
-  [] (const auto& p) { return D(_message = "hello " + p.name); },
+  // GET / _test2 * get_parameters(_name = optional(std::string("John")))  =
+  // [] (const auto& p) { return D(_message = "hello " + p.name); },
   
-  POST / _test3 / _name / _city
-     * get_parameters(_name = optional(std::string("Rob")))
-     * post_parameters(_city = optional(std::string("Paris")))
-  =
-  [] (const auto& p) { return D(_message = p.name + " lives in " + p.city); },
+  // POST / _test3 / _name / _city
+  //    * get_parameters(_name = optional(std::string("Rob")))
+  //    * post_parameters(_city = optional(std::string("Paris")))
+  // =
+  // [] (const auto& p) { return D(_message = p.name + " lives in " + p.city); },
 
 
-  GET / _test4 / _name / _city * get_parameters(_name, _city)  =
-  [] (const auto& p) { return D(_message = p.name + " lives in " + p.city); },
+  // GET / _test4 / _name / _city * get_parameters(_name, _city)  =
+  // [] (const auto& p) { return D(_message = p.name + " lives in " + p.city); },
 
-  POST / _test5 / _id[std::string()] / _city
-    *get_parameters(_city)  *post_parameters(_name) =
-  [] (const auto& p) { return D(_message = p.name + " with id " + p.id +  " lives in " + p.city); },
+  // POST / _test5 / _id[std::string()] / _city
+  //   *get_parameters(_city)  *post_parameters(_name) =
+  // [] (const auto& p) { return D(_message = p.name + " with id " + p.id +  " lives in " + p.city); },
   
-  POST / _test4 / _name / _city * get_parameters(_name) * post_parameters(_city)  =
-  [] (const auto& p) { return D(_message = p.name + " lives in " + p.city); }
+  // POST / _test4 / _name / _city * get_parameters(_name) * post_parameters(_city)  =
+  // [] (const auto& p) { return D(_message = p.name + " lives in " + p.city); }
   
-  // _test2(_name) = [] (const auto& p) { return D(_message = "hello " + p.name); },
-  // _test3 = [] () { return "hello world."; },
-  // _test4 = [] () { return response(_content_type = "text/html", _body = D(_message = "hello world.")); }
   
 );
 
@@ -45,7 +43,7 @@ int main(int argc, char* argv[])
     );
 
   auto c = libcurl_json_client(hello_api, "127.0.0.1", 12345);
-  auto r1 = c.http_get.test();
+  auto r1 = c.http_put.test();
   
   std::cout << iod::json_encode(r1) << std::endl;
 }

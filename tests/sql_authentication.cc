@@ -2,6 +2,7 @@
 #include <iostream>
 
 #include <silicon/api.hh>
+#include <silicon/middleware_factories.hh>
 #include <silicon/backends/mhd.hh>
 #include <silicon/middlewares/sqlite_connection.hh>
 #include <silicon/middlewares/sqlite_session.hh>
@@ -90,25 +91,26 @@ int main()
 {
   using namespace sl;
 
-  auto api = make_api(
-    _who_am_I = [] (current_user& user)
+  auto api = http_api(
+    GET / _who_am_I = [] (current_user& user)
     {
       return user.user_data();
     },
 
-    _signin * post_parameters(_name = std::string()) = [] (auto params, authenticator& auth)
+    POST / _signin * post_parameters(_name = std::string()) = [] (auto params, authenticator& auth)
     {
       if (!auth.authenticate(params.name))
         throw error::bad_request("Invalid user name");
     },
 
-    _logout = [] (session& sess)
+    GET / _logout = [] (session& sess)
     {
       sess._destroy();
     }
 
-    )
-    .bind_factories(
+    );
+
+  auto mf = middleware_factories(
       sqlite_connection_factory("/tmp/sl_test_authentication.sqlite"), // sqlite middleware.
       sqlite_orm_factory<User>("users"), // Orm middleware for users.
       sqlite_session_factory<session_data>("sessions"),
@@ -117,10 +119,10 @@ int main()
 
   
   // Start server.
-  auto server = mhd_json_serve(api, 12345);
+  auto server = mhd_json_serve(api, mf, 12345);
   
   { // Setup database for testing.
-    auto orm = api.template instantiate_factory<sqlite_orm<User>>();
+    auto orm = instantiate_factory<sqlite_orm<User>>(mf);
     std::cout << orm.insert(User(0, "John Doe")) << std::endl;
   }
 
@@ -128,21 +130,21 @@ int main()
   auto c = libcurl_json_client(api, "127.0.0.1", 12345);
 
   // Signin.
-  auto signin_r = c.signin(_name = "John Doe");
+  auto signin_r = c.http_post.signin(_name = "John Doe");
   std::cout << json_encode(signin_r) << std::endl;
   
   assert(signin_r.status == 200);
 
-  auto who_r = c.who_am_I();
+  auto who_r = c.http_get.who_am_I();
   std::cout << json_encode(who_r) << std::endl;
   assert(who_r.status == 200);
   assert(who_r.response.name == "John Doe");
 
-  auto logout_r = c.logout();
+  auto logout_r = c.http_get.logout();
   std::cout << json_encode(logout_r) << std::endl;
   assert(logout_r.status == 200);
 
-  auto who_r2 = c.who_am_I();
+  auto who_r2 = c.http_get.who_am_I();
   std::cout << json_encode(who_r2) << std::endl;
   assert(who_r2.status == 401);
   

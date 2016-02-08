@@ -92,6 +92,17 @@ namespace sl
         }, m);
     };
   }
+
+  template <typename... T>
+  struct add_global_middlewares
+  {
+    template <typename A>
+    static auto to(A api)
+    {
+      return apply_global_middlewares<std::tuple<T...>>(api);
+    }
+  };
+  
   
   template <typename S, typename A, typename M, typename... ARGS>
   struct service
