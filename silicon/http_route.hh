@@ -155,7 +155,7 @@ namespace sl
       return foreach(params2) | [&] (auto& m) {
         return static_if<is_optional<decltype(m.value())>::value>(
           [&] (auto x) {
-            return x.symbol()(_optional) = std::string(x.value());
+            return x.symbol()(_optional) = x.value().value;
           },
           [] (auto x) {
             return x.symbol() = x.value();

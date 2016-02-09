@@ -92,7 +92,12 @@ target_link_libraries(global_middlewares ${MHD_LIBS} curl)
 add_executable(api_nesting api_nesting.cc)
 target_link_libraries(api_nesting ${MHD_LIBS} curl)
 
+
+add_executable(optional optional.cc)
+target_link_libraries(optional ${MHD_LIBS} curl)
+
 add_test(crud crud)
 add_test(user_tracking user_tracking)
 add_test(sql_authentication sql_authentication)
 add_test(mysql mysql)
+add_test(optional optional)

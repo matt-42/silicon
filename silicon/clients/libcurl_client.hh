@@ -86,7 +86,7 @@ namespace sl
       };
 
       // Get params
-      static_if<(route.get_params._size > 0)>(
+      static_if<(!std::is_same<decltype(iod::intersect(args, route.get_params)), void>::value)>(
         [&] (auto args) {
           auto get_params = iod::intersect(args, route.get_params);
           if (get_params.size() > 0) url_ss << '?';
@@ -108,7 +108,7 @@ namespace sl
       req_body_buffer_.str("");
       std::string rq_body;
       char* rq_body_encoded = nullptr;
-      static_if<(route.post_params._size > 0)>(
+      static_if<(route.post_params._size > 0 and A::_size > 0)>(
         [&] (auto args) {
           auto post_params = iod::intersect(args, route.post_params);
           rq_body = json_encode(post_params);

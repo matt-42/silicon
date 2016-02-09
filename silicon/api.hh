@@ -22,7 +22,28 @@ namespace sl
     // return
     auto to_sio() {}
   };
-  
+
+  // template <typename A>
+  // auto procedure_arguments_remove_optionals_f()
+  // {
+  //   return foreach(A()) | [] (auto m)
+  //   {
+  //     return static_if<is_optional<decltype(m.value())>::value>(
+  //       [] (auto m) { return m.symbol() = m.value().value; },
+  //       [] (auto m) { return m.symbol() = m.value(); },
+  //       m);
+  //   };
+  // }
+
+  // template <typename A>
+  // struct procedure_arguments_remove_optionals
+  // {
+  //   typedef decltype(procedure_arguments_remove_optionals_f<A>()) type; 
+  // };
+
+  // template <typename A>
+  // using procedure_arguments_remove_optionals_t = typename procedure_arguments_remove_optionals<A>::type;
+
   template <typename Ro, typename A, typename Ret, typename F>
   struct procedure
   {
@@ -37,7 +58,8 @@ namespace sl
 
     procedure(F f, Ro route)
       : f_(f), default_args_(route.all_params()), route_(route)
-    {}
+    {
+    }
 
     auto function() const { return f_; }
     auto default_arguments() const { return default_args_; }
@@ -45,7 +67,7 @@ namespace sl
 
   private:
     F f_;
-    A default_args_;
+    arguments_type default_args_;
     Ro route_;
   };
     

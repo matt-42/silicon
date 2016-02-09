@@ -133,13 +133,16 @@ namespace sl
       {
         decode_url_arguments<typename P::path_type>(res, r->url);
         decode_get_arguments<typename P::get_arguments_type>(res, r);
-        json_decode<typename P::post_arguments_type>(res, r->body);
+        if (r->body.size() > 0)
+          json_decode<typename P::post_arguments_type>(res, r->body);
+        else
+          json_decode<typename P::post_arguments_type>(res, "{}");
       }
       catch (const std::runtime_error& e)
       {
         throw error::bad_request("Error when decoding procedure arguments: ", e.what());
       }
-
+      
     }
 
     void serialize2(response_type* r, const std::string res) const

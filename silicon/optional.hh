@@ -8,13 +8,14 @@ iod_define_symbol(optional)
 namespace sl
 {
   template <typename T>
-  struct optional_ : public T
+  struct optional_
   {
-    using T::T;
-    using T::operator=;
     optional_() {}
-    optional_(T v) : T(v) {}
-    // T value;
+    optional_(T v) : value(v) {}
+
+    operator T() { return value; }
+
+    T value;
   };
 
   template <typename T>
