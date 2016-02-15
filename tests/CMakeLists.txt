@@ -43,6 +43,7 @@ message(STATUS ${WEBSOCKETS_LIBS})
 set(MIMOSA_LIBS mimosa-http mimosa-uri mimosa gnutls z pthread lzma)
 
 set(MHD_LIBS gnutls gcrypt pthread microhttpd)
+set(LWAN_LIBS lwan-common curl z pthread dl)
 
 # add_executable(cppnet_hello_world cppnet_hello_world.cc)
 # target_link_libraries(cppnet_hello_world ${CPPNET_LIBS})
@@ -52,6 +53,9 @@ target_link_libraries(sql_authentication sqlite3 ${MHD_LIBS} curl)
 
 add_executable(user_tracking user_tracking.cc)
 target_link_libraries(user_tracking  ${MHD_LIBS} curl)
+
+add_executable(user_tracking_lwan user_tracking_lwan.cc)
+target_link_libraries(user_tracking_lwan  ${LWAN_LIBS} curl)
 
 add_executable(user_tracking_mhd user_tracking_mhd.cc)
 target_link_libraries(user_tracking_mhd  ${MHD_LIBS} curl)
@@ -68,29 +72,39 @@ target_link_libraries(libcurl_client  ${MHD_LIBS} curl)
 add_executable(microhttpd_hello_world microhttpd_hello_world.cc)
 target_link_libraries(microhttpd_hello_world ${MHD_LIBS} curl)
 
+
+add_executable(lwan_hello_world lwan_hello_world.cc)
+target_link_libraries(lwan_hello_world ${LWAN_LIBS})
+
 add_executable(sqlite sqlite.cc)
 target_link_libraries(sqlite ${MHD_LIBS} sqlite3)
 
 add_executable(mysql mysql.cc)
 target_link_libraries(mysql ${MHD_LIBS} mysqlclient)
 
-# add_executable(javascript_client javascript_client.cc)
-# target_link_libraries(javascript_client ${MIMOSA_LIBS})
+add_executable(javascript_client javascript_client.cc)
+target_link_libraries(javascript_client ${MHD_LIBS})
 
-# add_executable(ws_echo_server ws_echo_server.cc)
-# target_link_libraries(ws_echo_server ${WEBSOCKETS_LIBS})
+add_executable(ws_echo_server ws_echo_server.cc)
+target_link_libraries(ws_echo_server ${WEBSOCKETS_LIBS})
 
-# add_executable(ws_chat_server ws_chat_server.cc)
-# target_link_libraries(ws_chat_server ${WEBSOCKETS_LIBS})
+add_executable(ws_chat_server ws_chat_server.cc)
+target_link_libraries(ws_chat_server ${WEBSOCKETS_LIBS})
 
 add_executable(rest rest.cc)
 target_link_libraries(rest sqlite3 ${MHD_LIBS} curl)
+
+add_executable(crud_lwan crud_lwan.cc)
+target_link_libraries(crud_lwan sqlite3 ${LWAN_LIBS} curl)
 
 add_executable(global_middlewares global_middlewares.cc)
 target_link_libraries(global_middlewares ${MHD_LIBS} curl)
 
 add_executable(api_nesting api_nesting.cc)
 target_link_libraries(api_nesting ${MHD_LIBS} curl)
+
+# add_executable(h2o_hello_world h2o_hello_world.cc)
+# target_link_libraries(h2o_hello_world h2o curl ssl)
 
 
 add_executable(optional optional.cc)

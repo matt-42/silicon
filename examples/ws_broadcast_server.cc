@@ -59,13 +59,13 @@ int main(int argc, char* argv[])
   std::mutex users_mutex;
   
   // The remote client api accessible from this server.
-  auto rclient = make_wspp_remote_client( _message(_text) );
+  auto rclient = make_wspp_remote_client( _message * parameters(_text) );
 
   // The server websocket api accessible by the client.
-  auto server_api = make_api(
+  auto server_api = ws_api(
 
     // Broadcast a message to all clients.
-    _broadcast(_message) = [&] (auto p) {
+    _broadcast * parameters(_message) = [&] (auto p) {
       for (const wspp_connection& c : users) rclient(c).message(p.message);
     }
 
@@ -80,9 +80,9 @@ int main(int argc, char* argv[])
   wspp_json_serve(server_api, atoi(argv[1]),
                   _on_open = [&] (wspp_connection& c) { lock l(users_mutex); users.insert(c); },
                   _on_close = [&] (wspp_connection& c) { lock l(users_mutex); users.erase(c); },
-                  _http_api = make_api(
-                    _js_client = [&] () { return js_client; },
-                    _home = [&] () { return index_html_source; }
+                  _http_api = http_api(
+                    GET / _js_client = [&] () { return js_client; },
+                    GET / _home = [&] () { return index_html_source; }
                     )
     );
 

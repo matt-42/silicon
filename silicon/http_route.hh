@@ -87,11 +87,14 @@ namespace sl
             typename P3 = iod::sio<>>
   struct http_route
   {
-
+    typedef http_route<V, S, P1, P2, P3> self;
     typedef S path_type;
     typedef P1 url_parameters_type;
     typedef P2 get_parameters_type;
     typedef P3 post_parameters_type;
+    typedef decltype(iod::cat(std::declval<P1>(),
+                              iod::cat(std::declval<P2>(), std::declval<P3>())))
+      parameters_type;
     
     http_route() {}
     http_route(P1 p1, P2 p2, P3 p3)
@@ -188,7 +191,7 @@ namespace sl
     {
       return iod::cat(url_params, iod::cat(get_params, post_params));
     }
-
+    
     auto verb_as_string(http_get) const { return "/GET"; }
     auto verb_as_string(http_post) const { return "/POST"; }
     auto verb_as_string(http_put) const { return "/PUT"; }
@@ -275,6 +278,20 @@ namespace sl
       return make_http_route(make_http_route(b, r.lhs), r.rhs);
     }
     
+  }
+
+  template <typename... R1, typename... R2>
+  auto route_cat(const http_route<R1...>& r1,
+                 const http_route<R2...>& r2)
+  {
+    return r1.append(r2);
+  }
+  
+  template <typename... R1, typename R2>
+  auto route_cat(const http_route<R1...>& r1,
+                 const R2& r2)
+  {
+    return internal::make_http_route(r1, r2);
   }
 
   template <typename V, typename S, typename P1,

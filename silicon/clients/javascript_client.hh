@@ -5,6 +5,7 @@
 #include <silicon/clients/templates/javascript.hh>
 #include <silicon/clients/templates/javascript_websocket.hh>
 #include <silicon/api_description.hh>
+#include <silicon/api_to_sio.hh>
 
 namespace sl
 {
@@ -116,7 +117,7 @@ namespace sl
     template <typename P, typename W>
     void generate_procedure(P p, std::string tpl, W& write, path_generator path)
     {
-      typedef std::remove_reference_t<decltype(p.value().function())> F;
+      typedef std::remove_reference_t<decltype(p.value().content.function())> F;
       typedef std::remove_reference_t<std::remove_const_t<callable_return_type_t<F>>> R;
 
       tpl_generator(
@@ -126,7 +127,7 @@ namespace sl
           write(path(p.symbol().name()));
         },
         "procedure_description", [&] (const char*&) {
-          write(procedure_description(p));
+          write(procedure_description(p.value().route, p.value().content));
         },
         "procedure_url", [&] (const char*&) {
           write(path(p.symbol().name(), "/", true));
@@ -188,7 +189,7 @@ namespace sl
 
       
     }
-  
+
     template <typename A, typename W, typename... T>
     void generate_client(const A& api, const std::string& tpl, W& write,
                          path_generator path, T... _options)
@@ -200,7 +201,7 @@ namespace sl
         "scope",
         [&] (const char*& c) {
           std::string scope_tpl = read_until(c, "{{end_scope}}");
-          generate_scope(api.procedures(), scope_tpl, write, path);
+          generate_scope(api, scope_tpl, write, path);
         },
 
         "root_scope", [&] (const char*&) {
@@ -218,9 +219,11 @@ namespace sl
   {
     auto path = tpl::path_generator(".") + "sl";
 
+    auto api_sio = http_api_to_sio(api);
+    
     std::stringstream ss;
     auto write = [&] (const auto& s) { ss << s; };
-    tpl::generate_client(api, javascript_client_template, write, path);
+    tpl::generate_client(api_sio, javascript_client_template, write, path);
     return ss.str();
   }
 
@@ -229,9 +232,11 @@ namespace sl
   {
     auto path = tpl::path_generator(".") + "sl";
 
+    auto api_sio = ws_api_to_sio(api);
+    
     std::stringstream ss;
     auto write = [&] (const auto& s) { ss << s; };
-    tpl::generate_client(api, javascript_websocket_client_template, write, path);
+    tpl::generate_client(api_sio, javascript_websocket_client_template, write, path);
     return ss.str();
   }
 }

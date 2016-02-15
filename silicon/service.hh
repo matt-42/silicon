@@ -1,6 +1,9 @@
 #pragma once
 
+#include <unordered_map>
 #include <map>
+#include <memory>
+#include <boost/utility/string_ref.hpp>
 #include <iod/foreach.hh>
 #include <silicon/api.hh>
 #include <silicon/error.hh>
@@ -12,6 +15,7 @@
 namespace sl
 {
   using namespace iod;
+  using boost::string_ref;
 
   template <typename M, typename S, typename... ARGS>
   struct ws_handler_base
@@ -108,7 +112,6 @@ namespace sl
   struct service
   {
     typedef M middlewares_type;
-    
     service(const A& api, const M& middlewares)
       : api_(api),
         middlewares_(middlewares)
@@ -144,20 +147,20 @@ namespace sl
     }
     
     template <typename O>
-    void index_api(O o, std::string prefix = "")
+    void index_api(O o)
     {
-      foreach(o) | [this, prefix] (auto& f)
+      routes.clear();
+      foreach(o) | [this] (auto& f)
       {
         static_if<is_tuple<decltype(f.content)>::value>(
           [&] (auto _this, auto f) { // If sio, recursion.
-            _this->index_api(f.content,
-                             f.route.path_as_string(false));
+            _this->index_api(f.content);
           },
           [&] (auto _this, auto f) { // Else, register the procedure.
             typedef std::remove_reference_t<decltype(f.content)> P;
             std::string name = f.route.string_id();
-            //std::cout << name << std::endl;
-            _this->routing_table_[name] =
+            routes.push_back(std::shared_ptr<std::string>(new std::string(name)));
+            _this->routing_table_[string_ref(*routes.back())] =
               new ws_handler<P, middlewares_type, S, ARGS...>(f.content);
           }, this, f);
       };
@@ -169,11 +172,10 @@ namespace sl
                     ARGS... args)
     {
       // skip the last / of the url.
-      std::string route2;
-      if (route.size() != 0 and route[route.size() - 1] == '/')
-        route2 = route.substr(0, route.size() - 1);
-      else
-        route2 = route;
+      string_ref route2(route);
+      if (route2.size() != 0 and route2[route2.size() - 1] == '/')
+        route2 = route2.substr(0, route2.size() - 1);
+
       auto it = routing_table_.find(route2);
       if (it != routing_table_.end())
         it->second->operator()(middlewares_, s_, args...);
@@ -184,8 +186,9 @@ namespace sl
     A api_;
     M middlewares_;
     S s_;
-    //std::map<std::string, ws_handler_base<middlewares_type, S, ARGS...>*> routing_table_;
-    dynamic_routing_table<std::string, ws_handler_base<middlewares_type, S, ARGS...>*> routing_table_;
+
+    std::vector<std::shared_ptr<std::string>> routes;
+    dynamic_routing_table<ws_handler_base<middlewares_type, S, ARGS...>*> routing_table_;
   };
 
 }

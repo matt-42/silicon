@@ -1,21 +1,24 @@
 #pragma once
 
 #include <map>
+#include <boost/utility/string_ref.hpp>
 
 namespace sl
 {
+  using boost::string_ref;
 
   namespace internal
   {
-    template <typename K, typename V>
+
+    template <typename V>
     struct drt_node
     {
 
       drt_node() : v(nullptr) {}
       struct iterator
       {
-        drt_node<K, V>* ptr;
-        K first;
+        drt_node<V>* ptr;
+        string_ref first;
         V second;
 
         auto operator->(){ return this; }
@@ -23,33 +26,36 @@ namespace sl
         bool operator!=(const iterator& b) { return this->ptr != b.ptr; }
       };
 
-      auto end() { return iterator{nullptr, K(), V()}; }
+      auto end() { return iterator{nullptr, string_ref(), V()}; }
       
-      auto& find_or_create(K r, int c)
+      auto& find_or_create(const string_ref& r, int c)
       {
-        if (!r[c])
+        if (c == r.size())
           return v;
 
         c++; // skip the /
         int s = c;
-        while (r[c] and r[c] != '/') c++;
-        K k(&r[s], c - s);
+        while (c < r.size() and r[c] != '/') c++;
+        string_ref k(&r[s], c - s);
+
         
-        return childs[k].find_or_create(r, c);
+        auto& v = childs[k].find_or_create(r, c);
+
+        return v;
       }
 
-      iterator find(K r, int c)
+      iterator find(const string_ref& r, int c)
       {
-        if (!r[c] and v != nullptr)
+        if (c == r.size() and v != nullptr)
           return iterator{this, r, v};
-        if (!r[c] and v == nullptr)
+        if (c == r.size() and v == nullptr)
           return iterator{nullptr, r, v};
 
         c++; // skip the /
         int s = c;
-        while (r[c] and r[c] != '/') c++;
-        K k(&r[s], c - s);
-
+        while (c < r.size() and r[c] != '/') c++;
+        string_ref k(&r[s], c - s);
+          
         auto it = childs.find(k);
         if (it != childs.end())
         {
@@ -67,29 +73,29 @@ namespace sl
       }
 
       V v;
-      std::map<K, drt_node> childs;
+      std::map<string_ref, drt_node> childs;
     };
   }
   
-  template <typename K, typename V>
+  template <typename V>
   struct dynamic_routing_table
   {
 
     // Find a route and return reference to a procedure.
-    auto& operator[](K r)
+    auto& operator[](const string_ref& r)
     {
       return root.find_or_create(r, 0);
     }
 
     // Find a route and return an iterator.
-    auto find(K r)
+    auto find(const string_ref& r)
     {
       return root.find(r, 0);
     }
 
     auto end() { return root.end(); }
 
-    internal::drt_node<K, V> root;
+    internal::drt_node<V> root;
   };
 
 }

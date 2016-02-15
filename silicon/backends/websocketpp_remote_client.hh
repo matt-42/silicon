@@ -7,6 +7,7 @@
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
 #include <silicon/symbols.hh>
+#include <silicon/utils.hh>
 #include <silicon/backends/wspp_connection.hh>
 
 namespace sl
@@ -34,7 +35,7 @@ namespace sl
       ss << ":" << route << ":" << json_encode(args);
       server->send(connection, ss.str(), websocketpp::frame::opcode::text);
     }
-    
+
     websocketpp::connection_hdl connection;
     wspp_server* server;
   };
@@ -80,31 +81,32 @@ namespace sl
   template <typename C, typename A>
   auto generate_wspp_remote_client_methods(C& c, A api, std::string prefix = "/")
   {
-    return foreach(api) | [c, prefix] (auto m) {
+    auto tu = foreach(api) | [c, prefix] (auto m) {
 
-      return static_if<is_sio<decltype(m.value())>::value>(
+      return static_if<is_tuple<decltype(m)>::value>(
         [c, prefix] (auto m) { // If sio, recursion.
           return m.symbol() = generate_wspp_remote_client_methods(c, m.value(), prefix + m.symbol().name() + "/");
         },
         [c, prefix] (auto m) { // Else, register the procedure.
-          typedef std::remove_reference_t<decltype(m.value())> V;
-          typename V::arguments_type arguments;
           typedef void R; // Fixme if we want to handle client return values.
-          return m.symbol() = create_wspp_remote_client_call<R>
-            (c, prefix + m.symbol().name(), arguments);
-            }, m);
+          return symbol_tuple_to_sio(&m.path, create_wspp_remote_client_call<R>
+                                     (c, m.string_id(), m.params));
+          // return m.symbol() = create_wspp_remote_client_call<R>
+          //   (c, prefix + m.symbol().name(), arguments);
+        }, m);
 
     };
-    
+
+    return deep_merge_sios_in_tuple(tu);    
   }
 
   template <typename... P>
   auto make_wspp_remote_client(const P&... procedures)
   {
-    auto api = make_remote_api(procedures...);
+    auto api = make_ws_remote_api(procedures...);
     std::shared_ptr<wspp_remote_client_ctx> c(new wspp_remote_client_ctx());
     auto accessor = D(_silicon_ctx = c);
-    auto rc = iod::cat(generate_wspp_remote_client_methods(c, api.procedures()), accessor);
+    auto rc = iod::cat(generate_wspp_remote_client_methods(c, api), accessor);
 
     return [rc] (wspp_connection c) {
       wspp_remote_client<decltype(rc)> client(rc);

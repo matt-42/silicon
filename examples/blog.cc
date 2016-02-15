@@ -9,5 +9,5 @@ using namespace s;
 int main()
 {
   std::cout << api_description(blog_api) << std::endl;
-  mhd_json_serve(blog_api, 9999);
+  auto ctx = mhd_json_serve(blog_api, 9999);
 }

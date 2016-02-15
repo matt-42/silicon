@@ -40,20 +40,41 @@ namespace sl
     
   struct h2o_json_service_utils
   {
-    template <typename T>
-    auto deserialize(h2o_req_t* req, T& res) const
+
+    typedef h2o_req_t request_type;
+
+    template <typename P, typename T>
+    auto deserialize(request_type* r, P procedure, T& res) const
     {
       try
       {
-        std::string body(req->entity.base, req->entity.len);
-        json_decode(res, body);
+        std::string body(r->entity.base, r->entity.len);
+        if (body.size() > 0)
+          json_decode<typename P::route_type::parameters_type>(res, body);
+        else
+          json_decode<typename P::route_type::parameters_type>(res, "{}");
       }
       catch (const std::runtime_error& e)
       {
         throw error::bad_request("Error when decoding procedure arguments: ", e.what());
       }
-
+      
     }
+    
+    // template <typename T>
+    // auto deserialize(h2o_req_t* req, T& res) const
+    // {
+    //   try
+    //   {
+    //     std::string body(req->entity.base, req->entity.len);
+    //     json_decode(res, body);
+    //   }
+    //   catch (const std::runtime_error& e)
+    //   {
+    //     throw error::bad_request("Error when decoding procedure arguments: ", e.what());
+    //   }
+
+    // }
 
     void send(h2o_req_t* r, const std::string& m) const
     {
@@ -264,11 +285,11 @@ namespace sl
     return NULL;
   }
   
-  template <typename A, typename... O>
-  void h2o_json_serve(const A& api, int port, O&&... opts)
+  template <typename A, typename M, typename... O>
+  void h2o_json_serve(const A& api, M middlewares, int port, O&&... opts)
   {
     // auto api2 = api.bind_factories(h2o_session_cookie());
-    auto s = service<h2o_json_service_utils, A, h2o_req_t*>(api);
+    auto s = service<h2o_json_service_utils, A, M, h2o_req_t*>(api, middlewares);
     typedef decltype(s) S;
     
     h2o_hostconf_t *hostconf;
@@ -357,5 +378,10 @@ namespace sl
     // H2O_stop_daemon(d);
   }
   
+  template <typename A, typename... O>
+  auto h2o_json_serve(const A& api, int port, O&&... opts)
+  {
+    return h2o_json_serve(api, std::make_tuple(), port, opts...);
+  }
 
 }

@@ -8,6 +8,7 @@
 #include <iod/sio_utils.hh>
 #include <silicon/symbols.hh>
 #include <silicon/http_route.hh>
+#include <silicon/utils.hh>
 
 namespace sl
 {
@@ -89,13 +90,16 @@ namespace sl
       static_if<(!std::is_same<decltype(iod::intersect(args, route.get_params)), void>::value)>(
         [&] (auto args) {
           auto get_params = iod::intersect(args, route.get_params);
-          if (get_params.size() > 0) url_ss << '?';
+          bool first = true;
           foreach(get_params) | [&] (auto m) {
+            if (first) url_ss << '?';
+            else url_ss << "&";
             std::stringstream value_ss;
             value_ss << m.value();
             char* escaped = curl_easy_escape(curl_, value_ss.str().c_str(),
                                              value_ss.str().size());
-            url_ss << m.symbol().name() << '=' << escaped << '&';
+            url_ss << m.symbol().name() << '=' << escaped;
+            first = false;
             curl_free(escaped);
           };
         },
@@ -111,8 +115,27 @@ namespace sl
       static_if<(route.post_params._size > 0 and A::_size > 0)>(
         [&] (auto args) {
           auto post_params = iod::intersect(args, route.post_params);
-          rq_body = json_encode(post_params);
-          rq_body_encoded = curl_easy_escape(curl_ , rq_body.c_str(), rq_body.size());
+          std::stringstream post_stream;
+          bool first = true;
+          foreach(post_params) | [&] (auto m)
+          {
+            if (!first) post_stream << "&";
+            post_stream << m.symbol_name() << "=";
+            std::stringstream value_str;
+            static_if<is_sio<std::decay_t<decltype(m.value())>>::value>(
+              [&] (auto m) { value_str << json_encode(m.value()); },
+              [&] (auto m) { value_str << m.value(); }, m);
+
+            char* escaped = curl_easy_escape(curl_, value_str.str().c_str(), value_str.str().size());
+            first = false;
+            post_stream << escaped;
+            curl_free(escaped);
+          };
+
+          // std::cout << "post_stream.str(): "<< post_stream.str() << std::endl;
+          rq_body = post_stream.str();
+          // rq_body = json_encode(post_params);
+          // rq_body_encoded = curl_easy_escape(curl_ , rq_body.c_str(), rq_body.size());
           req_body_buffer_.str(rq_body);
         },
         [&] (auto args) {}, args);
@@ -150,6 +173,7 @@ namespace sl
 
       // Send the request.
       char errbuf[CURL_ERROR_SIZE];
+      curl_easy_setopt(curl_, CURLOPT_ERRORBUFFER, errbuf);
       if (curl_easy_perform(curl_) != CURLE_OK)
       {
         std::stringstream errss;
@@ -219,36 +243,6 @@ namespace sl
   {
     return generic_client_call<C, R, Ret>(c, route);
   }
-
-  inline auto filter_symbols_from_tuple(std::tuple<> path)
-  {
-    return std::tuple<>();
-  }
-
-  template <typename T1, typename... T>
-  auto filter_symbols_from_tuple(std::tuple<T1, T...> path)
-  {
-    return iod::foreach(path) | [] (auto e)
-    {
-      return static_if<is_symbol<decltype(e)>::value>(
-        [&] () { return e; },
-        [] () { }
-        );
-    };
-  }
-
-  template <typename T>
-  auto symbol_tuple_to_sio(const std::tuple<>*, T content)
-  {
-    return content;
-  }
-  
-  template <typename S1, typename T, typename... S>
-  auto symbol_tuple_to_sio(const std::tuple<S1, S...>*, T content)
-  {
-    return D(S1() = symbol_tuple_to_sio((std::tuple<S...>*)0, content));
-  }
-
 
   template <typename R, typename M>
   struct client_method_with_root : public R, 

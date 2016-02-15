@@ -2,6 +2,7 @@
 
 #include <sstream>
 #include <silicon/api.hh>
+#include <silicon/backends/ws_api.hh>
 
 
 namespace sl
@@ -33,14 +34,14 @@ namespace sl
     return std::move(res.str());
   }
 
-  template <typename P>
-  std::string procedure_description(P& m)
+  template <typename... R, typename P>
+  std::string procedure_description(const http_route<R...>& route, P f)
   {
     std::stringstream res;
 
-    res << m.route.verb_as_string() << ": ";
+    res << route.verb_as_string() << ": ";
 
-    foreach(m.route.path) | [&] (auto e)
+    foreach(route.path) | [&] (auto e)
     {
       static_if<is_symbol<decltype(e)>::value>(
         [&] (auto e2) { res << std::string("/") + e2.name(); },
@@ -49,11 +50,39 @@ namespace sl
     };
     
     res << "(";
-    typedef std::remove_reference_t<decltype(m.content.function())> F;
+    typedef std::remove_reference_t<decltype(f.function())> F;
     typedef callable_return_type_t<F> ret_type;
     first_sio_of_tuple_t<callable_arguments_tuple_t<F>> args;
 
-    auto get_post_args = iod::cat(m.route.get_params, m.route.post_params);
+    auto get_post_args = iod::cat(route.get_params, route.post_params);
+    
+    bool first = true;
+    foreach(get_post_args) | [&] (auto& a) {
+      if (!first) res << ", ";
+      first = false;
+      res << a.symbol().name() << ": " << type_string(&a.value());
+    };
+    res << ") -> " << type_string((ret_type*) 0);
+    return res.str();
+  }
+  
+
+  template <typename... R, typename P>
+  std::string procedure_description(const ws_route<R...>& route, P f)
+  {
+    std::stringstream res;
+
+    foreach(route.path) | [&] (auto e)
+    {
+      res << std::string("/") + e.name();
+    };
+    
+    res << "(";
+    typedef std::remove_reference_t<decltype(f.function())> F;
+    typedef callable_return_type_t<F> ret_type;
+    first_sio_of_tuple_t<callable_arguments_tuple_t<F>> args;
+
+    auto get_post_args = route.params;
     
     bool first = true;
     foreach(get_post_args) | [&] (auto& a) {
@@ -76,7 +105,7 @@ namespace sl
           res << api_description(m.content);
         },
         [&] (auto m) { // Else, register the procedure.
-          res << procedure_description(m) << std::endl;
+          res << procedure_description(m.route, m.content) << std::endl;
         }, m);
       
     };

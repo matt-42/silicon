@@ -6,6 +6,7 @@
 
 #include <websocketpp/config/asio_no_tls.hpp>
 #include <websocketpp/server.hpp>
+#include <silicon/api.hh>
 #include <silicon/symbols.hh>
 #include <silicon/error.hh>
 #include <silicon/service.hh>
@@ -28,18 +29,21 @@ namespace sl
     typedef wspp_request request_type;
     typedef wspp_response response_type;
 
-    template <typename T>
-    auto deserialize(request_type* r, T& res) const
+    template <typename P, typename T>
+    auto deserialize(request_type* r, P procedure, T& res) const
     {
       try
       {
-        json_decode(res, r->body);
+        if (r->body.size() > 0)
+          json_decode<typename P::route_type::parameters_type>(res, r->body);
+        else
+          json_decode<typename P::route_type::parameters_type>(res, "{}");
       }
       catch (const std::runtime_error& e)
       {
         throw error::bad_request("Error when decoding procedure arguments: ", e.what());
       }
-
+      
     }
 
     inline auto serialize2(response_type* r, const std::string& res) const
@@ -61,8 +65,8 @@ namespace sl
     
   };
 
-  template <typename A1, typename... OPTS>
-  void wspp_json_serve(const A1& server_api, int port, OPTS&&... opts)
+  template <typename A1, typename M, typename... OPTS>
+  void wspp_json_serve(const A1& server_api, M middleware_factories, int port, OPTS&&... opts)
   {
     using websocketpp::connection_hdl;
     typedef wspp_server::message_ptr message_ptr;
@@ -70,17 +74,17 @@ namespace sl
     auto options = D(opts...);
     auto on_close_handler = options.get(_on_close, [] () {});
     auto on_open_handler = options.get(_on_open, [] () {});
-    auto http_api = options.get(_http_api, make_api());
+    auto on_http_api = options.get(_http_api, http_api());
 
     wspp_server server;
 
-    auto ws_service = service<websocketpp_json_service_utils, A1,
+    auto ws_service = service<websocketpp_json_service_utils, A1, M,
                               wspp_request*, wspp_response*,
-                              wspp_connection>(server_api);
+                              wspp_connection>(server_api, middleware_factories);
 
     auto http_service = service<websocketpp_json_service_utils,
-                                decltype(http_api),
-                                wspp_request*, wspp_response*>(http_api);
+                                decltype(on_http_api), M,
+                                wspp_request*, wspp_response*>(on_http_api, middleware_factories);
 
     std::mutex connections_mutex;
     std::mutex messages_mutex;
@@ -93,13 +97,13 @@ namespace sl
     auto on_close = [&] (connection_hdl hdl)
     {
       wspp_connection c{hdl, &server};
-      di_factories_call(on_close_handler, ws_service.api().middlewares(), c);
+      di_factories_call(on_close_handler, middleware_factories, c);
     };
 
     auto on_open = [&] (connection_hdl hdl)
     {
       wspp_connection c{hdl, &server};
-      di_factories_call(on_open_handler, ws_service.api().middlewares(), c);
+      di_factories_call(on_open_handler, middleware_factories, c);
     };
 
     auto on_message = [&] (connection_hdl hdl, message_ptr msg)
@@ -117,7 +121,9 @@ namespace sl
       {
         wspp_request request;
         wspp_response response;
-        http_service(con->get_resource(), &request, &response);
+        // Only http GET requests.
+        http_service(std::string("/GET") + con->get_resource(),
+                     &request, &response);
         con->set_status(websocketpp::http::status_code::ok);
         con->set_body(response.body);
       }
@@ -223,4 +229,11 @@ namespace sl
 
   }
 
+  template <typename A, typename... O>
+  auto wspp_json_serve(const A& api, int port, O&&... opts)
+  {
+    return wspp_json_serve(api, std::make_tuple(), port, opts...);
+  }
+  
 }
+

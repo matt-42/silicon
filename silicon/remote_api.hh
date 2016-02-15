@@ -1,6 +1,7 @@
 #pragma once
 
 #include <silicon/api.hh>
+#include <silicon/backends/ws_api.hh>
 
 namespace sl
 {
@@ -14,7 +15,8 @@ namespace sl
   };
 
   // Make a remote procedure.
-  // @procedure_name(@arg1 = arg_type1(), @arg2 = ...) = return_type();
+  // @procedure_name * parameters(@arg1 = arg_type1(), @arg2 = ...);
+  // Todo: handle return type route  = return_type();
   template <typename M>
   auto make_remote_procedure(M m)
   {
@@ -23,41 +25,19 @@ namespace sl
   }
   
   template <typename... T>
-  auto parse_remote_api(sio<T...> api)
+  auto parse_ws_remote_api(sio<T...> api)
   {
+    // Todo: handle nesting.
     return foreach(api) | [] (auto m)
     {
-      return static_if<is_sio<decltype(m.value())>::value>(
-        [] (auto m) { // If sio, recursion.
-          return m.symbol() = parse_remote_api(m.value());
-        },
-        [] (auto m) { // Else, register the procedure.
-          return m.symbol() = make_remote_procedure(m);
-        }, m);
+      return make_ws_route(m);
     };
   }
-  
-  template <typename P>
-  struct remote_api
-  {
-    remote_api(const P& procs)
-      : procedures_(procs)
-    {
-    }
-    
-    const auto& procedures() const
-    {
-      return procedures_;
-    }
-    
-    P procedures_;
-  };
 
   template <typename... P>
-  auto make_remote_api(P... procs)
+  auto make_ws_remote_api(P... procs)
   {
-    auto a = parse_remote_api(D(procs...));
-    return api<decltype(a), std::tuple<>>(a, std::tuple<>());
+    return std::make_tuple(make_ws_route(procs)...);
   }
-  
+
 }

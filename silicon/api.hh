@@ -52,8 +52,6 @@ namespace sl
     typedef Ret return_type;
     typedef F function_type;
 
-    typedef typename Ro::get_parameters_type get_arguments_type;
-    typedef typename Ro::post_parameters_type post_arguments_type;
     typedef typename Ro::path_type path_type;
 
     procedure(F f, Ro route)
@@ -190,11 +188,11 @@ namespace sl
     {
       return static_if<is_tuple<decltype(m.content)>::value>(
         [&] (auto m) { // If tuple, plug it under route.
-          auto r = route.append(m.route);
+          auto r = route_cat(route, m.route);
           return make_api_node(r, prefix_api(r, m.content));
         },
         [&] (auto m) { // Else, register the procedure.
-          auto r = route.append(m.route);
+          auto r = route_cat(route, m.route);
           return make_api_node(r, make_procedure(0, r, m.content.function()));
         }, m);
     };
@@ -208,11 +206,11 @@ namespace sl
     {
       return static_if<is_tuple<decltype(m.right)>::value>(
         [&] (auto m) { // If api_node, plug it under route.
-          auto r = internal::make_http_route(route, m.left);
+          auto r = route_cat(route, m.left);
           return make_api_node(r, prefix_api(r, m.right));
         },
         [&] (auto m) { // Else, register the procedure.
-          auto r = internal::make_http_route(route, m.left);
+          auto r = route_cat(route, m.left);
           return make_api_node(r, make_procedure(0, r, m.right));
         }, m);
     };

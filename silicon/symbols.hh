@@ -35,6 +35,11 @@
     iod_define_symbol(body)
 #endif
 
+#ifndef IOD_SYMBOL_blocking
+#define IOD_SYMBOL_blocking
+    iod_define_symbol(blocking)
+#endif
+    
 #ifndef IOD_SYMBOL_content_type
 #define IOD_SYMBOL_content_type
     iod_define_symbol(content_type)

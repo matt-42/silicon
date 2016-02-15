@@ -36,10 +36,8 @@ function silicon_json_websocket(url)
     return p;
   }
 
-  this.api = {
-    broadcast: function (p) { console.log("Broadcast" + p.from + " " + p.text); },
-    pm: function (p) { console.log("Pm" + p.from + " " + p.text); },
-  }
+  this.api = {};
+
   var api = this.api;
   // Server -> Client communication
   ws.onmessage = function(event) {
@@ -49,7 +47,10 @@ function silicon_json_websocket(url)
       var node = api;
       for (var i = 0; i < req.route.length && node != undefined; i++)
         node = node[req.route[i]];
-      if (node) node(req.params);
+      if (node)
+      {
+        node(req.params);
+      }
       else console.error("Procedure " + req.route.join('.') + " is not implemented.")
     }
     else // Server response of a client call.

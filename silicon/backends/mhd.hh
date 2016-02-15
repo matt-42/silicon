@@ -125,6 +125,72 @@ namespace sl
           }, m);
       };
     }
+
+    template <typename P, typename O>
+    void decode_post_parameters(O& res, mhd_request* r) const
+    {
+      std::map<std::string, std::string> map;
+      auto add = [&] (const char* k, const char* v) {
+        // std::cout << k << " " << v << std::endl;
+        map[k] = v;
+      };
+
+      const std::string& body = r->body;
+      int last = 0;
+      for (int i = 0; i < body.size();)
+      {
+        std::string key, value;
+
+        for (; i < body.size() and body[i] != '='; i++);
+
+        key = std::string(&body[last], i - last);
+
+        i++; // skip =
+
+        if (i >= body.size()) break;
+
+        last = i;
+
+        for (; i < body.size() and body[i] != '&'; i++);
+
+        value = std::string(&body[last], i - last);
+        value.resize(MHD_http_unescape(&value[0]));
+
+        // std::cout << key << " -> " << value << std::endl;
+        map.insert(std::make_pair(key, value));
+
+        i++; // skip &;
+        last=i;
+      }
+      // MHD_get_connection_values(r->connection, MHD_POSTDATA_KIND,
+      //                           &mhd_keyvalue_iterator<decltype(add)>,
+      //                           &add);
+      
+      foreach(P()) | [&] (auto m)
+      {
+        auto it = map.find(m.symbol().name());
+        if (it != map.end())
+        {
+          try
+          {
+            static_if<is_sio<std::decay_t<decltype(m.value())>>::value>(
+              [&] (auto m, auto& res) { json_decode<std::decay_t<decltype(m.value())>>(res[m.symbol()], it->second); },
+              [&] (auto m, auto& res) { res[m.symbol()] = boost::lexical_cast<std::decay_t<decltype(m.value())>>(it->second); }, m, res);
+          }
+          catch (const std::exception& e)
+          {
+            throw error::bad_request(std::string("Error while decoding the POST parameter ") +
+                                     m.symbol().name() + ": " + e.what());
+          }
+        }
+        else
+        {
+          if(!m.attributes().has(_optional))
+            throw std::runtime_error(std::string("Missing required GET parameter ") + m.symbol().name());
+        }
+            
+      };
+    }
     
     template <typename P, typename T>
     auto deserialize(request_type* r, P procedure, T& res) const
@@ -132,11 +198,8 @@ namespace sl
       try
       {
         decode_url_arguments<typename P::path_type>(res, r->url);
-        decode_get_arguments<typename P::get_arguments_type>(res, r);
-        if (r->body.size() > 0)
-          json_decode<typename P::post_arguments_type>(res, r->body);
-        else
-          json_decode<typename P::post_arguments_type>(res, "{}");
+        decode_get_arguments<typename P::route_type::get_parameters_type>(res, r);
+        decode_post_parameters<typename P::route_type::post_parameters_type>(res, r);
       }
       catch (const std::runtime_error& e)
       {
@@ -151,6 +214,12 @@ namespace sl
       r->body = res;
     }
 
+    void serialize2(response_type* r, const string_ref res) const
+    {
+      r->status = 200;
+      r->body = std::string(&res.front(), res.size());
+    }
+    
     void serialize2(response_type* r, const char* res) const
     {
       r->status = 200;
@@ -160,11 +229,11 @@ namespace sl
     template <typename T>
     auto serialize2(response_type* r, const T& res) const
     {
-      std::string str = json_encode(res);
       r->status = 200;
-      r->body = str;      
+      r->body = json_encode(res);      
     }
 
+    
     template <typename T>
     auto serialize(response_type* r, const T& res) const
     {
@@ -176,7 +245,7 @@ namespace sl
     {
       serialize2(r, res.body);
       if (res.has(_content_type))
-        r->headers.push_back(std::make_pair("Content-Type", res.get(_content_type, "")));
+        r->headers.push_back(std::make_pair("Content-Type", std::string(res.get(_content_type, ""))));
     }
     
   };
@@ -364,6 +433,11 @@ namespace sl
     if (d == NULL)
       throw std::runtime_error("Cannot start the microhttpd daemon");
 
+    if (options.has(_blocking))
+    {
+      while (true) usleep(1e6);
+    }
+
     return silicon_mhd_ctx<service_t>
       (d, s);
   }
@@ -373,5 +447,5 @@ namespace sl
   {
     return mhd_json_serve(api, std::make_tuple(), port, opts...);
   }
-
+  
 }
