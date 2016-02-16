@@ -361,11 +361,20 @@ namespace sl
     
     auto s = service_t(api, m2);
 
-    const lwan_url_map_t default_map[] = {
-      { .prefix = "/", .handler = &lwan_silicon_handler<service_t>, .data = &s},
-      { .prefix = NULL }
-    };
+    // const lwan_url_map_t default_map[] = {
+    //   { .prefix = "/", .handler = &lwan_silicon_handler<service_t>, .data = &s},
+    //   { .prefix = NULL }
+    // };
 
+
+    lwan_url_map_t default_map[2];
+    memset(default_map, 0, sizeof(default_map));
+    default_map[1].prefix = NULL;
+    default_map[0].prefix = "/";
+    default_map[0].handler = &lwan_silicon_handler<service_t>;
+    default_map[0].data = &s;
+           
+    
     lwan_t l;
     lwan_config_t c;
 
