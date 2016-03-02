@@ -10,6 +10,7 @@
 #include <iod/bind_method.hh>
 #include <silicon/di_factories.hh>
 #include <silicon/http_route.hh>
+#include <silicon/middleware_factories.hh>
 
 namespace sl
 {

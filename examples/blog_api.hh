@@ -58,15 +58,15 @@ struct restricted_area
 };
 
 
-auto blog_api = make_api(
+auto blog_api = http_api(
 			   
-  _login(_login, _password) = [] (auto p, session& s, sqlite_connection& c)
+  POST / _login * post_parameters(_login, _password) = [] (auto p, session& s, sqlite_connection& c)
   {
     if (!s.authenticate(c, p.login, p.password))
       throw error::bad_request("Invalid user or password");      
   },
 
-  _logout = [] (session& s, restricted_area)
+  GET / _logout = [] (session& s, restricted_area)
   {
     s.logout();
   },
@@ -104,7 +104,8 @@ auto blog_api = make_api(
     }
 
     )
-  ).bind_factories(sqlite_connection_factory("blog.sqlite"),
-                      user_orm_factory("blog_users"),
-                      post_orm_factory("blog_posts"),
-                      hashmap_session_factory<session>());
+  );
+auto blog_middlewares = middleware_factories(sqlite_connection_factory("blog.sqlite"),
+                                       user_orm_factory("blog_users"),
+                                       post_orm_factory("blog_posts"),
+                                       hashmap_session_factory<session>());

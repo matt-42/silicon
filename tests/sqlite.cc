@@ -25,6 +25,6 @@ int main()
     sqlite_connection_factory("db.sqlite") // sqlite middleware.
     );
 
-  sl::mhd_json_serve(api, f, 12345);
+  sl::mhd_json_serve(api, f, 12345, _non_blocking);
 
 }

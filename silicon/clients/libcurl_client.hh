@@ -131,7 +131,6 @@ namespace sl
             post_stream << escaped;
             curl_free(escaped);
           };
-
           // std::cout << "post_stream.str(): "<< post_stream.str() << std::endl;
           rq_body = post_stream.str();
           // rq_body = json_encode(post_params);

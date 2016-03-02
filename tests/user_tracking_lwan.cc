@@ -21,11 +21,11 @@ int main()
 
   // Start server.
   std::thread t([&] () { lwan_json_serve(api, 12345); });
-  usleep(.1e6);
+  usleep(1e6);
 
   // Test.
   {
-    auto c = libcurl_json_client(api, "127.0.0.1", 8080);
+    auto c = libcurl_json_client(api, "127.0.0.1", 12345);
   
     auto r1 = c.http_get.my_tracking_id();
     auto r2 = c.http_get.my_tracking_id();

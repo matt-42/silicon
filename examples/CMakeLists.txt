@@ -10,13 +10,14 @@ link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib
                 ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib64
                 $ENV{HOME}/local/lib)
 
+set(LWAN_LIBS lwan-common curl z pthread dl ubsan)
+
 set(WEBSOCKETS_LIBS
     ${Boost_LIBRARIES} pthread)
 
-add_definitions(-std=c++14  -ftemplate-depth=1024 -O3 -DNDEBUG)
+add_definitions(-std=c++14  -ftemplate-depth=1024 -g)
 
 set(MHD_LIBS gnutls gcrypt pthread microhttpd)
-set(MIMOSA_LIBS mimosa-http mimosa-uri mimosa gnutls z pthread lzma)
 
 add_executable(simple simple.cc)
 target_link_libraries(simple ${MHD_LIBS})
@@ -25,7 +26,7 @@ add_executable(blog blog.cc)
 target_link_libraries(blog ${MHD_LIBS} sqlite3 nettle)
 
 add_executable(blog_test blog_test.cc)
-target_link_libraries(blog_test sqlite3 nettle ${MIMOSA_LIBS} ${MHD_LIBS})
+target_link_libraries(blog_test sqlite3 nettle ${MHD_LIBS} curl)
 
 add_executable(ws_broadcast_server ws_broadcast_server.cc)
 target_link_libraries(ws_broadcast_server ${WEBSOCKETS_LIBS})

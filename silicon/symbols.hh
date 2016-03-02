@@ -39,7 +39,12 @@
 #define IOD_SYMBOL_blocking
     iod_define_symbol(blocking)
 #endif
-    
+
+#ifndef IOD_SYMBOL_non_blocking
+#define IOD_SYMBOL_non_blocking
+    iod_define_symbol(non_blocking)
+#endif
+      
 #ifndef IOD_SYMBOL_content_type
 #define IOD_SYMBOL_content_type
     iod_define_symbol(content_type)

@@ -119,7 +119,7 @@ int main()
 
   
   // Start server.
-  auto server = mhd_json_serve(api, mf, 12345);
+  auto server = mhd_json_serve(api, mf, 12345, _non_blocking);
   
   { // Setup database for testing.
     auto orm = instantiate_factory<sqlite_orm<User>>(mf);

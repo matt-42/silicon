@@ -258,7 +258,7 @@ namespace sl
       std::string key = "sl_token";
       std::string token;
       const char* token_ = MHD_lookup_connection_value(req->connection, MHD_COOKIE_KIND, key.c_str());
-      
+
       if (!token_)
       {
         token = generate_secret_tracking_id();
@@ -353,7 +353,7 @@ namespace sl
     // Set cookies.
     for(auto kv : resp.cookies)
     {
-      std::string set_cookie_string = kv.first + '=' + kv.second + "";
+      std::string set_cookie_string = kv.first + '=' + kv.second + "; Path=/";
       if (MHD_NO == MHD_add_response_header (response,
                                              MHD_HTTP_HEADER_SET_COOKIE,
                                              set_cookie_string.c_str()))
@@ -433,7 +433,7 @@ namespace sl
     if (d == NULL)
       throw std::runtime_error("Cannot start the microhttpd daemon");
 
-    if (options.has(_blocking))
+    if (!options.has(_non_blocking))
     {
       while (true) usleep(1e6);
     }

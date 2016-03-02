@@ -75,24 +75,24 @@
     iod_define_symbol(from)
 #endif
 
+#ifndef IOD_SYMBOL_get_id
+#define IOD_SYMBOL_get_id
+    iod_define_symbol(get_id)
+#endif
+
 #ifndef IOD_SYMBOL_get_user
 #define IOD_SYMBOL_get_user
     iod_define_symbol(get_user)
 #endif
 
+#ifndef IOD_SYMBOL_hello
+#define IOD_SYMBOL_hello
+    iod_define_symbol(hello)
+#endif
+
 #ifndef IOD_SYMBOL_hello_world
 #define IOD_SYMBOL_hello_world
     iod_define_symbol(hello_world)
-#endif
-
-#ifndef IOD_SYMBOL_home
-#define IOD_SYMBOL_home
-    iod_define_symbol(home)
-#endif
-
-#ifndef IOD_SYMBOL_http_api
-#define IOD_SYMBOL_http_api
-    iod_define_symbol(http_api)
 #endif
 
 #ifndef IOD_SYMBOL_id
@@ -145,6 +145,16 @@
     iod_define_symbol(nick)
 #endif
 
+#ifndef IOD_SYMBOL_non_blocking
+#define IOD_SYMBOL_non_blocking
+    iod_define_symbol(non_blocking)
+#endif
+
+#ifndef IOD_SYMBOL_nthreads
+#define IOD_SYMBOL_nthreads
+    iod_define_symbol(nthreads)
+#endif
+
 #ifndef IOD_SYMBOL_on_close
 #define IOD_SYMBOL_on_close
     iod_define_symbol(on_close)
@@ -193,6 +203,11 @@
 #ifndef IOD_SYMBOL_sess
 #define IOD_SYMBOL_sess
     iod_define_symbol(sess)
+#endif
+
+#ifndef IOD_SYMBOL_set_id
+#define IOD_SYMBOL_set_id
+    iod_define_symbol(set_id)
 #endif
 
 #ifndef IOD_SYMBOL_signin
@@ -245,12 +260,11 @@
     iod_define_symbol(test4)
 #endif
 
-
 #ifndef IOD_SYMBOL_test5
 #define IOD_SYMBOL_test5
     iod_define_symbol(test5)
 #endif
-      
+
 #ifndef IOD_SYMBOL_text
 #define IOD_SYMBOL_text
     iod_define_symbol(text)

@@ -72,7 +72,7 @@ namespace sl
 
     void add_cookie(std::string k, std::string v)
     {
-      add_header("Set-Cookie", k + '=' + v);
+      add_header("Set-Cookie", k + '=' + v + ";Path=/");
     }
     
     lwan_request_t* lwan_req;
@@ -302,13 +302,9 @@ namespace sl
       resp.body = "Internal server error.";
     }
 
-    // resp.body = "hello world";
-    // resp.status = 200;
-    
     if (!response->mime_type)
       response->mime_type = "text/plain";
     strbuf_set(response->buffer, resp.body.c_str(), resp.body.size());
-    // strbuf_set(response->buffer, "Hello world", resp.body.size());
 
     return lwan_http_status_t(resp.status);
   }

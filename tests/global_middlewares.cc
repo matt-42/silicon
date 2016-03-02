@@ -63,7 +63,7 @@ int main(int argc, char* argv[])
 
   auto hello_api_ga = add_global_middlewares<request_logger>::to(hello_api);
   
-  auto server = mhd_json_serve(hello_api_ga, 12345, _nthreads = 1);
+  auto server = mhd_json_serve(hello_api_ga, 12345, _nthreads = 1, _non_blocking);
 
   // Test.
   auto c = libcurl_json_client(hello_api, "127.0.0.1", 12345);

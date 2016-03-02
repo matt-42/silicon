@@ -42,7 +42,7 @@ int main()
 
   // Start server.
   std::thread t([&] () { lwan_json_serve(api, factories, 12345); });
-  usleep(.1e6);
+  usleep(.5e6);
 
   // Test.
   auto c = libcurl_json_client(api, "127.0.0.1", 12345);
@@ -63,7 +63,7 @@ int main()
   assert(get_r.response.address == "USA");
 
   auto get_r2 = c.http_get.user.get_by_id(_id = 42);
-  std::cout << json_encode(get_r2) << std::endl;;
+  std::cout << get_r2.error << std::endl;;
   assert(get_r2.status == 404);
 
   // Update

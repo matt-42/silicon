@@ -33,7 +33,7 @@ int main(int argc, char* argv[])
 
   js_client = generate_javascript_client(hello_api);
 
-  auto ctx = sl::mhd_json_serve(hello_api, atoi(argv[1]));
+  auto ctx = sl::mhd_json_serve(hello_api, atoi(argv[1]), _non_blocking);
 
   std::cout << js_client << std::endl;
   

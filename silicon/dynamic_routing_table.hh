@@ -36,9 +36,8 @@ namespace sl
         c++; // skip the /
         int s = c;
         while (c < r.size() and r[c] != '/') c++;
-        string_ref k(&r[s], c - s);
+        string_ref k = r.substr(s, c - s);
 
-        
         auto& v = childs[k].find_or_create(r, c);
 
         return v;
@@ -55,7 +54,7 @@ namespace sl
         int s = c;
         while (c < r.size() and r[c] != '/') c++;
         string_ref k(&r[s], c - s);
-          
+        
         auto it = childs.find(k);
         if (it != childs.end())
         {

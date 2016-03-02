@@ -39,7 +39,7 @@ auto hello_api = http_api(
 
 int main(int argc, char* argv[])
 {
-  auto ctx = sl::mhd_json_serve(hello_api, 12345//, _nthreads=3, _linux_epoll
+  auto ctx = sl::mhd_json_serve(hello_api, 12345, _non_blocking
     );
 
   auto c = libcurl_json_client(hello_api, "127.0.0.1", 12345);

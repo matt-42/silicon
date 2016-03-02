@@ -149,7 +149,6 @@ namespace sl
     template <typename O>
     void index_api(O o)
     {
-      routes.clear();
       foreach(o) | [this] (auto& f)
       {
         static_if<is_tuple<decltype(f.content)>::value>(
@@ -158,9 +157,9 @@ namespace sl
           },
           [&] (auto _this, auto f) { // Else, register the procedure.
             typedef std::remove_reference_t<decltype(f.content)> P;
-            std::string name = f.route.string_id();
-            routes.push_back(std::shared_ptr<std::string>(new std::string(name)));
-            _this->routing_table_[string_ref(*routes.back())] =
+            std::shared_ptr<std::string> name(new std::string(f.route.string_id()));
+            routes.push_back(name);
+            _this->routing_table_[string_ref(*name)] =
               new ws_handler<P, middlewares_type, S, ARGS...>(f.content);
           }, this, f);
       };
@@ -176,6 +175,8 @@ namespace sl
       if (route2.size() != 0 and route2[route2.size() - 1] == '/')
         route2 = route2.substr(0, route2.size() - 1);
 
+      std::cout << "call: " << route2 << std::endl;
+      
       auto it = routing_table_.find(route2);
       if (it != routing_table_.end())
         it->second->operator()(middlewares_, s_, args...);

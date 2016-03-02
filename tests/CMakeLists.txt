@@ -30,6 +30,8 @@ link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib
                 ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib64
                 $ENV{HOME}/local/lib)
 #add_definitions(-std=c++14  -ftemplate-depth=1024 -O3 -DNDEBUG)
+
+
 add_definitions(-std=c++14 -ftemplate-depth=1024 -g)
 set(CPPNET_LIBS
     ${Boost_LIBRARIES}
@@ -43,7 +45,7 @@ message(STATUS ${WEBSOCKETS_LIBS})
 set(MIMOSA_LIBS mimosa-http mimosa-uri mimosa gnutls z pthread lzma)
 
 set(MHD_LIBS gnutls gcrypt pthread microhttpd)
-set(LWAN_LIBS lwan-common curl z pthread dl)
+set(LWAN_LIBS lwan-common curl z pthread dl ubsan)
 
 # add_executable(cppnet_hello_world cppnet_hello_world.cc)
 # target_link_libraries(cppnet_hello_world ${CPPNET_LIBS})
@@ -93,6 +95,10 @@ target_link_libraries(ws_chat_server ${WEBSOCKETS_LIBS})
 
 add_executable(rest rest.cc)
 target_link_libraries(rest sqlite3 ${MHD_LIBS} curl)
+
+
+add_executable(hashmap_session hashmap_session.cc)
+target_link_libraries(hashmap_session ${LWAN_LIBS} curl)
 
 add_executable(crud_lwan crud_lwan.cc)
 target_link_libraries(crud_lwan sqlite3 ${LWAN_LIBS} curl)

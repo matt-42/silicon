@@ -13,7 +13,8 @@ auto hl_api = http_api(
 
   
   GET = [] () { return D(_message = "hello world."); },
-  GET / _test = [] () { return D(_message = "hello world."); }
+  GET / _test = [] () { return D(_message = "hello world."); },
+  POST / _test2 * post_parameters(_id = int()) = [] (auto p) { return D(_message = "hello world."); }
   //PUT / _test = [] () { return; }
 
   // GET / _test2 * get_parameters(_name = optional(std::string("John")))  =
@@ -49,6 +50,7 @@ int main(int argc, char* argv[])
 
   auto c = libcurl_json_client(hl_api, "127.0.0.1", 12345);
   auto r1 = c.http_get.test();
+  auto r2 = c.http_post.test2(_id = 12);
   
   std::cout << iod::json_encode(r1) << std::endl;
   exit(0);

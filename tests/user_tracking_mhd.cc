@@ -20,7 +20,7 @@ int main()
     );
 
   // Start server.
-  auto server = mhd_json_serve(api, 12345);
+  auto server = mhd_json_serve(api, 12345, _non_blocking);
 
   // Test.
   auto c = libcurl_json_client(api, "127.0.0.1", 12345);

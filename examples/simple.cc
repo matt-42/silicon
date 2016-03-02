@@ -13,9 +13,9 @@ int main()
   using namespace s;
 
   // Create an api
-  auto api = make_api(
+  auto api = http_api(
 
-    _hello(_name) = [] (auto p) { return D(_message = "hello " + p.name); }
+    _hello * get_parameters(_name) = [] (auto p) { return D(_message = "hello " + p.name); }
 
     );
 
