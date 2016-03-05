@@ -69,11 +69,11 @@ namespace sl
   template <typename T> struct http_verb : public T, public iod::assignable<http_verb<T>>, public iod::Exp<http_verb<T>> {
     using iod::assignable<http_verb<T>>::operator=;
   };
-  struct http_get {};    static http_verb<http_get> GET;
-  struct http_post {};   static http_verb<http_post> POST;
-  struct http_put {};    static http_verb<http_put> PUT;
-  struct http_delete {}; static http_verb<http_delete> DELETE;
-  struct http_verb_any {}; static http_verb<http_verb_any> ANY;
+  struct http_get { const char* to_string() { return "GET"; } }; static http_verb<http_get> GET;
+  struct http_post { const char* to_string() { return "POST"; } };   static http_verb<http_post> POST;
+  struct http_put { const char* to_string() { return "PUT"; } };    static http_verb<http_put> PUT;
+  struct http_delete { const char* to_string() { return "DELETE"; } }; static http_verb<http_delete> DELETE;
+  struct http_verb_any {  const char* to_string() { return "GET"; } }; static http_verb<http_verb_any> ANY;
 
   auto http_verb_to_symbol(http_get) { return _http_get; }
   auto http_verb_to_symbol(http_post) { return _http_post; }

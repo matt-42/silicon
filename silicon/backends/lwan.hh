@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <cstring>
 #include <vector>
 #include <lwan/lwan.h>
@@ -65,6 +66,9 @@ namespace sl
         
       }
 
+      assert(lwan_req);
+      assert(lwan_req->conn);
+      assert(lwan_req->conn->coro);
       headers[headers_cpt].key = coro_strdup(lwan_req->conn->coro, k.c_str());
       headers[headers_cpt].value = coro_strdup(lwan_req->conn->coro, v.c_str());
       headers_cpt++;
@@ -287,7 +291,7 @@ namespace sl
 
     try
     {
-      service(std::string("/") + std::string(method) + "/" + url, &rq, &resp);
+      service(std::string("/") + std::string(method) + "/" + url, &rq, &resp, request, response);
     }
     catch(const error::error& e)
     {
@@ -308,55 +312,65 @@ namespace sl
 
     return lwan_http_status_t(resp.status);
   }
-  
 
-  inline void
-  lwan_unset_urlmap_data_rec(lwan_trie_t *trie, lwan_trie_node_t *node)
+  template <typename S>
+  struct lwan_ctx
   {
-    if (!node)
-      return;
 
-    int32_t nodes_unset = node->ref_count;
+    inline lwan_ctx(lwan_t* lwan, S* service)
+      : thread_(nullptr),
+        lwan_(lwan),
+        service_(service)
+      {}
 
-    for (lwan_trie_leaf_t *leaf = node->leaf; leaf;) {
-      lwan_trie_leaf_t *tmp = leaf->next;
-
-      lwan_url_map_t* urlmap = (lwan_url_map_t*) leaf->data;
-      urlmap->data = NULL;
-
-      leaf = tmp;
+    inline ~lwan_ctx() {
+      stop();
+      delete lwan_;
+      delete service_;
     }
 
-    for (int32_t i = 0; nodes_unset > 0 && i < 8; i++) {
-      if (node->next[i]) {
-        lwan_unset_urlmap_data_rec(trie, node->next[i]);
-        --nodes_unset;
+    inline void wait() { thread_->join(); }
+
+    inline void start()
+    {
+      stop();
+      thread_ = new std::thread([this] { lwan_main_loop(lwan_); });
+    }
+    inline void stop()
+    {
+      if (thread_ != nullptr)
+      {
+        shutdown((int)lwan_->main_socket, SHUT_RDWR);
+        close((int)lwan_->main_socket);
+        lwan_shutdown(lwan_);
+        thread_->join();
+        delete thread_;
+        lwan_ = nullptr;
+        thread_ = nullptr;
       }
     }
+    std::thread* thread_;
+    lwan_t* lwan_;
+    S* service_;
+  };
 
-  }
-
-  inline void lwan_unset_urlmap_data(lwan_trie_t *trie)
-  {
-    if (!trie || !trie->root)
-      return;  
-
-    lwan_unset_urlmap_data_rec(trie, trie->root);    
-  }
-
+  struct lwan_sess { int id; };
+  
   template <typename A, typename M, typename... O>
-  void lwan_json_serve(const A& api, const M& middleware_factories,
+  auto lwan_json_serve(const A& api, M middleware_factories,
                        int port, O&&... opts)
   {
 
+    auto options = D(opts...);
     auto m2 = std::tuple_cat(std::make_tuple(lwan_session_cookie()),
                                              middleware_factories);
     
     using service_t = service<lwan_json_service_utils, A, decltype(m2),
-                              lwan_request*, lwan_response*>;
+                              lwan_request*, lwan_response*, lwan_request_t*, lwan_response_t*>;
     
-    auto s = service_t(api, m2);
+    auto s = new service_t(api, m2);
 
+    // This won't compile with GCC.
     // const lwan_url_map_t default_map[] = {
     //   { .prefix = "/", .handler = &lwan_silicon_handler<service_t>, .data = &s},
     //   { .prefix = NULL }
@@ -368,10 +382,10 @@ namespace sl
     default_map[1].prefix = NULL;
     default_map[0].prefix = "/";
     default_map[0].handler = &lwan_silicon_handler<service_t>;
-    default_map[0].data = &s;
+    default_map[0].data = s;
            
     
-    lwan_t l;
+    lwan_t* l = new lwan_t;
     lwan_config_t c;
 
 
@@ -380,18 +394,24 @@ namespace sl
     listen_str << "*:" << port;
     c.listener = strdup(listen_str.str().c_str());
     
-    lwan_init_with_config(&l, &c);
+    lwan_init_with_config(l, &c);
+    lwan_set_url_map(l, default_map);
 
-    lwan_set_url_map(&l, default_map);
-    lwan_main_loop(&l);
+    auto ctx = std::make_shared<lwan_ctx<service_t>>(l, s);
 
-    lwan_unset_urlmap_data(&l.url_map_trie);
-    lwan_shutdown(&l);
+    ctx->start();
 
+    if (!options.has(_non_blocking))
+    {
+      ctx->wait();
+      ctx->stop();
+    }
+
+    return ctx;
   }
 
   template <typename A, typename... O>
-  void lwan_json_serve(const A& api, int port, O&&... opts)
+  auto lwan_json_serve(const A& api, int port, O&&... opts)
   {
     return lwan_json_serve(api, std::make_tuple(), port, opts...);
   }

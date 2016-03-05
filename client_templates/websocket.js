@@ -69,7 +69,7 @@ function silicon_json_websocket(url)
     if ( ! {{scope_path}} ) {{scope_path}} = {};
     {{procedure}}
       // {{procedure_description}}
-      {{procedure_path}} = function(params) { return send_request("{{procedure_url}}", params); };
+      {{procedure_path}} = function(params) { return send_request("{{procedure_url_string}}", params); };
     {{end_procedure}}
     {{child_scopes}}
   {{end_scope}}

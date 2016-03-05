@@ -71,7 +71,6 @@ namespace sl
       [=] (auto obj, ORMI& orm,
            v_deps_t& v_deps,
            oc_deps_t& oc_deps,
-           wa_deps_t& wa_deps,
            bc_deps_t& bc_deps
         )
     {

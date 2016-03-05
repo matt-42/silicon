@@ -66,13 +66,13 @@ int main()
   assert(get_r2.status == 404);
 
   // Update
-  auto update_r = c.http_post.user.update(_id = id, _name = "john", _age = 42, _address = "Canada");
+  auto update_r = c.http_post.user.update(_id = id, _name = "john", _age = 42, _address = "Canad a");
   auto get_r3 = c.http_get.user.get_by_id(_id = id);
   assert(get_r3.status == 200);
   assert(get_r3.response.id == id);
   assert(get_r3.response.name == "john");
   assert(get_r3.response.age == 42);
-  assert(get_r3.response.address == "Canada");
+  assert(get_r3.response.address == "Canad a");
 
   std::cout << json_encode(get_r3) << std::endl;;
 

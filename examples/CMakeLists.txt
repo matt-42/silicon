@@ -4,13 +4,15 @@ find_package( Iod )
 find_package( Boost COMPONENTS system thread date_time program_options filesystem chrono)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/.. ${IOD_INCLUDE_DIR}
-                    ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/websocketpp)
+                    ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/websocketpp
+                    ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/include
+                    )
 
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib
                 ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib64
                 $ENV{HOME}/local/lib)
 
-set(LWAN_LIBS lwan-common curl z pthread dl ubsan)
+set(LWAN_LIBS lwan-common curl z pthread dl)
 
 set(WEBSOCKETS_LIBS
     ${Boost_LIBRARIES} pthread)

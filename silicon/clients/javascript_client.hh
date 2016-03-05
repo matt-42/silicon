@@ -129,9 +129,44 @@ namespace sl
         "procedure_description", [&] (const char*&) {
           write(procedure_description(p.value().route, p.value().content));
         },
-        "procedure_url", [&] (const char*&) {
+        "procedure_url_string", [&] (const char*&) {
           write(path(p.symbol().name(), "/", true));
         },
+        "http_method", [&] (const char*&) {
+          write(p.value().route.verb.to_string());
+        },
+        "procedure_url", [&] (const char*&) {
+          auto url = p.value().route;
+          write("{");
+          foreach(url.path) | [&] (auto e)
+          {
+            std::string name =
+              static_if<is_symbol<decltype(e)>::value>(
+                [&] (auto e) { return e.name(); },
+                [&] (auto e) { return e.symbol().name(); }, e);
+            
+            write(name + ": { is_param: " +
+                  (!is_symbol<decltype(e)>::value ? "true" : "false") + "},");
+          };
+          write("}");
+        },
+        "params_schema", [&] (const char*&) {
+          auto url = p.value().route;
+          write("{get:{");
+          foreach(url.get_params) | [&] (auto e)
+          {
+            write(std::string(e.symbol().name()) + ": { required: " +
+                  (!has_symbol<decltype(e.attributes()), _optional_t>::value ? "true" : "false") + "},");
+          };
+          write("},post:{");
+          foreach(url.post_params) | [&] (auto e)
+          {
+            write(std::string(e.symbol().name()) + ": { required: " +
+                  (!has_symbol<decltype(e.attributes()), _optional_t>::value ? "true" : "false") + "},");
+          };
+          write("}}");
+        },
+        
         "return_type", [&] (const char*&) {
           write(return_type_string((R*)0));
         },

@@ -17,24 +17,33 @@ int main(int argc, char* argv[])
   }
 
   std::string js_client;
-  
+
+  std::string homepage = R"html(
+<script src="/js_client"></script>
+<script>
+sl.http_get.test().then(function (e) { console.log(e); });
+sl.http_post.my_scope.test2({name: "John", test: "Paris", id: 32}).then(function (e) { console.log(e); });
+</script>
+)html";
   auto hello_api = http_api(
 
     GET / _test = [] () { return D(_message = "hello world."); },
     GET / _test2 = [] () { return D(_message = "hello world."); },
-    GET / _my_scope = http_api(
-      _test2 / _name[std::string()] = [] (auto p) {
-        return D(_message = "hello " + p.name);
+    _my_scope = http_api(
+      POST / _test2 / _name[std::string()] * post_parameters(_test = optional(std::string("432"))) * get_parameters(_id = std::string())= [] (auto p) {
+        return D(_message = "hello " + p.name + p.test + p.id);
       }),
 
-    GET / _js_client = [&] () { return js_client; }
+    GET / _js_client = [&] () { return js_client; },
+    GET  = [&] { return homepage; }
 
     );
 
   js_client = generate_javascript_client(hello_api);
 
-  auto ctx = sl::mhd_json_serve(hello_api, atoi(argv[1]), _non_blocking);
-
   std::cout << js_client << std::endl;
+  
+  auto ctx = sl::mhd_json_serve(hello_api, atoi(argv[1]), _blocking);
+
   
 }

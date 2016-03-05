@@ -1,6 +1,8 @@
 #pragma once
 
 #include <mutex>
+#include <cassert>
+#include <memory>
 #include <random>
 #include <unordered_map>
 #include <silicon/middlewares/tracking_cookie.hh>

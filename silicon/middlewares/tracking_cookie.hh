@@ -1,6 +1,7 @@
 #pragma once
 
 #include <random>
+#include <sstream>
 
 namespace sl
 {

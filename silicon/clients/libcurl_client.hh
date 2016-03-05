@@ -72,7 +72,8 @@ namespace sl
     template <typename R, typename S, typename A>
     auto remote_call(S route, const A& args)
     {
-      
+      struct curl_slist *headers_list = NULL;
+
       // Generate url.
       std::stringstream url_ss;
       url_ss << "http://" << host_ << ":" << port_;
@@ -146,6 +147,7 @@ namespace sl
       {
         curl_easy_setopt(curl_, CURLOPT_POST, 1);
         curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, rq_body.c_str());        
+        headers_list = curl_slist_append(headers_list, "Content-Type: application/x-www-form-urlencoded");
       }
 
       // HTTP GET
@@ -157,6 +159,7 @@ namespace sl
         curl_easy_setopt(curl_, CURLOPT_UPLOAD, 1L);
         curl_easy_setopt(curl_, CURLOPT_READFUNCTION, curl_read_callback);
         curl_easy_setopt(curl_, CURLOPT_READDATA, this);
+        headers_list = curl_slist_append(headers_list, "Content-Type: application/x-www-form-urlencoded");
       }
 
       // HTTP DELETE
@@ -169,6 +172,8 @@ namespace sl
       body_buffer_.clear();
       curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, curl_write_callback);
       curl_easy_setopt(curl_, CURLOPT_WRITEDATA, this);
+      
+      curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, headers_list);
 
       // Send the request.
       char errbuf[CURL_ERROR_SIZE];
@@ -179,7 +184,7 @@ namespace sl
         errss << "Libcurl error when sending request: " << errbuf;
         throw std::runtime_error(errss.str());
       }
-
+      curl_slist_free_all(headers_list);
       // Read response code.
       long response_code;
       curl_easy_getinfo(curl_, CURLINFO_RESPONSE_CODE, &response_code);
