@@ -29,11 +29,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/mimosa/
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib
                 ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib64
                 $ENV{HOME}/local/lib)
-#add_definitions(-std=c++14  -ftemplate-depth=2024 -O3 -DNDEBUG)
 
-
-#add_definitions(-std=c++14 -ftemplate-depth=2024 -g)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -ftemplate-depth=2024 -g")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -ftemplate-depth=1024 -g")
 set(CPPNET_LIBS
     ${Boost_LIBRARIES}
     cppnetlib-uri cppnetlib-client-connections
@@ -104,6 +101,9 @@ target_link_libraries(hashmap_session ${LWAN_LIBS} curl)
 add_executable(lwan lwan.cc)
 target_link_libraries(lwan ${LWAN_LIBS} curl)
 
+add_executable(mhd mhd.cc)
+target_link_libraries(mhd ${MHD_LIBS} curl)
+
 add_executable(crud_lwan crud_lwan.cc)
 target_link_libraries(crud_lwan sqlite3 ${LWAN_LIBS} curl)
 
@@ -125,6 +125,7 @@ add_test(crud_lwan crud_lwan)
 add_test(user_tracking user_tracking)
 add_test(hashmap_session hashmap_session)
 add_test(lwan lwan)
+add_test(mhd mhd)
 add_test(sql_authentication sql_authentication)
 add_test(mysql mysql)
 add_test(optional optional)

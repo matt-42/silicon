@@ -41,8 +41,7 @@ int main()
   // std::cout << api_description(api) << std::endl;
 
   // Start server.
-  std::thread t([&] () { lwan_json_serve(api, factories, 12345); });
-  usleep(.5e6);
+  auto ctx = lwan_json_serve(api, factories, 12345, _non_blocking);
 
   // Test.
   auto c = libcurl_json_client(api, "127.0.0.1", 12345);

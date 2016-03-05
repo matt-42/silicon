@@ -174,8 +174,6 @@ namespace sl
       string_ref route2(route);
       if (route2.size() != 0 and route2[route2.size() - 1] == '/')
         route2 = route2.substr(0, route2.size() - 1);
-
-      std::cout << "call: " << route2 << std::endl;
       
       auto it = routing_table_.find(route2);
       if (it != routing_table_.end())

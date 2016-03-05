@@ -28,7 +28,7 @@ add_executable(blog blog.cc)
 target_link_libraries(blog ${MHD_LIBS} sqlite3 nettle)
 
 add_executable(blog_test blog_test.cc)
-target_link_libraries(blog_test sqlite3 nettle ${MHD_LIBS} curl)
+target_link_libraries(blog_test sqlite3 nettle ${LWAN_LIBS} curl)
 
 add_executable(ws_broadcast_server ws_broadcast_server.cc)
 target_link_libraries(ws_broadcast_server ${WEBSOCKETS_LIBS})

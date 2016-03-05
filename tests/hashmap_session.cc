@@ -52,4 +52,5 @@ int main()
     assert(r3.response.id == 42);
     assert(r4.response.id == 51);
   }
+  exit(0);
 }

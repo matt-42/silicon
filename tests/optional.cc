@@ -14,7 +14,6 @@ auto hello_api = http_api(
   GET / _test * get_parameters(_id = optional(12)) = [] (auto p) { return D(_id = p.id ); },
   POST / _test * post_parameters(_id = optional(22)) = [] (auto p) { return D(_id = p.id ); },
   POST / _test2 * post_parameters(_id = optional("test")) = [] (auto p) { return D(_id = p.id ); }
-  
 );
 
 int main(int argc, char* argv[])
