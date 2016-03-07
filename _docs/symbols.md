@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: documentation
 title: IOD Symbols and Statically Introspectable Objects
 ---
 

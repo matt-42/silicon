@@ -3,89 +3,90 @@ title: Introduction
 layout: post
 ---
 
-The Silicon Web Framework
+Why Silicon?
 =================================
 
-Silicon is a high performance, middleware oriented, C++14 http web
-framework. It brings to C++ the high expressive power of other web
-frameworks based on dynamic languages without introducing run-time
-overhead. Its compile-time static metaprogramming paradigm allows to
-match the performances of servers written in C.
+C++ has never been a popular language to write web servers for many
+reasons.  It has a reputation of being a low level language that
+leaves the programmer deal with low level things like memory managment
+or other error prone tasks. It is also a strongly typed and usually
+more verbose than other untyped dynamic languages. It also have a much
+longer learning curve.
 
-Installation
-=========================
+However, when performance matters, C++ is one of the few choices
+left. Simply because it is one of the few languages that does impact the
+runtime with a virtual machine, a just in time compiler or a garbage
+collector, and because it allows the programmer to directly access low
+level optimization like SIMD or thread level parallelism.
 
-```
-git clone https://github.com/matt-42/silicon.git
-cd silicon;
-./install.sh __YOUR__INSTALL__PREFIX__
-```
+Silicon provides the best of both world by providing an almost free
+and easy to use abstraction to write web servers and by relying on
+fast and scalable C web servers. More than being fast, it is also
+secure: No pointer manipulation, no memory managment is left to the
+user, and it's static paradigm allows the compiler to detect most of
+the errors at compile time. Finally, even if it is C++ and templates,
+you will not have to be a C++ master to leverage the framework, no
+virtual class, inheritance, or heavy meta programming are required.
 
 Features
 =========================
 
-  - __Ease of use__
+ - GET, POST, and url parameters
+ - Databases middlewares
+ - Simple object relational mapping
+ - Sessions
+ - HTTP client
+ - LibMicrohttpd and LWAN support
+ - Websockets with websocketpp
+ - Generation of javascript bindings.
 
-    Silicon is designed such that the developer only writes the core
-    of the API. The framework and the middlewares handle other stuffs
-    like serialization, deserialization, generation of the client
-    libraries, routing, multithreading, managing a pool of connection
-    to a database... Its learning curve is similar to frameworks based
-    on nodejs or go.
+A Quick Introduction
+=========================
 
-  - __High performance__
+###Hello world
 
-    C++ has no overhead such as other web programming languages: No
-    interpreter, no garbage collection, no virtual machine and no just
-    in time compiler. Finally, Silicon provides several high
-    performance C/C++ server libraries leveraging the processing power
-    of multi-core processors.
+Here is how you could write a simple hello world with silicon.
 
-  - __A compile-time static paradigm for more safety and performances__
+```c++
+// Let's define our API.
+auto my_api = http_api(GET / _hello = [] () { return "hello world";});
 
-    Silicon flexibility entirely runs at compile time. It does not use
-    C++ virtual classes or dynamic inheritance. This allows the
-    compiler to detect more bugs and to generate faster code.
+// Serve it with the microhttpd backend.
+auto server = mhd_json_serve(my_api, 8080);
+```
 
-  - __Automatic dependency injection and middlewares__
+###GET parameters
 
-    A remote procedure can request access to one or several
-    middlewares. Middlewares provide access to external data like a session,
-    connection to a database, another webservice, or anything else
-    that needs to be initialized before each API call. Middlewares may
-    depend on each other, leading to a middleware dependency graph
-    automatically resolved at compile time.
+Let's add a GET parameter name.
 
-  - __Automatic validation, serialization and deserialization of messages__
+```c++
+// Let's define our API.
+auto my_api = http_api(
+        GET / _hello * get_parameters(_name = std::string())=
+          [] (auto p) { return std::string("hello") + p.name; }
+        );
+```
 
-    The IOD static introspection on API arguments and return types
-    enable the implementation of ultra fast message parsers and
-    encoders generated at compile time and specialized for each
-    message structure. It also allows automatic validation of API
-    arguments: the request do not reach the API until it contains all
-    the required arguments.
+###POST parameters
 
-  - __Flexible__
+POST parameters do not differ much.
 
-    The core of most silicon application servers is tied neither to a
-    specific message format, neither to a communication backend. In
-    other words, you can easily switch from JSON to another binary
-    format, or from a thread based to an epoll based http server.
+```c++
+// Let's define our API.
+auto my_api = http_api(
+        GET / _hello * post_parameters(_name = std::string())=
+          [] (auto p) { return std::string("hello") + p.name; }
+        );
+```
 
-  - __Automatic generation of the client libraries__
+###URL parameters
 
-    Because the framework knows the input and output type of each API
-    procedure, it is able to automatically generate the code of the
-    remote client. The C++ client is generated at compile time and
-    other languages are generated at runtime thanks to a tiny
-    templating engine.
+Like in REST APIs, parameters can also be part of the url.
 
-<!--
-  - __Coming soon: asynchronism [with the C++17 resumable functions]__
-  
-    While asynchronism can be implemented with C/C++, it involves
-    using callbacks, or javascript-like promises and complexify the
-    code. The C++17 will probably standardize the resumable functions
-    with the ```async await``` keywords. The Silicon framework will
-    leverage this syntax to build async handlers.
--->
+```c++
+// Let's define our API.
+auto my_api = http_api(
+        GET / _hello / _name[std::string()] =
+          [] (auto p) { return std::string("hello") + p.name; }
+        );
+```

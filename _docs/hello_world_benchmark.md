@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: documentation
 title: Hello world benchmark
 ---
 

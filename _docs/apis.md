@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: documentation
 title: APIs and Procedures
 ---
 
@@ -14,63 +14,92 @@ other protocols depending on the backend serving the API.
 ```c++
 #include <silicon/api.hh>
 
-auto my_api = make_api(
+auto my_api = http_api(
 
-  _procedure1 = [] () {
+  GET / _procedure1 = [] () {
     std::cout << "Hello from procedure1" << std::endl;
   },
 
-  _procedure2(_arg1, _arg2 = int()) = [] (auto param) {
+  GET / _procedure2 * get_parameters(_arg1, _arg2 = int()) = [] (auto param) {
     std::cout << "Hello from procedure2: " << param.arg1 << param.arg2 << std::endl;
   }
 
 );
-
 ```
 
-The declaration of a procedure specifies its name, arguments, and function:
+## Procedure Parameters
+
+There is 3 way to pass parameters to procedures. They are all strongly
+typed. The framework takes care of the deserialisation and does not
+call the procedure in case of invalid argument.
+
+Via the url:
 
 ```c++
-_procedureX(_arg1, _arg2 = int())  = [] (auto param) { return D(_message = "Hello") }
+// /procedureX/1234
+GET / _procedureX / _id[int()]  = [] (auto param) { return D(_id = param.id);  }
+```
+
+Via the GET parameters:
+
+```c++
+// /procedureX?id=1234
+GET / _procedureX * get_parameters(_id = int())  = [] (auto param) { return D(_id = param.id); }
+```
+
+Via the POST parameters:
+
+```c++
+// /procedureX (with the body set as "id=1234")
+GET / _procedureX * post_parameters(_id = int())  = [] (auto param) { return D(_id = param.id); }
 ```
 
 
-__Passing arguments:__ From this signature, the backend deserializes
-the arguments and pass them to the ```auto param``` argument of the
-function. In this case, ```param.arg1``` has the type
-```std::string``` and ```param.arg2``` is an ```int```. If the
-arguments are invalid, the backend sends back an invalid argument
-error without calling the function.
+## Sending a Response
 
-__The response:__ The return value of the function is serialized and
-sent to the remote client.
+The return value of the procedure is serialized and sent back to the client.
+You can return strings or SIO objects (built with the D function).
+
+## HTTP Errors
+
+When an error occurs and the procedure should not complete, just throw an exeption:
+
+```c++
+GET / _login * get_parameters(_id = int())  = [] (auto param) {
+    if (param.id != 42) throw error::unauthorized("id ", param.id, " is not allowed.");
+    return "welcome 42";
+}
+```
+
+The framework catch it and send it to the client.
+
 
 ## Namespaces
 
-A API may include namespaces. They allows to better organise large
-APIs.
+An API may include namespaces. They allows to better organise large
+APIs and for example, to define sub apis in other header files.
 
 ```c++
-auto my_api = make_api(
+auto my_api = http_api(
 
-  _procedure1 = [] () {
+  GET / _procedure1 = [] () {
     std::cout << "Hello from procedure1" << std::endl;
   },
 
-  _namespace1 = D(
-    _procedure2(_arg1, _arg2 = int()) = [] (auto param) {
+  _namespace1 = http_api(
+    GET / _procedure2 * get_parameters(_arg1, _arg2 = int()) = [] (auto param) {
       std::cout << "Hello from namespace1.procedure2: "
       		<< param.arg1 << param.arg2 << std::endl;
     },
-    _procedure3 = [] () {
+    GET / _procedure3 = [] () {
       std::cout << "Hello from namespace1.procedure3"  << std::endl;
     }),
 
-  _namespace2 = D(
-    _procedure4 = [] () {
+  _namespace2 = http_api(
+    GET / _procedure4 = [] () {
       std::cout << "Hello from namespace2.procedure4"  << std::endl;
     },
-    _procedure5 = [] () {
+    GET / _procedure5 = [] () {
       std::cout << "Hello from namespace2.procedure5"  << std::endl;
     })
 
@@ -78,6 +107,6 @@ auto my_api = make_api(
 
 ```
 
-The backends usually reflect the namespace hierarchy in the
-routes. For example, with a classic http backend, procedure5 will be
-accessible under /namespace2/procedure5.
+The backends reflect the namespace hierarchy in the routes. For
+example, with a classic http backend, procedure5 will be accessible
+under /namespace2/procedure5.

@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: documentation
 title: Session middlewares
 ---
 
@@ -28,7 +28,8 @@ The headers are located under the ```middlewares``` directory:
 
 ## SQL Session
 
-The following example shows how to implement a simple sqlite sessions.
+The following example shows how to implement a simple sqlite
+sessions.
 
 ```c++
 // session_data handles the session data.
@@ -46,27 +47,32 @@ struct session_data
   int user_id;
 };
 
+using session = sqlite_session<session_data>;
+
 int main()
 {
-  auto api = make_api(
-    _login(_id = int()) = [] (auto p, sqlite_session<session_data>& sess)
+  auto api = http_api(
+    GET / _login * get_parameters(_id = int()) = [] (auto p, session& sess)
     {
-      sess.user_id = p.id;
-      sess._save();
+      // Access to the session_data object with operator->
+      sess->user_id = p.id;
+      // Access to DB related functions with operator.
+      sess.save();
     },
 
-    _get_my_id() = [] (sqlite_session<session_data>& sess)
+    GET / _get_my_id() = [] (session& sess)
     {
-      return D(_id = sess.user_id;
+      return D(_id = sess->user_id);
     },
 
-    _logout = [] (sqlite_session<session_data>& sess)
+    GET / _logout = [] (session& sess)
     {
-      sess._destroy();
+      sess.destroy();
     }
 
-    )
-    .bind_factories(
+    );
+  
+  auto middlewares = std::make_tuple(
       sqlite_connection_factory("/tmp/sl_test_authentication.sqlite"), // sqlite middleware.
       sqlite_session_factory<session_data>("sessions") // The middleware stores the sessions in the "sessions" table.
       );
@@ -83,8 +89,6 @@ To initialize a mysql session factory call:
 ```c++
 mysql_session_factory<__a_session_data_type__>("__the_session_mysql_table_name__");
 ```
-
-
 
 ## Hashmap Session
 
@@ -108,24 +112,24 @@ struct session_data
 
 int main()
 {
-  auto api = make_api(
-    _login(_id = int()) = [] (auto p, session_data& sess)
+  auto api = http_api(
+    GET / _login * get_parameters(_id = int()) = [] (auto p, session_data& sess)
     {
       sess.user_id = p.id;
     },
 
-    _get_my_id() = [] (session_data& sess)
+    GET / _get_my_id() = [] (session_data& sess)
     {
       return D(_id = sess.user_id;
     },
 
-    _logout = [] (session_data& sess)
+    GET / _logout = [] (session_data& sess)
     {
       sess.logout();
     }
 
-    )
-    .bind_factories(
+    ));
+  auto middlewares = std::make_tuple(
       hashmap_session_factory() // The middleware factory storing the session hashmap.
       );
 }

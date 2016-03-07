@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: documentation
 title: Mimosa backend
 ---
 
@@ -16,7 +16,7 @@ mimosa_json_serve(api, port);
 The following hello world example ...
 
 ```c++
-auto hello_api = make_api(
+auto hello_api = http_api(
 
   // The hello world procedure.
   _hello = [] () { return D(_message = "Hello world."); }

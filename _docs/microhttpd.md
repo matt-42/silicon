@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: documentation
 title: Microhttpd backend
 ---
 
@@ -10,15 +10,16 @@ This backend wraps [the Microhttpd library](http://www.gnu.org/software/libmicro
 
 ```c++
 mhd_json_serve(api, port, options...);
+mhd_json_serve(api, middlewares, port, options...);
 ```
 
 The hello world example:
 
 ```c++
-auto hello_api = make_api(
+auto hello_api = http_api(
 
   // The hello world procedure.
-  _hello = [] () { return D(_message = "Hello world."); }
+  GET / _hello = [] () { return D(_message = "Hello world."); }
 
 );
 

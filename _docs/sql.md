@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: documentation
 title: SQL middlewares
 ---
 
@@ -16,7 +16,6 @@ procedures.
 
   - sqlite
   - mysql
-  - Soon: postgresql
 
 ## Getting started
 
@@ -31,10 +30,10 @@ filepath) is passed once to the ```sqlite_connection_factory```
 constructor. ```bind_factory``` binds the middleware to an API:
 
 ```c++
-auto api = make_api(
+auto api = http_api(
 
   // The procedure request a connection by simply declaring it as argument.
-  _get_user_name(_id = int()) = [] (auto p, sqlite_connection& c)
+  GET / _get_user_name * get_parameters(_id = int()) = [] (auto p, sqlite_connection& c)
   {
     std::string name;
     // Lanch a select query an get the result in res.
@@ -45,9 +44,8 @@ auto api = make_api(
 
     return D(_name = name);
   }
-)
-.bind_factories(
-  // Bind the sqlite middleware and specify the path to the db file.
+);
+auto middlewares = std::make_tuple(
   sqlite_connection_factory("db.sqlite") // sqlite middleware.
 );
 ```

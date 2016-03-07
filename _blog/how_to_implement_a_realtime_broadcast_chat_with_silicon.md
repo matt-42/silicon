@@ -66,7 +66,7 @@ only have to define one remote function: the function ```message```
 taking as argument the new message to display.
 
 ```c++
-auto rclient = make_wspp_remote_client( _message(_text) );
+auto rclient = make_wspp_remote_client * parameters( _message(_text) );
 ```
 
 
@@ -90,9 +90,9 @@ enters a message. The role of this procedure is to broadcast the message
 to all clients contained in the ```users``` set via the ```rclient``` helper.
 
 ```c++
-auto server_api = make_api(
+auto server_api = ws_api(
 
-    _broadcast(_message) = [&] (auto p) {
+    _broadcast * parameters(_message) = [&] (auto p) {
       for (wspp_connection& c : users) rclient(c).message(p.message);
     }
 );
@@ -137,9 +137,9 @@ wspp_json_serve(server_api, 8080,
                                   users.erase(c);
                            },
                   
-                _http_api = make_api(
-                  _js_client = [&] () { return js_client; },
-                  _home = [&] () { return index_html_source; }
+                _http_api = http_api(
+                  GET / _js_client = [&] () { return js_client; },
+                  GET / _home = [&] () { return index_html_source; }
                 )
 );
 ```

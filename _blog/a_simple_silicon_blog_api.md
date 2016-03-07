@@ -146,9 +146,9 @@ destroy (CRUD) procedures for the user and post objects.
 Let's start with the login procedure:
 
 ```c++
-auto blog_api = make_api(
+auto blog_api = http_api(
 			   
-  _login(_login, _password) = [] (auto p, session& s, sqlite_connection& c)
+  POST / _login * post_parameters(_login, _password) = [] (auto p, session& s, sqlite_connection& c)
   {
     if (!s.authenticate(c, p.login, p.password))
       throw error::bad_request("Invalid user or password");      
@@ -172,7 +172,7 @@ The logout method just requires access to the session and call its
 ```logout``` method:
 
 ```c++
-  _logout = [] (session& s)
+  GET / _logout = [] (session& s)
   {
     s.logout();
   },
@@ -239,11 +239,10 @@ We now need the factories required to instantiate the
 middlewares. ```restricted_area``` does not need a factory since it
 provides the ```instantiate``` static method. However, it is not the
 case of ```session```, ```sqlite_connection```, ```user_orm``` and
-```post_orm```. The ```bind_factories``` method allows us to bind a
-list of factories to the API.
+```post_orm```.
 
 ```c++
-  ).bind_factories(sqlite_connection_factory("blog.sqlite"),
+auto middlewares = std::make_tuple(sqlite_connection_factory("blog.sqlite"),
                       user_orm_factory("blog_users"),
                       post_orm_factory("blog_posts"),
                       hashmap_session_factory<session>());
@@ -256,16 +255,16 @@ port to listen to. It starts a HTTP server and serve the API via a routing schem
 directly generated from the API hierarchy:
 
 ```c++
-/login(login: string, password: string) -> void
-/logout() -> void
-/user/get_by_id(id: int) -> {id: int, login: string, password: string}
-/user/create(login: string, password: string) -> {id: int}
-/user/update(id: int, login: string, password: string) -> void
-/user/destroy(id: int) -> void
-/post/get_by_id(id: int) -> {id: int, user_id: int, title: string, body: string}
-/post/create(title: string, body: string) -> {id: int}
-/post/update(id: int, title: string, body: string) -> void
-/post/destroy(id: int) -> void
+POST /login(login: string, password: string) -> void
+GET /logout() -> void
+GET /user/get_by_id(id: int) -> {id: int, login: string, password: string}
+POST /user/create(login: string, password: string) -> {id: int}
+POST /user/update(id: int, login: string, password: string) -> void
+POST /user/destroy(id: int) -> void
+GET /post/get_by_id(id: int) -> {id: int, user_id: int, title: string, body: string}
+POST /post/create(title: string, body: string) -> {id: int}
+POST /post/update(id: int, title: string, body: string) -> void
+POST /post/destroy(id: int) -> void
 ```
 
 To remotely call the API, the client passes the arguments via the body
@@ -280,6 +279,6 @@ return value into the response body.
 
 int main()
 {
-  sl::mhd_json_serve(blog_api, 9999);
+  sl::mhd_json_serve(blog_api, middlewares, 9999);
 }
 ```

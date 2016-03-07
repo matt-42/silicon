@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: documentation
 title: SQL generic CReate Update Delete procedures
 ---
 
@@ -19,13 +19,15 @@ typedef decltype(iod::D(_id(_auto_increment, _primary_key) = int(),
 // And its ORM
 typedef sqlite_orm_factory<User> user_orm_factory;
 
-auto api = make_api(
+auto api = http_api(
     
       // Attach the set of CRUD procedures to the namespace user.
       // See bellow the option descriptions.
       _user = sql_crud<user_orm>(options...)
-)
-.bind_factories(
+);
+
+
+auto middlewares = std::make_tuple(
   sqlite_connection_factory("test_crud.sqlite"), // sqlite middleware. Set the db filepath.
   user_orm_factory("users") // ORM middleware. Set the users table name.
 );
@@ -34,10 +36,10 @@ auto api = make_api(
 This sets up the following procedures:
 
 ```javascript
-user.get_by_id(id: int) -> {id: int, name: string, age: int, address: string}
-user.create(name: string, age: int, address: string) -> {id: int}
-user.update(id: int, name: string, age: int, address: string) -> void
-user.destroy(id: int) -> void
+GET user.get_by_id(id: int) -> {id: int, name: string, age: int, address: string}
+POST user.create(name: string, age: int, address: string) -> {id: int}
+POST user.update(id: int, name: string, age: int, address: string) -> void
+POST user.destroy(id: int) -> void
 ```
 
 ## Options

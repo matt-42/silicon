@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: documentation
 title: ORM
 ---
 
@@ -38,9 +38,9 @@ or update the ```users``` table.
 typedef sqlite_orm_factory<User> user_orm_factory;
 typedef sqlite_orm<User> user_orm;
 
-auto orm_api = make_api(
+auto orm_api = http_api(
 
-  _test = [] (user_orm& orm) {
+  GET / _test = [] (user_orm& orm) {
     User u;
     u.name = "John";
     u.age = 42;
@@ -59,7 +59,9 @@ auto orm_api = make_api(
     
   }    
 
-).bind_factories( // Bind the middleware factories
+);
+
+auto middlewares = std::make_tuple(
     sqlite_connection_factory("./db.sqlite"), // Create the sqlite_connection
     user_orm_factory("users") // The orm takes the table name
 );

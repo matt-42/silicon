@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: documentation
 title: Middlewares
 ---
 
@@ -58,9 +58,9 @@ int main()
 {
   using namespace sl;
 
-  auto api = make_api(
+  auto api = http_api(
     
-    _get_user(_id = int()) = [] (auto p, sqlite_connection& c)
+    GET / _get_user / _id[int()] = [] (auto p, sqlite_connection& c)
     {
       auto res = D(_name = std::string(), _age = int());
       if (!(c("SELECT name, age from users where id = ?")(p.id)() >> res))
@@ -68,12 +68,10 @@ int main()
 
       return res;
     }
-    )
-    .bind_factories(
-      sqlite_connection_factory("db.sqlite") // sqlite middleware.
-      );
+    );
 
-  sl::mhd_json_serve(api, 12345);
+  auto middlewares = std::make_tuple(sqlite_connection_factory("db.sqlite"));
+  sl::mhd_json_serve(api, middlewares, 12345);
 
 }
 ```
@@ -125,8 +123,8 @@ API can implicitly attach a set of middlewares to each procedure
 call. The instantiate method of these middlewares will run before each
 request, and the destructor of the instance after.
 
-To pass a set of global middleware to an API, simply call its
-```global_middlewares``` method.
+To pass a set of global middleware to an API, simply wrap its procedures with
+the ```add_global_middlewares::to``` routine.
 
 Here is a example showing a very simple example logging the running
 time of each request:
@@ -158,23 +156,20 @@ struct request_logger
     return double(ts.tv_sec) * 1e6 + double(ts.tv_nsec) / 1e3;
   }
 
-  static auto instantiate() { return request_logger(); }
+  static request_logger instantiate() { return request_logger(); }
 
 private:
   double time;
 };
 
-auto hello_api = make_api(
+auto hello_api = http_api(GET / _test = [] () { return "hello world."; });
 
-  _test = [] () { return D(_message = "hello world."); }
+auto hello_api_ga = add_global_middlewares<request_logger>::to(hello_api);
 
-  ).template global_middlewares<request_logger, __other_factory_instance_types__...>>();
-
-int main(int argc, char* argv[])
+int main()
 {
-  if (argc == 2)
-    sl::mhd_json_serve(hello_api, atoi(argv[1]));
-  else
-    std::cerr << "Usage: " << argv[0] << " port" << std::endl;
+  sl::mhd_json_serve(hello_api_ga, 12345);
 }
 ```
+
+Note that ```request_logger``` is a stateless factory.

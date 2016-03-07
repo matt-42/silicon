@@ -1,5 +1,5 @@
 ---
-layout: post
+layout: documentation
 title: Backends
 ---
 
@@ -21,6 +21,7 @@ microhttpd-json backend:
 
 ```c++
 mhd_json_serve(my_api, 12345);
+mhd_json_serve(my_api, middlewares, 12345);
 ```
 
 The Silicon code base does not contain low level network

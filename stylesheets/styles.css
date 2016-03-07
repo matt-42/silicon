@@ -96,3 +96,19 @@ ul.blog-index
     padding-bottom: 20px;
     border-bottom: 1px #ccc solid;
 }
+
+.jumbotron
+{
+    text-align: center;
+    margin-top: -20px;
+    background-color: #D3DDFF;
+}
+.jumbotron h1
+{
+    color: #004481;
+    font-size: 30px;
+}
+.jumbotron p
+{
+    font-size: 17px;
+}
