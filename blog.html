@@ -8,7 +8,7 @@ layout: blog
   {% for post in site.blog reversed %}
       <a href="{{ post.url }}">
     <li>
-        <div class="date">{{ post.date }}</div>
+        <div class="date">{{ post.date | date: '%B %d, %Y'}}</div>
         <div class="title">{{ post.title }}</div>
         <div class="description">{{ post.description }}</div>
     </li>
