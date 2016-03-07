@@ -3,7 +3,7 @@ url: http://siliconframework.org
 
 highlighter: pygments
 
-markdown: kramdown
+markdown: redcarpet
 
 collections:
   docs:

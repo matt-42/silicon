@@ -47,7 +47,7 @@ A Quick Introduction
 
 Here is how you could write a simple hello world with silicon.
 
-```c++
+```
 // Let's define our API.
 auto my_api = http_api(GET / _hello = [] () { return "hello world";});
 
