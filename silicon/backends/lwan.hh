@@ -1,5 +1,6 @@
 #pragma once
 
+#include <thread>
 #include <memory>
 #include <cstring>
 #include <vector>

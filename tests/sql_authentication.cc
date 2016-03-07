@@ -26,7 +26,7 @@ struct session_data
 {
   session_data() { user_id = -1; }
   bool authenticated() const { return user_id != -1; }
-  auto sio_info() { return D(_user_id = int()); }
+  static auto sio_info() { return D(_user_id = int()); }
   int user_id;
 };
 
@@ -44,12 +44,12 @@ struct current_user : public User
   // Requires the session and a sqlite connection.
   static auto instantiate(session& sess, sqlite_orm<User> orm)
   {
-    if (!sess.authenticated())
+    if (!sess->authenticated())
       throw error::unauthorized("Access to this procedure is reserved to logged users.");
 
     current_user u;
 
-    if (!orm.find_by_id(sess.user_id, u.user_data()))
+    if (!orm.find_by_id(sess->user_id, u.user_data()))
       throw error::internal_server_error("Session user_id not in user table.");
 
     return u;
@@ -69,8 +69,8 @@ struct authenticator
     if (con("SELECT * from users where name == ?")(name) >> u)
     {
       // 2/ store data in the session (session.store(user)).
-      sess.user_id = u.id;
-      sess._save();
+      sess->user_id = u.id;
+      sess.save();
       return true;
     }
     else
@@ -105,7 +105,7 @@ int main()
 
     GET / _logout = [] (session& sess)
     {
-      sess._destroy();
+      sess.destroy();
     }
 
     );

@@ -7,19 +7,19 @@ namespace sl
 {
 
   template <typename C, typename T>
-  struct sql_session : public T
+  struct sql_session
   {
     typedef T data_type;
 
     sql_session(const std::string& key, const std::string& table_name,
 		C& con, int expires)
-      : data_type(), key_(key), table_name_(table_name), con_(con)
+      : key_(key), table_name_(table_name), con_(con)
     {
       // Get and decode the session data
       //auto sio = iod::cat(T::sio_info(), D(_created_at = sql_date()));
       auto sio = T::sio_info();
       if (con_("SELECT * from " + table_name_ + " WHERE key = ?")(key) >> sio)
-        foreach(sio) | [this] (auto& m) { m.symbol().member_access(*this) = m.value(); };
+        foreach(sio) | [this] (auto& m) { m.symbol().member_access(data_) = m.value(); };
       else
         con_("INSERT into " + table_name_ + " (key) VALUES (?)")(key);
 
@@ -27,9 +27,10 @@ namespace sl
       //   {}
     }
 
-    data_type& data() { return *static_cast<data_type*>(this); }
+    data_type* operator->() { return &data_; }
+    data_type& data() { return data_; }
 
-    void _save()
+    void save()
     {
       std::stringstream ss;
       ss << "UPDATE " << table_name_ << " SET ";
@@ -44,19 +45,20 @@ namespace sl
 
       auto values = foreach(data().sio_info()) | [this] (auto& m)
       {
-        return m.symbol() = m.symbol().member_access(this->data());
+        return m.symbol() = m.symbol().member_access(data_);
       };
 
       auto rq = con_(ss.str());
       apply(values, rq);
     };
 
-    void _destroy()
+    void destroy()
     {
       con_("DELETE from  " + table_name_ + " WHERE key = ?")(key_);
     }
 
     //private:
+    T data_;
     std::string key_;
     std::string table_name_;
     C& con_;
