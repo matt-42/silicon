@@ -20,7 +20,8 @@
 
 namespace sl
 {
-
+  using namespace iod;
+  
   struct mhd_request
   {
     MHD_Connection* connection;
