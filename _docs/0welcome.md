@@ -123,7 +123,7 @@ mhd_json_serve(my_api, middlewares, 8080);
 ```
 
 Procedures can take any number of middlewares in any order. The
-framework takes care of instantiating and passing the middleware to
+framework takes care of instantiating and passing the middlewares to
 the procedure in the right order. If an instantiation fails, Silicon
 does not call the procedure and send an error to the client.
 
@@ -132,43 +132,42 @@ does not call the procedure and send an error to the client.
 Silicon provides an abstraction around the low level C client libraries of MySQL and Sqlite.
 
 ```c++
-  GET / _mysql = [] (auto p, mysql_connection& db) {
-      // Read one scalar.
-      int s;
-      c("SELECT 1+2")() >> s;
+GET / _mysql = [] (auto p, mysql_connection& db) {
+    // Read one scalar.
+    int s;
+    c("SELECT 1+2")() >> s;
 
 
-      // Read a record.
-      int age; std::string name;
-      c("SELECT name, age from users LIMIT 1")() >> std::tie(name, age);
-      // name == "first_user_name"
-      // age == first_user_age
+    // Read a record.
+    int age; std::string name;
+    c("SELECT name, age from users LIMIT 1")() >> std::tie(name, age);
+    // name == "first_user_name"
+    // age == first_user_age
 
 
-      // Iterate on a list of records:
-      typedef decltype(r) R;
-      c("SELECT name, age from users")() | [] (std::string& name, int& age) {
-        std::cout << name << " " << age << std::endl;
-      };
+    // Iterate on a list of records:
+    c("SELECT name, age from users")() | [] (std::string& name, int& age) {
+      std::cout << name << " " << age << std::endl;
+    };
 
-      // Read a record using a IOD object.
-      auto r = D(_name = std::string(), _age = int());
-      c("SELECT name, age from users LIMIT 1")() >> r;
-      // r.name == "first_user_name"
-      // r.age == first_user_age
+    // Read a record using a IOD object.
+    auto r = D(_name = std::string(), _age = int());
+    c("SELECT name, age from users LIMIT 1")() >> r;
+    // r.name == "first_user_name"
+    // r.age == first_user_age
 
 
-      // Iterate on a list of records using a IOD object:
-      typedef decltype(r) R;
-      c("SELECT name, age from users")() | [] (R r) {
-        std::cout << r.name << " " << r.age << std::endl;
-      };
+    // Iterate on a list of records using a IOD object:
+    typedef decltype(r) R;
+    c("SELECT name, age from users")() | [] (R r) {
+      std::cout << r.name << " " << r.age << std::endl;
+    };
 
-      // Inject a variable into a SQL request.
-      int id = 42;
-      std::string name;
-      db("SELECT name from User where id = ?")(id) >> name;
-
+    // Inject a variable into a SQL request.
+    int id = 42;
+    std::string name;
+    db("SELECT name from User where id = ?")(id) >> name;
+}
 ```
 
 ###Errors

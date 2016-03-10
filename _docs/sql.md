@@ -70,7 +70,6 @@ c("SELECT name, age from users LIMIT 1")() >> std::tie(name, age);
 
 
 // Iterate on a list of records:
-typedef decltype(r) R;
 c("SELECT name, age from users")() | [] (std::string& name, int& age) {
   std::cout << name << " " << age << std::endl;
 };
