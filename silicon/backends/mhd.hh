@@ -187,7 +187,7 @@ namespace sl
         else
         {
           if(!m.attributes().has(_optional))
-            throw std::runtime_error(std::string("Missing required GET parameter ") + m.symbol().name());
+            throw std::runtime_error(std::string("Missing required POST parameter ") + m.symbol().name());
         }
             
       };
