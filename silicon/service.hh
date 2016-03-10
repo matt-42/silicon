@@ -45,17 +45,18 @@ namespace sl
       di_call_method(s, method, arguments, procedure_, args...);
 
       // Call the procedure and serialize its result.
+      
       static_if<std::is_same<return_type, void>::value>(
-        [&, this] (auto& arguments) { // If the procedure does not return a value just call it.
+        [&, this] (auto& arguments, auto f) { // If the procedure does not return a value just call it.
           di_factories_call(f, middlewares, arguments, args...);
           auto method = &S::template serialize<const std::string>;
           di_call_method(s, method, std::string(""), args...);
         },
-        [&, this] (auto& arguments) { // If the procedure returns a value, serialize it.
+        [&, this] (auto& arguments, auto f) { // If the procedure returns a value, serialize it.
           auto ret = di_factories_call(f, middlewares, arguments, args...);
           auto method = &S::template serialize<decltype(ret)>;
           di_call_method(s, method, ret, args...);
-        }, arguments);
+        }, arguments, f);
     }
     
   private:
@@ -108,15 +109,17 @@ namespace sl
   };
   
   
-  template <typename S, typename A, typename M, typename... ARGS>
+  template <typename S, typename M, typename... ARGS>
   struct service
   {
     typedef M middlewares_type;
+
+    template <typename A>
     service(const A& api, const M& middlewares)
-      : api_(api),
+      : //api_(api),
         middlewares_(middlewares)
     {
-      index_api(api_);
+      index_api(api);
       initialize_factories();
     }
 
@@ -165,8 +168,6 @@ namespace sl
       };
     }
 
-    auto& api() { return api_; }
-
     void operator()(const std::string& route,
                     ARGS... args)
     {
@@ -182,7 +183,6 @@ namespace sl
         throw error::not_found("Route ", route2, " does not exist.");
     }
 
-    A api_;
     M middlewares_;
     S s_;
 

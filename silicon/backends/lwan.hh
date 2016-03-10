@@ -366,7 +366,7 @@ namespace sl
     auto m2 = std::tuple_cat(std::make_tuple(lwan_session_cookie()),
                                              middleware_factories);
     
-    using service_t = service<lwan_json_service_utils, A, decltype(m2),
+    using service_t = service<lwan_json_service_utils, decltype(m2),
                               lwan_request*, lwan_response*, lwan_request_t*, lwan_response_t*>;
     
     auto s = new service_t(api, m2);

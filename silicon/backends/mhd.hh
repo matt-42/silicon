@@ -401,7 +401,7 @@ namespace sl
     auto m2 = std::tuple_cat(std::make_tuple(mhd_session_cookie()),
                                              middleware_factories);
     
-    using service_t = service<mhd_json_service_utils, A,
+    using service_t = service<mhd_json_service_utils,
                               decltype(m2),
                               mhd_request*, mhd_response*, MHD_Connection*>;
     

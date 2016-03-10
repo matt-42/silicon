@@ -78,12 +78,11 @@ namespace sl
 
     wspp_server server;
 
-    auto ws_service = service<websocketpp_json_service_utils, A1, M,
+    auto ws_service = service<websocketpp_json_service_utils, M,
                               wspp_request*, wspp_response*,
                               wspp_connection>(server_api, middleware_factories);
 
-    auto http_service = service<websocketpp_json_service_utils,
-                                decltype(on_http_api), M,
+    auto http_service = service<websocketpp_json_service_utils, M,
                                 wspp_request*, wspp_response*>(on_http_api, middleware_factories);
 
     std::mutex connections_mutex;
