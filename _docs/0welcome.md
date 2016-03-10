@@ -62,8 +62,8 @@ mhd_json_serve(my_api, 8080);
 ###Returning JSON objects
 
 Silicon relies on static objects (i.e. not hashmaps) to model
-objects. They embeds static introspection in their type such that the
-JSON serializer knows about their members name and type.
+objects. They embed static introspection in their type such that the
+JSON serializer knows about their members names and types.
 
 ```c++
 GET / _hi = [] () { return D(_name = "John", _age = 42); }
@@ -94,7 +94,6 @@ GET and POST parameters can be set as optional.
 
 ```c++
 GET / _hello * get_parameters(_id = optional(int(42)))
-= [] (auto p) {}
 ```
 
 ###Middlewares
@@ -117,7 +116,7 @@ auto my_api = http_api(
 );
 
 auto middlewares = std::make_tuple(
-   mysql_connection_factory("localhost", "silicon", "my_silicon", "silicon_test")
+   mysql_connection_factory("localhost", "user", "password", "database_name")
 );
 mhd_json_serve(my_api, middlewares, 8080);
 
