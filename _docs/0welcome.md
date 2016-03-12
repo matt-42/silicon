@@ -61,7 +61,7 @@ mhd_json_serve(my_api, 8080);
 
 ```mhd_json_serve``` is a Silicon backend. It takes an API and serves
 it with the microhttpd C library. It relies on the JSON format whenever it has to
-encore or decode objects (procedures parameters and return values).
+encode or decode objects (procedures parameters and return values).
 
 ###Returning JSON objects
 
