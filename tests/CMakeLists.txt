@@ -5,7 +5,6 @@ enable_testing()
 
 find_package( OpenSSL )
 find_package( Threads )
-find_package( Iod )
 find_package( Boost COMPONENTS system thread date_time program_options filesystem chrono)
 
 #include(${IOD_USE_FILE})

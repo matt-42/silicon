@@ -1,6 +1,5 @@
 cmake_minimum_required(VERSION 2.8)
 
-find_package( Iod )
 find_package( Boost COMPONENTS system thread date_time program_options filesystem chrono)
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/.. ${IOD_INCLUDE_DIR}

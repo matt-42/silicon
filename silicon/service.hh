@@ -116,8 +116,7 @@ namespace sl
 
     template <typename A>
     service(const A& api, const M& middlewares)
-      : //api_(api),
-        middlewares_(middlewares)
+      : middlewares_(middlewares)
     {
       index_api(api);
       initialize_factories();
