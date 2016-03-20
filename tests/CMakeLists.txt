@@ -1,8 +1,10 @@
 cmake_minimum_required(VERSION 2.8)
+SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
+                      ${CMAKE_SOURCE_DIR}/../cmake)
 
 enable_testing()
 
-
+find_package( Iod )
 find_package( OpenSSL )
 find_package( Threads )
 find_package( Boost COMPONENTS system thread date_time program_options filesystem chrono)
@@ -19,7 +21,7 @@ if (OPENSSL_FOUND)
   include_directories(${OPENSSL_INCLUDE_DIR})
 endif (OPENSSL_FOUND)
 
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/..)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/.. $ENV{HOME}/local/include)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/mimosa/
                     ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/websocketpp/
                     ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/include

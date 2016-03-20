@@ -113,9 +113,53 @@ namespace sl
     inline std::string return_type_string(std::string*) { return "string"; }
     template <typename... T>
     std::string return_type_string(sio<T...>*) { return "object"; }
+    
+    template <typename P, typename Ro, typename W>
+    void generate_procedure(P p, Ro route, std::string tpl, W& write, path_generator path)
+    {
+      typedef std::remove_reference_t<decltype(p.value().content.function())> F;
+      typedef std::remove_reference_t<std::remove_const_t<callable_return_type_t<F>>> R;
 
-    template <typename P, typename W>
-    void generate_procedure(P p, std::string tpl, W& write, path_generator path)
+      tpl_generator(
+        tpl, write,
+
+        "procedure_path", [&] (const char*&) {
+          write(path(p.symbol().name()));
+        },
+        "procedure_description", [&] (const char*&) {
+          write(procedure_description(p.value().route, p.value().content));
+        },
+        "procedure_url_string", [&] (const char*&) {
+          write(path(p.symbol().name(), "/", true));
+        },
+        "procedure_url", [&] (const char*&) {
+          auto url = p.value().route;
+          write("{");
+          foreach(url.path) | [&] (auto e)
+          {
+            std::string name =
+              static_if<is_symbol<decltype(e)>::value>(
+                [&] (auto e) { return e.name(); },
+                [&] (auto e) { return e.symbol().name(); }, e);
+            
+            write(name + ": { is_param: " +
+                  (!is_symbol<decltype(e)>::value ? "true" : "false") + "},");
+          };
+          write("}");
+        },
+        
+        "return_type", [&] (const char*&) {
+          write(return_type_string((R*)0));
+        },
+        "root_scope", [&] (const char*&) {
+          write(path.root());
+        }
+        
+        );
+    }
+
+    template <typename P, typename... Ro, typename W>
+    void generate_procedure(P p, const http_route<Ro...>& route, std::string tpl, W& write, path_generator path)
     {
       typedef std::remove_reference_t<decltype(p.value().content.function())> F;
       typedef std::remove_reference_t<std::remove_const_t<callable_return_type_t<F>>> R;
@@ -197,7 +241,7 @@ namespace sl
               [] (auto m) {
               },
               [&] (auto m) {
-                generate_procedure(m, proc_tpl, write, path);
+                generate_procedure(m, m.value().route, proc_tpl, write, path);
               }, m);
           };
           
