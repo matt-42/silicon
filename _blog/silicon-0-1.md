@@ -51,6 +51,6 @@ notice:
 
 Checkout [silicon/releases on
 GitHub](https://github.com/matt-42/silicon/releases) to try this first
-release and does not hesitate to send me some feedback or questions on
+release and do not hesitate to send your feedback or questions on
 the [discussion group]
 (https://groups.google.com/forum/#!forum/siliconframework)
