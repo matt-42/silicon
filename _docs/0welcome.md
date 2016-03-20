@@ -72,8 +72,9 @@ GET / _hi = [] () { return D(_name = "John", _age = 42); }
 ###Passing Parameters
 
 In Silicon, parameters are strongly typed and declared next to the
-procedure route. If any error occur during the decoding, the framework
-does not call the procedure and send an error to the client.
+procedure route. If any error occur during the decoding (i.e. a missing or
+ill-formated value), the framework does not call the procedure and
+send an error to the client.
 
 ```c++
 POST / _hello / _id[int()] // Url parameter
@@ -90,7 +91,7 @@ POST / _hello / _id[int()] // Url parameter
 
 ###Optional Parameters
 
-GET and POST parameters can be set as optional.
+All parameters are required by default. GET and POST parameters can be set as optional.
 
 ```c++
 GET / _hello * get_parameters(_id = optional(int(42)))
