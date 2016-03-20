@@ -27,7 +27,7 @@ auto my_api = http_api(
 );
 ```
 
-## Procedure Parameters
+## Parameters
 
 There is 3 way to pass parameters to procedures. They are all strongly
 typed. The framework takes care of the deserialisation and does not
@@ -54,11 +54,25 @@ Via the POST parameters:
 GET / _procedureX * post_parameters(_id = int())  = [] (auto param) { return D(_id = param.id); }
 ```
 
+## Optional Parameters
+
+
+All parameters are required by default. GET and POST parameters can be set as optional.
+
+```c++
+GET / _hello * get_parameters(_id = optional(int(42)))
+```
+
 
 ## Sending a Response
 
 The return value of the procedure is serialized and sent back to the client.
 You can return strings or SIO objects (built with the D function).
+
+```c++
+GET / _hello  = [] () { return D(_message = "hello"); }
+GET / _hello  = [] () { return "hello"; }
+```
 
 ## HTTP Errors
 
