@@ -14,7 +14,7 @@ tour](http://siliconframework.org/). Here is some important things to
 notice:
 
 
-- **The finalization of the API embeded domain specific language:**
+- **The finalization of the API embedded domain specific language:**
     HTTP methods are now explicit and parameters can be passed via
     the URL, the GET and/or the POST:
 
@@ -40,8 +40,8 @@ notice:
     simplification of the IOD dependency injection code. I recommend
     to use clang++ which is faster to compile Silicon's templates.
 
-- **Inclusion of fast C backends:** Silicon now wraps two of the
-    fastest C webserver libraries:
+- **Fast external C backends:** Silicon now wraps two of the
+    fastest C webserver libraries to serve its APIs:
     [Microhttpd](http://www.gnu.org/software/libmicrohttpd/), which is
     stable widely use and [LWAN](http://lwan.ws), a faster but experimental one.
 
