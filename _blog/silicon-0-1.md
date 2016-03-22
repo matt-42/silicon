@@ -9,7 +9,6 @@ date: 2016-03-20
 <iframe src="http://ghbtns.com/github-btn.html?user=matt-42&repo=silicon&type=watch&count=true&size=large" height="30" width="160" frameborder="0" scrolling="0" allowTransparency="true"></iframe> 
 <div class="g-plus" data-action="share" data-height="30" data-annotation="bubble" style="float:left; padding-top: 10px;"></div>
 <a href="https://twitter.com/share" class="twitter-share-button" style="float:left; padding-top: 10px;" data-size="large">Tweet</a>
-<script>!function(d,s,id){var js,fjs=d.getElementsByTagName(s)[0],p=/^http:/.test(d.location)?'http':'https';if(!d.getElementById(id)){js=d.createElement(s);js.id=id;js.src=p+'://platform.twitter.com/widgets.js';fjs.parentNode.insertBefore(js,fjs);}}(document, 'script', 'twitter-wjs');</script>            
 
 Today I'm happy to announce the first release of the Silicon C++14 web
 framework. The goal of this release is to provide a stable library to
