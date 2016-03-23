@@ -32,7 +32,7 @@ int main()
 ```
 
 All the variables starting with _ are called symbols. They are the
-core of the static paradigm of the framework. To generate there
+core of the static paradigm of the framework. To generate their
 definition, use the ```iod_generate_symbols``` tool provided by the
 iod library and located in the directory
 ```__YOUR__INSTALL__PREFIX__/bin```:
