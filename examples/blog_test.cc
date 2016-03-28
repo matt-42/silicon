@@ -1,6 +1,6 @@
 #include <thread>
 #include <silicon/clients/libcurl_client.hh>
-#include <silicon/backends/lwan.hh>
+#include <silicon/backends/mhd.hh>
 
 #include "blog_api.hh"
 
@@ -9,7 +9,7 @@ int main(int argc, char* argv[])
 
 
   // Start server.
-  auto server = lwan_json_serve(blog_api, blog_middlewares, 12345, _non_blocking);
+  auto server = mhd_json_serve(blog_api, blog_middlewares, 12345, _non_blocking);
 
   auto db = instantiate_factory<sqlite_connection>(blog_middlewares);
 

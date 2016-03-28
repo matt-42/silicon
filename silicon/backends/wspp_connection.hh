@@ -13,7 +13,7 @@ namespace sl
     websocketpp::connection_hdl hdl;
     wspp_server* server;
 
-    bool operator<(const wspp_connection& a) const { return hdl < a.hdl; }
+    bool operator<(const wspp_connection& a) const { return hdl.owner_before(a.hdl); }
   };
 
 }

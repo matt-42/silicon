@@ -1,3 +1,4 @@
+#include <set>
 #include <silicon/api.hh>
 #include <silicon/remote_api.hh>
 #include <silicon/backends/websocketpp.hh>
@@ -51,6 +52,12 @@ std::string index_html_source = R"html(
 
 int main(int argc, char* argv[])
 {
+  if (argc != 2)
+  {
+    std::cout << "Usage: " << argv[0] << " port " << std::endl;
+    return 1;
+  }
+  
   using namespace sl;
 
   // The list of user

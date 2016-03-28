@@ -4,6 +4,8 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
 
 enable_testing()
 
+set(CMAKE_CXX_COMPILER clang++) # Gcc fails to compile sql_crud and sql_rest.
+
 find_package( Iod )
 find_package( OpenSSL )
 find_package( Threads )
