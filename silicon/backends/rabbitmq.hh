@@ -22,6 +22,52 @@ namespace sl
 {
 namespace rmq
 {
+	auto get_string = [] (auto const & b) { return std::string(static_cast<char const *>(b.bytes), b.len); };
+
+	void
+	die_on_error(int x, std::string const & context)
+	{
+		if (x < 0)
+			throw std::runtime_error(context + ": " + amqp_error_string2(x));
+	}
+
+	void
+	die_on_amqp_error(amqp_rpc_reply_t const & x, std::string const & context)
+	{
+		switch (x.reply_type)
+		{
+			case AMQP_RESPONSE_NORMAL:
+				return;
+
+			case AMQP_RESPONSE_NONE:
+				throw std::runtime_error(context + ": missing RPC reply type!");
+
+			case AMQP_RESPONSE_LIBRARY_EXCEPTION:
+				throw std::runtime_error(context + ": " + amqp_error_string2(x.library_error));
+
+			case AMQP_RESPONSE_SERVER_EXCEPTION:
+				switch (x.reply.id)
+				{
+					case AMQP_CONNECTION_CLOSE_METHOD:
+					{
+						auto m = static_cast<amqp_connection_close_t const *>(x.reply.decoded);
+
+						throw std::runtime_error(context + ": server connection error " + std::to_string(m->reply_code) + ", message: " + get_string(m->reply_text));
+					}
+
+					case AMQP_CHANNEL_CLOSE_METHOD:
+					{
+						auto m = static_cast<amqp_channel_close_t const *>(x.reply.decoded);
+
+						throw std::runtime_error(context + ": server channel error " + std::to_string(m->reply_code) + ", message: " + get_string(m->reply_text));
+					}
+
+					default:
+						throw std::runtime_error(context + ":  unknown server error, method id " + std::to_string( x.reply.id));
+				}
+		}
+	}
+
 	struct request
 	{
 		amqp_envelope_t					envelope;
@@ -43,26 +89,25 @@ namespace rmq
 					P					procedure,
 					T &					res) const
 		{
-			auto get_string = [&] (auto const & b) { return std::string(static_cast<char const *>(b.bytes), b.len); };
 
 			auto						routing_key = get_string(r->envelope.routing_key);
 			auto						message = get_string(r->envelope.message.body);
 			auto						content_type = get_string(r->envelope.message.properties.content_type);
 			auto						exchange = get_string(r->envelope.exchange);
 
-			std::cout << "Delivery " << (unsigned) r->envelope.delivery_tag << " "
-					  << "exchange " << exchange << " "
-					  << "routingkey " << routing_key << " "
-					  << std::endl;
+			//std::cout << "Delivery " << (unsigned) r->envelope.delivery_tag << " "
+			//		  << "exchange " << exchange << " "
+			//		  << "routingkey " << routing_key << " "
+			//		  << std::endl;
 
 			if (r->envelope.message.properties._flags & AMQP_BASIC_CONTENT_TYPE_FLAG)
 			{
-				std::cout << "Content-type: " << content_type << std::endl;
-				std::cout << "Message: " << message << std::endl;
+				//std::cout << "Content-type: " << content_type << std::endl;
+				//std::cout << "Message: " << message << std::endl;
 
 				iod::json_decode<typename P::route_type::parameters_type>(res, message);
 			}
-			std::cout << "----" << std::endl;
+			//std::cout << "----" << std::endl;
 		}
 
 		template <typename T>
@@ -94,9 +139,9 @@ namespace rmq
 			if (status)
 				throw std::runtime_error("opening TCP socket");
 
-			amqp_login(conn, "/", 0, 131072, 0, AMQP_SASL_METHOD_PLAIN, username.c_str(), password.c_str());
+			die_on_amqp_error(amqp_login(conn, "/", 0, 131072, 0, AMQP_SASL_METHOD_PLAIN, username.c_str(), password.c_str()), "Loggin in");
 			amqp_channel_open(conn, 1);
-			amqp_get_rpc_reply(conn);
+			die_on_amqp_error(amqp_get_rpc_reply(conn), "Opening channel");
 		}
 
 		int								status;
@@ -141,7 +186,7 @@ namespace rmq
 						amqp_queue_declare_ok_t *	r = amqp_queue_declare(ctx.conn, 1, amqp_empty_bytes, 0, 0, 0, 1, amqp_empty_table);
 						amqp_bytes_t				queuename;
 
-						amqp_get_rpc_reply(ctx.conn);
+						die_on_amqp_error(amqp_get_rpc_reply(ctx.conn), "Declaring queue");
 						queuename = amqp_bytes_malloc_dup(r->queue);
 						if (queuename.bytes == NULL)
 						{
@@ -149,10 +194,10 @@ namespace rmq
 						}
 
 						amqp_queue_bind(ctx.conn, 1, queuename, amqp_cstring_bytes(exchange.c_str()), amqp_cstring_bytes(bindingkey.str().c_str()), amqp_empty_table);
-						amqp_get_rpc_reply(ctx.conn);
+						die_on_amqp_error(amqp_get_rpc_reply(ctx.conn), "Binding queue");
 
 						amqp_basic_consume(ctx.conn, 1, queuename, amqp_empty_bytes, 0, 1, 0, amqp_empty_table);
-						amqp_get_rpc_reply(ctx.conn);
+						die_on_amqp_error(amqp_get_rpc_reply(ctx.conn), "Consuming");
 
 						ctx.queuenames.emplace_back(queuename);
 					},
@@ -188,8 +233,6 @@ namespace rmq
 			if (AMQP_RESPONSE_NORMAL != resp.res.reply_type)
 				break;
 
-			auto get_string = [&] (auto const & b) { return std::string(static_cast<char const *>(b.bytes), b.len); };
-
 			auto						routing_key  =  get_string(rq.envelope.routing_key);
 
 			try
@@ -208,6 +251,11 @@ namespace rmq
 
 			amqp_destroy_envelope(&rq.envelope);
 		}
+
+		die_on_amqp_error(amqp_channel_close(ctx.conn, 1, AMQP_REPLY_SUCCESS), "Closing channel");
+		die_on_amqp_error(amqp_connection_close(ctx.conn, AMQP_REPLY_SUCCESS), "Closing connection");
+		die_on_error(amqp_destroy_connection(ctx.conn), "Ending connection");
+
 		return 0;
 	}
 
