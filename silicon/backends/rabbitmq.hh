@@ -41,23 +41,26 @@ namespace sl
 					P					procedure,
 					T &					res) const
 		{
-			auto						routing_key =  std::string(static_cast<char const *>(r->envelope.routing_key.bytes), r->envelope.routing_key.len);
-			auto						message = std::string(static_cast<char const *>(r->envelope.message.body.bytes), r->envelope.message.body.len);
+			auto get_string = [&] (auto const & b) { return std::string(static_cast<char const *>(b.bytes), b.len); };
+
+			auto						routing_key = get_string(r->envelope.routing_key);
+			auto						message = get_string(r->envelope.message.body);
+			auto						content_type = get_string(r->envelope.message.properties.content_type);
+			auto						exchange = get_string(r->envelope.exchange);
 
 			std::cout << "Delivery " << (unsigned) r->envelope.delivery_tag << " "
-					  << "exchange " << std::string(static_cast<char const *>(r->envelope.exchange.bytes), r->envelope.exchange.len) << " "
+					  << "exchange " << exchange << " "
 					  << "routingkey " << routing_key << " "
 					  << std::endl;
 
 			if (r->envelope.message.properties._flags & AMQP_BASIC_CONTENT_TYPE_FLAG)
 			{
-				std::cout << "Content-type: " << std::string(static_cast<char const *>(r->envelope.message.properties.content_type.bytes), r->envelope.message.properties.content_type.len) << std::endl;
-				std::cout << "Message: " << std::string(static_cast<char const *>(r->envelope.message.body.bytes), r->envelope.message.body.len) << std::endl;
+				std::cout << "Content-type: " << content_type << std::endl;
+				std::cout << "Message: " << message << std::endl;
+
+				iod::json_decode<typename P::route_type::parameters_type>(res, message);
 			}
 			std::cout << "----" << std::endl;
-
-			typename P::route_type::get_parameters_type u2;
-			iod::json_decode(res, message);
 		}
 
 		template <typename T>
