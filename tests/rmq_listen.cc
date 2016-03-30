@@ -7,14 +7,14 @@ iod_define_symbol(test2)
 iod_define_symbol(message)
 
 auto hello_api = sl::http_api(
-		s::_test / s::_test1 = [] ()
+		s::_test / s::_test1 * sl::get_parameters(s::_id = int()) = [] (auto				params)
 		{
-			std::cout << "coucou test/test1" << std::endl;
+			std::cout << "coucou test/test1 " << params.id << std::endl;
 			return D(s::_message = "test/test1");
 		},
-		s::_test / s::_test2 = [] ()
+		s::_test / s::_test2 * sl::get_parameters(s::_str = std::string()) = [] (auto		params)
 		{
-			std::cout << "coucou test/test2" << std::endl;
+			std::cout << "coucou test/test2 " << params.str << std::endl;
 			return D(s::_message = "test/test1");
 		}
 );

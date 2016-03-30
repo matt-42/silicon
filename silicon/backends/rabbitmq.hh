@@ -7,6 +7,8 @@
 # include <amqp.h>
 # include <amqp_framing.h>
 
+# include <iod/json.hh>
+
 # include <silicon/symbols.hh>
 # include <silicon/service.hh>
 
@@ -39,7 +41,8 @@ namespace sl
 					P					procedure,
 					T &					res) const
 		{
-			auto						routing_key  =  std::string(static_cast<char const *>(r->envelope.routing_key.bytes), r->envelope.routing_key.len);
+			auto						routing_key =  std::string(static_cast<char const *>(r->envelope.routing_key.bytes), r->envelope.routing_key.len);
+			auto						message = std::string(static_cast<char const *>(r->envelope.message.body.bytes), r->envelope.message.body.len);
 
 			std::cout << "Delivery " << (unsigned) r->envelope.delivery_tag << " "
 					  << "exchange " << std::string(static_cast<char const *>(r->envelope.exchange.bytes), r->envelope.exchange.len) << " "
@@ -52,6 +55,9 @@ namespace sl
 				std::cout << "Message: " << std::string(static_cast<char const *>(r->envelope.message.body.bytes), r->envelope.message.body.len) << std::endl;
 			}
 			std::cout << "----" << std::endl;
+
+			typename P::route_type::get_parameters_type u2;
+			iod::json_decode(res, message);
 		}
 
 		template <typename T>
@@ -188,14 +194,14 @@ namespace sl
 			}
 			catch(const error::error& e)
 			{
-				std::cout << e.what() << std::endl;
+				std::cerr << "Exception: " << e.status() << " " << e.what() << std::endl;
 				//resp.status = e.status();
 				//std::string m = e.what();
 				//resp.body = m.data();
 			}
 			catch(const std::runtime_error& e)
 			{
-				std::cout << e.what() << std::endl;
+				std::cerr << "Exception: " << e.what() << std::endl;
 				//resp.status = 500;
 				//resp.body = "Internal server error.";
 			}
