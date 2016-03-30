@@ -20,10 +20,12 @@ namespace sl
 {
 	struct rmq_request
 	{
+		amqp_envelope_t				envelope;
 	};
 
 	struct rmq_response
 	{
+		amqp_rpc_reply_t			res;
 	};
 
 	struct rmq_service_utils
@@ -37,6 +39,19 @@ namespace sl
 					P					procedure,
 					T &					res) const
 		{
+			auto						routing_key  =  std::string(static_cast<char const *>(r->envelope.routing_key.bytes), r->envelope.routing_key.len);
+
+			std::cout << "Delivery " << (unsigned) r->envelope.delivery_tag << " "
+					  << "exchange " << std::string(static_cast<char const *>(r->envelope.exchange.bytes), r->envelope.exchange.len) << " "
+					  << "routingkey " << routing_key << " "
+					  << std::endl;
+
+			if (r->envelope.message.properties._flags & AMQP_BASIC_CONTENT_TYPE_FLAG)
+			{
+				std::cout << "Content-type: " << std::string(static_cast<char const *>(r->envelope.message.properties.content_type.bytes), r->envelope.message.properties.content_type.len) << std::endl;
+				std::cout << "Message: " << std::string(static_cast<char const *>(r->envelope.message.body.bytes), r->envelope.message.body.len) << std::endl;
+			}
+			std::cout << "----" << std::endl;
 		}
 
 		template <typename T>
@@ -94,7 +109,7 @@ namespace sl
 		{
 			iod::static_if<is_tuple<decltype(m.content)>::value>(
 					[&] (auto m) { // If sio, recursion.
-						std::cout << "lol" << std::endl;
+						throw std::runtime_error("FIXME: m.content is a tuple, not handle today");
 					},
 					[&] (auto m) { // Else, register the procedure.
 						std::stringstream bindingkey;
@@ -111,8 +126,6 @@ namespace sl
 									},
 							e);
 						};
-
-						std::cout << "binding key: " << bindingkey.str() << std::endl;
 
 						amqp_queue_declare_ok_t *	r = amqp_queue_declare(ctx.conn, 1, amqp_empty_bytes, 0, 0, 0, 1, amqp_empty_table);
 						amqp_bytes_t				queuename;
@@ -150,36 +163,46 @@ namespace sl
 		auto m2 = std::tuple_cat(std::make_tuple(), mf);
 		using service_t = service<rmq_service_utils,
 								  decltype(m2),
-								  rmq_request*, rmq_response*>;
-		auto s = new service_t(api, m2);
+								  rmq_request*, rmq_response*,
+								  decltype(ctx)>;
+		auto s = service_t(api, m2);
  
 		while (1)
 		{
-			amqp_rpc_reply_t			res;
-			amqp_envelope_t				envelope;
+			rmq_request					rq;
+			rmq_response				resp;
 
 			amqp_maybe_release_buffers(ctx.conn);
 
-			res = amqp_consume_message(ctx.conn, &envelope, NULL, 0);
+			resp.res = amqp_consume_message(ctx.conn, &rq.envelope, NULL, 0);
 
-			if (AMQP_RESPONSE_NORMAL != res.reply_type)
+			if (AMQP_RESPONSE_NORMAL != resp.res.reply_type)
 				break;
 
-			std::cout << "Delivery " << (unsigned) envelope.delivery_tag << " "
-					  << "exchange " << std::string(static_cast<char const *>(envelope.exchange.bytes), envelope.exchange.len) << " "
-					  << "routingkey " << std::string(static_cast<char const *>(envelope.routing_key.bytes), envelope.routing_key.len) << " "
-					  << std::endl;
+			auto						routing_key  =  std::string(static_cast<char const *>(rq.envelope.routing_key.bytes), rq.envelope.routing_key.len);
 
-			if (envelope.message.properties._flags & AMQP_BASIC_CONTENT_TYPE_FLAG)
+			try
 			{
-				std::cout << "Content-type: " << std::string(static_cast<char const *>(envelope.message.properties.content_type.bytes), envelope.message.properties.content_type.len) << std::endl;
-				std::cout << "Message: " << std::string(static_cast<char const *>(envelope.message.body.bytes), envelope.message.body.len) << std::endl;
+				// FIXME: should get the prefix from the type of the current envelope.
+				s("/*" + routing_key, &rq, &resp, ctx);
 			}
-			printf("----\n");
+			catch(const error::error& e)
+			{
+				std::cout << e.what() << std::endl;
+				//resp.status = e.status();
+				//std::string m = e.what();
+				//resp.body = m.data();
+			}
+			catch(const std::runtime_error& e)
+			{
+				std::cout << e.what() << std::endl;
+				//resp.status = 500;
+				//resp.body = "Internal server error.";
+			}
 
 			//amqp_dump(envelope.message.body.bytes, envelope.message.body.len);
 
-			amqp_destroy_envelope(&envelope);
+			amqp_destroy_envelope(&rq.envelope);
 		}
 		return 0;
 	}
