@@ -28,8 +28,8 @@ namespace sl
 
 	struct rmq_service_utils
 	{
-		typedef rmq_request		request_type;
-		typedef rmq_response	response_type;
+		typedef rmq_request				request_type;
+		typedef rmq_response			response_type;
 
 		template <typename P, typename T>
 		auto
@@ -47,91 +47,133 @@ namespace sl
 		}
 	};
 
-	template <typename A, typename M, typename... O>
-	auto
-	rmq_serve(A const &					api,
-			  M const &					middleware_factories,
-			  unsigned short			port,
-			  O &&...					opts)
+	struct rmq_context
 	{
+		template <typename... O>
+		rmq_context(unsigned short		port,
+				    O &&...				opts)
+		{
+			auto						options		= D(opts...);
+			auto						hostname	= options.get(s::_hostname,		"localhost"); 
+			auto						username	= options.get(s::_username,		"guest"); 
+			auto						password	= options.get(s::_password,		"guest"); 
+
+			conn	= amqp_new_connection();
+			socket	= amqp_tcp_socket_new(conn);
+
+			if (!socket)
+				throw std::runtime_error("creating TCP socket");
+
+			status = amqp_socket_open(socket, hostname.c_str(), port);
+			if (status)
+				throw std::runtime_error("opening TCP socket");
+
+			amqp_login(conn, "/", 0, 131072, 0, AMQP_SASL_METHOD_PLAIN, username.c_str(), password.c_str());
+			amqp_channel_open(conn, 1);
+			amqp_get_rpc_reply(conn);
+		}
+
 		int								status;
 		amqp_socket_t *					socket = nullptr;
 		amqp_connection_state_t			conn;
-		amqp_bytes_t					queuename[2];
-		auto							options = D(opts...);
+		std::vector<amqp_bytes_t>		queuenames;
+	};
 
-		auto							hostname	= options.get(s::_hostname,		"localhost"); 
-		auto							exchange	= options.get(s::_exchange,		""); 
-		auto							bindingkey	= options.get(s::_bindingkey,	"test"); 
-		auto							username	= options.get(s::_username,		"guest"); 
-		auto							password	= options.get(s::_password,		"guest"); 
+	template <typename A, typename M, typename... O>
+	auto
+	make_rmq_context(A const &			api,
+					 M const &			mf,
+					 unsigned short		port,
+					 O &&...			opts)
+	{
+		auto							ctx			= rmq_context(port, opts...);
+		auto							options		= D(opts...);
+		auto							exchange	= options.get(s::_exchange,		"");
 
-		conn	= amqp_new_connection();
-		socket	= amqp_tcp_socket_new(conn);
-
-		if (!socket)
-			throw std::runtime_error("creating TCP socket");
-
-		status = amqp_socket_open(socket, hostname.c_str(), port);
-		if (status)
-			throw std::runtime_error("opening TCP socket");
-
-		amqp_login(conn, "/", 0, 131072, 0, AMQP_SASL_METHOD_PLAIN, username.c_str(), password.c_str());
-		amqp_channel_open(conn, 1);
-		amqp_get_rpc_reply(conn);
-
-		for (int i = 0; i < 2; ++i)
+		foreach(api) | [&] (auto& m)
 		{
-			amqp_queue_declare_ok_t *	r = amqp_queue_declare(conn, 1, amqp_empty_bytes, 0, 0, 0, 1, amqp_empty_table);
+			iod::static_if<is_tuple<decltype(m.content)>::value>(
+					[&] (auto m) { // If sio, recursion.
+						std::cout << "lol" << std::endl;
+					},
+					[&] (auto m) { // Else, register the procedure.
+						std::stringstream bindingkey;
 
-			amqp_get_rpc_reply(conn);
-			queuename[i] = amqp_bytes_malloc_dup(r->queue);
-			if (queuename[i].bytes == NULL)
-			{
-				throw std::runtime_error("Out of memory while copying queue name");
-			}
-		}
+						foreach(m.route.path) | [&] (auto e)
+						{
 
+							iod::static_if<is_symbol<decltype(e)>::value>(
+									[&] (auto e2) {
+										bindingkey << std::string("/") + e2.name();
+									},
+									[&] (auto e2) {
+										// FIXME: dynamic symbol
+									},
+							e);
+						};
+
+						std::cout << "binding key: " << bindingkey.str() << std::endl;
+
+						amqp_queue_declare_ok_t *	r = amqp_queue_declare(ctx.conn, 1, amqp_empty_bytes, 0, 0, 0, 1, amqp_empty_table);
+						amqp_bytes_t				queuename;
+
+						amqp_get_rpc_reply(ctx.conn);
+						queuename = amqp_bytes_malloc_dup(r->queue);
+						if (queuename.bytes == NULL)
+						{
+							throw std::runtime_error("Out of memory while copying queue name");
+						}
+
+						amqp_queue_bind(ctx.conn, 1, queuename, amqp_cstring_bytes(exchange.c_str()), amqp_cstring_bytes(bindingkey.str().c_str()), amqp_empty_table);
+						amqp_get_rpc_reply(ctx.conn);
+
+						amqp_basic_consume(ctx.conn, 1, queuename, amqp_empty_bytes, 0, 1, 0, amqp_empty_table);
+						amqp_get_rpc_reply(ctx.conn);
+
+						ctx.queuenames.emplace_back(queuename);
+					},
+			m);
+		};
+
+		return ctx;
+	}
+
+	template <typename A, typename M, typename... O>
+	auto
+	rmq_serve(A const &					api,
+			  M	const &					mf,
+			  unsigned short			port,
+			  O &&...					opts)
+	{
+		auto ctx = make_rmq_context(api, mf, port, opts...);
+
+		auto m2 = std::tuple_cat(std::make_tuple(), mf);
 		using service_t = service<rmq_service_utils,
-								  decltype(middleware_factories),
+								  decltype(m2),
 								  rmq_request*, rmq_response*>;
-		auto s = new service_t(api, middleware_factories);
+		auto s = new service_t(api, m2);
  
-		amqp_queue_bind(conn, 1, queuename[0], amqp_cstring_bytes(exchange.c_str()), amqp_cstring_bytes(bindingkey.c_str()), amqp_empty_table);
-		amqp_get_rpc_reply(conn);
-
-		amqp_basic_consume(conn, 1, queuename[0], amqp_empty_bytes, 0, 1, 0, amqp_empty_table);
-		amqp_get_rpc_reply(conn);
-
-		amqp_queue_bind(conn, 1, queuename[1], amqp_cstring_bytes(exchange.c_str()), amqp_cstring_bytes("lol"), amqp_empty_table);
-		amqp_get_rpc_reply(conn);
-
-		amqp_basic_consume(conn, 1, queuename[1], amqp_empty_bytes, 0, 1, 0, amqp_empty_table);
-		amqp_get_rpc_reply(conn);
-
 		while (1)
 		{
 			amqp_rpc_reply_t			res;
 			amqp_envelope_t				envelope;
 
-			amqp_maybe_release_buffers(conn);
+			amqp_maybe_release_buffers(ctx.conn);
 
-			res = amqp_consume_message(conn, &envelope, NULL, 0);
+			res = amqp_consume_message(ctx.conn, &envelope, NULL, 0);
 
 			if (AMQP_RESPONSE_NORMAL != res.reply_type)
 				break;
 
-			std::cout << "Delivery " << (unsigned) envelope.delivery_tag << std::endl;//", exchange %.*s routingkey %.*s\n",
-			//printf("Delivery %u, exchange %.*s routingkey %.*s\n",
-			//		(unsigned) envelope.delivery_tag,
-			//		(int) envelope.exchange.len, (char *) envelope.exchange.bytes,
-			//		(int) envelope.routing_key.len, (char *) envelope.routing_key.bytes);
+			std::cout << "Delivery " << (unsigned) envelope.delivery_tag << " "
+					  << "exchange " << std::string(static_cast<char const *>(envelope.exchange.bytes), envelope.exchange.len) << " "
+					  << "routingkey " << std::string(static_cast<char const *>(envelope.routing_key.bytes), envelope.routing_key.len) << " "
+					  << std::endl;
 
 			if (envelope.message.properties._flags & AMQP_BASIC_CONTENT_TYPE_FLAG)
 			{
-				//printf("Content-type: %.*s\n",
-				//		(int) envelope.message.properties.content_type.len,
-				//		(char *) envelope.message.properties.content_type.bytes);
+				std::cout << "Content-type: " << std::string(static_cast<char const *>(envelope.message.properties.content_type.bytes), envelope.message.properties.content_type.len) << std::endl;
+				std::cout << "Message: " << std::string(static_cast<char const *>(envelope.message.body.bytes), envelope.message.body.len) << std::endl;
 			}
 			printf("----\n");
 
