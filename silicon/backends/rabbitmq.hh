@@ -80,9 +80,9 @@ namespace rmq
 				O &&...					opts)
 		{
 			auto						options		= D(opts...);
-			auto						hostname	= options.get(s::_hostname,		"localhost"); 
-			auto						username	= options.get(s::_username,		"guest"); 
-			auto						password	= options.get(s::_password,		"guest"); 
+			auto						hostname	= options.get(s::_hostname,		std::string("localhost"));
+			auto						username	= options.get(s::_username,		std::string("guest"));
+			auto						password	= options.get(s::_password,		std::string("guest"));
 
 			conn	= amqp_new_connection();
 			socket	= amqp_tcp_socket_new(conn);
@@ -172,10 +172,8 @@ namespace rmq
 		auto ctx = make_context(api, mf, port, opts...);
 
 		auto m2 = std::tuple_cat(std::make_tuple(), mf);
-		using service_t = service<service_utils,
-								  decltype(m2),
-								  request*, response*,
-								  decltype(ctx)>;
+		using service_t = service<service_utils, decltype(m2),
+								  request*, response*, decltype(ctx)>;
 		auto s = service_t(api, m2);
  
 		while (1)
@@ -190,7 +188,9 @@ namespace rmq
 			if (AMQP_RESPONSE_NORMAL != resp.res.reply_type)
 				break;
 
-			auto						routing_key  =  std::string(static_cast<char const *>(rq.envelope.routing_key.bytes), rq.envelope.routing_key.len);
+			auto get_string = [&] (auto const & b) { return std::string(static_cast<char const *>(b.bytes), b.len); };
+
+			auto						routing_key  =  get_string(rq.envelope.routing_key);
 
 			try
 			{
@@ -200,18 +200,11 @@ namespace rmq
 			catch(const error::error& e)
 			{
 				std::cerr << "Exception: " << e.status() << " " << e.what() << std::endl;
-				//resp.status = e.status();
-				//std::string m = e.what();
-				//resp.body = m.data();
 			}
 			catch(const std::runtime_error& e)
 			{
 				std::cerr << "Exception: " << e.what() << std::endl;
-				//resp.status = 500;
-				//resp.body = "Internal server error.";
 			}
-
-			//amqp_dump(envelope.message.body.bytes, envelope.message.body.len);
 
 			amqp_destroy_envelope(&rq.envelope);
 		}
