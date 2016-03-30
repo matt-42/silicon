@@ -21,8 +21,8 @@ auto hello_api = sl::http_api(
 
 int main(int argc, char* argv[])
 {
-	auto ctx = sl::rmq_serve(hello_api, atoi(argv[2]), s::_hostname		= std::string(argv[1]),
-													   s::_exchange		= std::string("amq.direct"),
-													   s::_username		= std::string("guest"),
-													   s::_password		= std::string("guest"));
+	auto ctx = sl::rmq::serve(hello_api, atoi(argv[2]), s::_hostname		= std::string(argv[1]),
+														s::_exchange		= std::string("amq.direct"),
+														s::_username		= std::string("guest"),
+														s::_password		= std::string("guest"));
 };

@@ -20,20 +20,22 @@ iod_define_symbol(password)
 
 namespace sl
 {
-	struct rmq_request
+namespace rmq
+{
+	struct request
 	{
-		amqp_envelope_t				envelope;
+		amqp_envelope_t					envelope;
 	};
 
-	struct rmq_response
+	struct response
 	{
-		amqp_rpc_reply_t			res;
+		amqp_rpc_reply_t				res;
 	};
 
-	struct rmq_service_utils
+	struct service_utils
 	{
-		typedef rmq_request				request_type;
-		typedef rmq_response			response_type;
+		typedef request					request_type;
+		typedef response				response_type;
 
 		template <typename P, typename T>
 		auto
@@ -71,11 +73,11 @@ namespace sl
 		}
 	};
 
-	struct rmq_context
+	struct context
 	{
 		template <typename... O>
-		rmq_context(unsigned short		port,
-				    O &&...				opts)
+		context(unsigned short			port,
+				O &&...					opts)
 		{
 			auto						options		= D(opts...);
 			auto						hostname	= options.get(s::_hostname,		"localhost"); 
@@ -105,12 +107,12 @@ namespace sl
 
 	template <typename A, typename M, typename... O>
 	auto
-	make_rmq_context(A const &			api,
-					 M const &			mf,
-					 unsigned short		port,
-					 O &&...			opts)
+	make_context(A const &				api,
+				 M const &				mf,
+				 unsigned short			port,
+				 O &&...				opts)
 	{
-		auto							ctx			= rmq_context(port, opts...);
+		auto							ctx			= context(port, opts...);
 		auto							options		= D(opts...);
 		auto							exchange	= options.get(s::_exchange,		"");
 
@@ -162,24 +164,24 @@ namespace sl
 
 	template <typename A, typename M, typename... O>
 	auto
-	rmq_serve(A const &					api,
-			  M	const &					mf,
-			  unsigned short			port,
-			  O &&...					opts)
+	serve(A const &						api,
+		  M	const &						mf,
+		  unsigned short				port,
+		  O &&...						opts)
 	{
-		auto ctx = make_rmq_context(api, mf, port, opts...);
+		auto ctx = make_context(api, mf, port, opts...);
 
 		auto m2 = std::tuple_cat(std::make_tuple(), mf);
-		using service_t = service<rmq_service_utils,
+		using service_t = service<service_utils,
 								  decltype(m2),
-								  rmq_request*, rmq_response*,
+								  request*, response*,
 								  decltype(ctx)>;
 		auto s = service_t(api, m2);
  
 		while (1)
 		{
-			rmq_request					rq;
-			rmq_response				resp;
+			request					rq;
+			response				resp;
 
 			amqp_maybe_release_buffers(ctx.conn);
 
@@ -218,10 +220,11 @@ namespace sl
 
 	template <typename A, typename... O>
 	auto
-	rmq_serve(A const &					api,
-			  unsigned short			port,
-			  O &&...					opts)
+	serve(A const &						api,
+		  unsigned short				port,
+		  O &&...						opts)
 	{
-		return rmq_serve(api, std::make_tuple(), port, opts...);
+		return serve(api, std::make_tuple(), port, opts...);
 	}
+};
 };
