@@ -52,14 +52,16 @@ namespace rmq
 					{
 						auto m = static_cast<amqp_connection_close_t const *>(x.reply.decoded);
 
-						throw std::runtime_error(context + ": server connection error " + std::to_string(m->reply_code) + ", message: " + get_string(m->reply_text));
+						throw std::runtime_error(context + ": server connection error " + std::to_string(m->reply_code)
+								+ ", message: " + get_string(m->reply_text));
 					}
 
 					case AMQP_CHANNEL_CLOSE_METHOD:
 					{
 						auto m = static_cast<amqp_channel_close_t const *>(x.reply.decoded);
 
-						throw std::runtime_error(context + ": server channel error " + std::to_string(m->reply_code) + ", message: " + get_string(m->reply_text));
+						throw std::runtime_error(context + ": server channel error " + std::to_string(m->reply_code)
+								+ ", message: " + get_string(m->reply_text));
 					}
 
 					default:
@@ -70,30 +72,28 @@ namespace rmq
 
 	struct request
 	{
-		amqp_envelope_t					envelope;
+		amqp_envelope_t envelope;
 	};
 
 	struct response
 	{
-		amqp_rpc_reply_t				res;
+		amqp_rpc_reply_t res;
 	};
 
 	struct service_utils
 	{
-		typedef request					request_type;
-		typedef response				response_type;
+		typedef request request_type;
+		typedef response response_type;
 
 		template <typename P, typename T>
 		auto
-		deserialize(request_type *		r,
-					P					procedure,
-					T &					res) const
+		deserialize(request_type * r, P procedure, T & res) const
 		{
 
-			auto						routing_key = get_string(r->envelope.routing_key);
-			auto						message = get_string(r->envelope.message.body);
-			auto						content_type = get_string(r->envelope.message.properties.content_type);
-			auto						exchange = get_string(r->envelope.exchange);
+			auto routing_key = get_string(r->envelope.routing_key);
+			auto message = get_string(r->envelope.message.body);
+			auto content_type = get_string(r->envelope.message.properties.content_type);
+			auto exchange = get_string(r->envelope.exchange);
 
 			//std::cout << "Delivery " << (unsigned) r->envelope.delivery_tag << " "
 			//		  << "exchange " << exchange << " "
@@ -112,8 +112,7 @@ namespace rmq
 
 		template <typename T>
 		auto
-		serialize(response_type *		r,
-				  T const &				res) const
+		serialize(response_type * r, T const & res) const
 		{
 		}
 	};
@@ -121,16 +120,15 @@ namespace rmq
 	struct context
 	{
 		template <typename... O>
-		context(unsigned short			port,
-				O &&...					opts)
+		context(unsigned short port, O &&... opts)
 		{
-			auto						options		= D(opts...);
-			auto						hostname	= options.get(s::_hostname,		std::string("localhost"));
-			auto						username	= options.get(s::_username,		std::string("guest"));
-			auto						password	= options.get(s::_password,		std::string("guest"));
+			auto options = D(opts...);
+			auto hostname = options.get(s::_hostname, std::string("localhost"));
+			auto username = options.get(s::_username, std::string("guest"));
+			auto password = options.get(s::_password, std::string("guest"));
 
-			conn	= amqp_new_connection();
-			socket	= amqp_tcp_socket_new(conn);
+			conn = amqp_new_connection();
+			socket = amqp_tcp_socket_new(conn);
 
 			if (!socket)
 				throw std::runtime_error("creating TCP socket");
@@ -144,22 +142,19 @@ namespace rmq
 			die_on_amqp_error(amqp_get_rpc_reply(conn), "Opening channel");
 		}
 
-		int								status;
-		amqp_socket_t *					socket = nullptr;
-		amqp_connection_state_t			conn;
-		std::vector<amqp_bytes_t>		queuenames;
+		int status;
+		amqp_socket_t * socket = nullptr;
+		amqp_connection_state_t conn;
+		std::vector<amqp_bytes_t> queuenames;
 	};
 
 	template <typename A, typename M, typename... O>
 	auto
-	make_context(A const &				api,
-				 M const &				mf,
-				 unsigned short			port,
-				 O &&...				opts)
+	make_context(A const & api, M const & mf, unsigned short port, O &&... opts)
 	{
-		auto							ctx			= context(port, opts...);
-		auto							options		= D(opts...);
-		auto							exchange	= options.get(s::_exchange,		"");
+		auto ctx = context(port, opts...);
+		auto options = D(opts...);
+		auto exchange = options.get(s::_exchange, std::string(""));
 
 		foreach(api) | [&] (auto& m)
 		{
@@ -183,8 +178,8 @@ namespace rmq
 							e);
 						};
 
-						amqp_queue_declare_ok_t *	r = amqp_queue_declare(ctx.conn, 1, amqp_empty_bytes, 0, 0, 0, 1, amqp_empty_table);
-						amqp_bytes_t				queuename;
+						amqp_queue_declare_ok_t * r = amqp_queue_declare(ctx.conn, 1, amqp_empty_bytes, 0, 0, 0, 1, amqp_empty_table);
+						amqp_bytes_t queuename;
 
 						die_on_amqp_error(amqp_get_rpc_reply(ctx.conn), "Declaring queue");
 						queuename = amqp_bytes_malloc_dup(r->queue);
@@ -209,22 +204,18 @@ namespace rmq
 
 	template <typename A, typename M, typename... O>
 	auto
-	serve(A const &						api,
-		  M	const &						mf,
-		  unsigned short				port,
-		  O &&...						opts)
+	serve(A const & api, M const & mf, unsigned short port, O &&... opts)
 	{
 		auto ctx = make_context(api, mf, port, opts...);
 
 		auto m2 = std::tuple_cat(std::make_tuple(), mf);
-		using service_t = service<service_utils, decltype(m2),
-								  request*, response*, decltype(ctx)>;
+		using service_t = service<service_utils, decltype(m2), request*, response*, decltype(ctx)>;
 		auto s = service_t(api, m2);
  
 		while (1)
 		{
-			request					rq;
-			response				resp;
+			request rq;
+			response resp;
 
 			amqp_maybe_release_buffers(ctx.conn);
 
@@ -233,7 +224,7 @@ namespace rmq
 			if (AMQP_RESPONSE_NORMAL != resp.res.reply_type)
 				break;
 
-			auto						routing_key  =  get_string(rq.envelope.routing_key);
+			auto routing_key = get_string(rq.envelope.routing_key);
 
 			try
 			{
@@ -261,9 +252,7 @@ namespace rmq
 
 	template <typename A, typename... O>
 	auto
-	serve(A const &						api,
-		  unsigned short				port,
-		  O &&...						opts)
+	serve(A const & api, unsigned short port, O &&... opts)
 	{
 		return serve(api, std::make_tuple(), port, opts...);
 	}
