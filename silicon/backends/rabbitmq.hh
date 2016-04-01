@@ -123,9 +123,9 @@ namespace rmq
 		context(unsigned short port, O &&... opts)
 		{
 			auto options = D(opts...);
-			auto hostname = options.get(s::_hostname, std::string("localhost"));
-			auto username = options.get(s::_username, std::string("guest"));
-			auto password = options.get(s::_password, std::string("guest"));
+			auto hostname = options.hostname;
+			auto username = options.username;
+			auto password = options.password;
 
 			conn = amqp_new_connection();
 			socket = amqp_tcp_socket_new(conn);
@@ -154,7 +154,7 @@ namespace rmq
 	{
 		auto ctx = context(port, opts...);
 		auto options = D(opts...);
-		auto exchange = options.get(s::_exchange, std::string(""));
+		auto exchange = options.exchange;
 
 		foreach(api) | [&] (auto& m)
 		{
