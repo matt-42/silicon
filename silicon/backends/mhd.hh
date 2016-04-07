@@ -31,7 +31,7 @@ namespace sl
 
   struct mhd_response
   {
-    void add_header(std::string k, std::string v)
+    inline void add_header(std::string k, std::string v)
     {
       headers.push_back(std::make_pair(k, v));
     }
