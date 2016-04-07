@@ -24,6 +24,11 @@ namespace sl
   
   struct mhd_request
   {
+    inline const char* get_header(const char* k)
+    {
+      return MHD_lookup_connection_value(connection, MHD_HEADER_KIND, k);
+    }
+
     MHD_Connection* connection;
     std::string body;
     std::string url;
