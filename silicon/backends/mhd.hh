@@ -31,6 +31,11 @@ namespace sl
 
   struct mhd_response
   {
+    void add_header(std::string k, std::string v)
+    {
+      headers.push_back(std::make_pair(k, v));
+    }
+
     int status;
     std::string body;
     std::vector<std::pair<std::string, std::string>> cookies;
