@@ -44,7 +44,7 @@ int main()
   auto ctx = lwan_json_serve(api, factories, 12345, _non_blocking);
 
   // Test.
-  auto c = libcurl_json_client(api, "127.0.0.1", 12345);
+  auto c = libcurl_json_client(api, "127.0.0.1", 12345, _post_encoding = _x_www_form_urlencoded);
 
   // // Insert.
   auto insert_r = c.http_post.user.create(_name = "matt", _age =  12, _address = "USA");

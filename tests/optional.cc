@@ -20,7 +20,7 @@ int main(int argc, char* argv[])
 {
   auto server = sl::mhd_json_serve(hello_api, 12345, _non_blocking);
 
-  auto c = libcurl_json_client(hello_api, "127.0.0.1", 12345);
+  auto c = libcurl_json_client(hello_api, "127.0.0.1", 12345, _post_encoding = _json);
 
   auto r1 = c.http_get.test();
   assert(r1.response.id == 12);

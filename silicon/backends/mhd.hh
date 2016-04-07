@@ -51,7 +51,7 @@ namespace sl
     //else return MHD_NO;
       return MHD_YES;
   }
-  
+
   struct mhd_json_service_utils
   {
     typedef mhd_request request_type;
@@ -128,13 +128,26 @@ namespace sl
     }
 
     template <typename P, typename O>
-    void decode_post_parameters(O& res, mhd_request* r) const
+    void decode_post_parameters_json(O& res, mhd_request* r) const
+    {
+      try
+      {
+        if (r->body.size())
+          json_decode(res, r->body);
+        else
+          json_decode(res, "{}");
+      }
+      catch (const std::runtime_error& e)
+      {
+        throw error::bad_request("Error when decoding procedure arguments: ", e.what());
+      }
+
+    }
+    
+    template <typename P, typename O>
+    void decode_post_parameters_urlencoded(O& res, mhd_request* r) const
     {
       std::map<std::string, std::string> map;
-      auto add = [&] (const char* k, const char* v) {
-        // std::cout << k << " " << v << std::endl;
-        map[k] = v;
-      };
 
       const std::string& body = r->body;
       int last = 0;
@@ -157,15 +170,11 @@ namespace sl
         value = std::string(&body[last], i - last);
         value.resize(MHD_http_unescape(&value[0]));
 
-        // std::cout << key << " -> " << value << std::endl;
         map.insert(std::make_pair(key, value));
 
         i++; // skip &;
         last=i;
       }
-      // MHD_get_connection_values(r->connection, MHD_POSTDATA_KIND,
-      //                           &mhd_keyvalue_iterator<decltype(add)>,
-      //                           &add);
       
       foreach(P()) | [&] (auto m)
       {
@@ -192,6 +201,7 @@ namespace sl
             
       };
     }
+
     
     template <typename P, typename T>
     auto deserialize(request_type* r, P procedure, T& res) const
@@ -200,7 +210,21 @@ namespace sl
       {
         decode_url_arguments<typename P::path_type>(res, r->url);
         decode_get_arguments<typename P::route_type::get_parameters_type>(res, r);
-        decode_post_parameters<typename P::route_type::post_parameters_type>(res, r);
+
+        using post_t = typename P::route_type::post_parameters_type;
+        if (post_t::size() > 0)
+        {
+          const char* encoding = MHD_lookup_connection_value(r->connection, MHD_HEADER_KIND, "Content-Type");
+          if (!encoding)
+            throw error::bad_request(std::string("Content-Type is required to decode the POST parameters"));
+          
+          if (encoding == std::string("application/x-www-form-urlencoded"))
+            decode_post_parameters_urlencoded<post_t>(res, r);
+          else if (encoding == std::string("application/json"))
+            decode_post_parameters_json<post_t>(res, r);
+          else
+            throw error::bad_request(std::string("Content-Type not implemented: ") + encoding);
+        }
       }
       catch (const std::runtime_error& e)
       {
@@ -274,19 +298,6 @@ namespace sl
     }
 
   };
-
-  // struct mhd_get_parameters_factory
-  // {
-  //   auto instantiate(MHD_Connection* connection)
-  //   {
-  //     get_parameters map;
-  //     auto add = [&] (const char* k, const char* v) { map[k] = v; };
-  //     MHD_get_connection_values(connection, MHD_GET_ARGUMENT_KIND,
-  //       			&mhd_keyvalue_iterator<decltype(add)>,
-  //       			&add);
-  //     return map;
-  //   }
-  // };
   
   template <typename S>
   int mhd_handler(void * cls,
@@ -383,6 +394,26 @@ namespace sl
     std::shared_ptr<S> service_;
   };
 
+  /*! 
+  ** Start the microhttpd json backend. This function is by default blocking.
+  ** 
+  ** @param api The api
+  ** @param middleware_factories The tuple of middlewares
+  ** @param port the port
+  ** @param opts Available options are:
+  **         _one_thread_per_connection: Spans one thread per connection.
+  **         _linux_epoll: One thread per CPU core with epoll.
+  **         _select: select instead of epoll (active by default).
+  **         _nthreads: Set the number of thread. Default: The numbers of CPU cores.
+  **         _non_blocking: Run the server in a thread and return in a non blocking way.
+  **         _blocking: (Active by default) Blocking call.
+  ** 
+  ** @return If set as non_blocking, this function returns a
+  ** silicon_mhd_ctx that will stop and cleanup the server at the end
+  ** of its lifetime. If set as blocking (default), never returns
+  ** except if an error prevents or stops the execution of the server.
+  **
+  */
   template <typename A, typename M, typename... O>
   auto mhd_json_serve(const A& api, const M& middleware_factories,
                       int port, O&&... opts)
