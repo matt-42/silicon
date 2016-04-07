@@ -6,7 +6,11 @@ title: Microhttpd backend
 Microhttpd backend
 =====================
 
-This backend wraps [the Microhttpd library](http://www.gnu.org/software/libmicrohttpd/) to serve Silicon APIs:
+This backend wraps [the Microhttpd
+library](http://www.gnu.org/software/libmicrohttpd/) to serve Silicon
+APIs. It supports the following content-types:
+  - application/x-www-form-urlencoded
+  - application/json
 
 ```c++
 mhd_json_serve(api, port, options...);
@@ -59,3 +63,13 @@ Default: The number of processor cores.
 
 When using ```_select``` or ```_linux_epoll```, set the size of the
 thread pool.
+
+
+### ```_blocking / _non_blocking```
+
+Default: _blocking
+
+If set as non_blocking, this function returns a silicon_mhd_ctx that
+will stop and cleanup the server at the end of its lifetime. If set as
+blocking (default), it never returns except if an error prevents or stops
+the execution of the server.
