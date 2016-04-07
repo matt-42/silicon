@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <unordered_map>
 #include <thread>
 #include <microhttpd.h>
 #include <stdlib.h>
@@ -36,15 +37,13 @@ namespace sl
 
   struct mhd_response
   {
-    inline void add_header(std::string k, std::string v)
-    {
-      headers.push_back(std::make_pair(k, v));
-    }
+    inline void set_header(std::string k, std::string v) { headers[k] = v; }
+    inline void set_cookie(std::string k, std::string v) { cookies[k] = v; }
 
     int status;
     std::string body;
-    std::vector<std::pair<std::string, std::string>> cookies;
-    std::vector<std::pair<std::string, std::string>> headers;
+    std::unordered_map<std::string, std::string> cookies;
+    std::unordered_map<std::string, std::string> headers;
   };
 
   template <typename F>
@@ -280,7 +279,7 @@ namespace sl
     {
       serialize2(r, res.body);
       if (res.has(_content_type))
-        r->headers.push_back(std::make_pair("Content-Type", std::string(res.get(_content_type, ""))));
+        r->set_header("Content-Type", std::string(res.get(_content_type, "")));
     }
     
   };
@@ -297,7 +296,7 @@ namespace sl
       if (!token_)
       {
         token = generate_secret_tracking_id();
-        resp->cookies.push_back(std::make_pair(key, token));
+        resp->set_cookie(key, token);
       }
       else
       {
