@@ -163,21 +163,6 @@ namespace rmq
 						throw std::runtime_error("FIXME: m.content is a tuple, not handle today");
 					},
 					[&] (auto m) { // Else, register the procedure.
-						std::stringstream bindingkey;
-
-						foreach(m.route.path) | [&] (auto e)
-						{
-
-							iod::static_if<is_symbol<decltype(e)>::value>(
-									[&] (auto e2) {
-										bindingkey << std::string("/") + e2.name();
-									},
-									[&] (auto e2) {
-										// FIXME: dynamic symbol
-									},
-							e);
-						};
-
 						amqp_queue_declare_ok_t * r = amqp_queue_declare(ctx.conn, 1, amqp_empty_bytes, 0, 0, 0, 1, amqp_empty_table);
 						amqp_bytes_t queuename;
 
@@ -188,7 +173,7 @@ namespace rmq
 							throw std::runtime_error("Out of memory while copying queue name");
 						}
 
-						amqp_queue_bind(ctx.conn, 1, queuename, amqp_cstring_bytes(exchange.c_str()), amqp_cstring_bytes(bindingkey.str().c_str()), amqp_empty_table);
+						amqp_queue_bind(ctx.conn, 1, queuename, amqp_cstring_bytes(exchange.c_str()), amqp_cstring_bytes(m.route.string_id().c_str()), amqp_empty_table);
 						die_on_amqp_error(amqp_get_rpc_reply(ctx.conn), "Binding queue");
 
 						amqp_basic_consume(ctx.conn, 1, queuename, amqp_empty_bytes, 0, 1, 0, amqp_empty_table);
@@ -229,7 +214,7 @@ namespace rmq
 			try
 			{
 				// FIXME: should get the prefix from the type of the current envelope.
-				s("/*" + routing_key, &rq, &resp, ctx);
+				s(routing_key, &rq, &resp, ctx);
 			}
 			catch(const error::error& e)
 			{
