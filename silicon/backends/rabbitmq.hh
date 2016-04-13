@@ -166,7 +166,6 @@ namespace rmq
 							throw std::runtime_error("Out of memory while copying queue name");
 						}
 
-						std::cout << m.route.path_as_string(false) << std::endl;
 						amqp_queue_bind(ctx.conn, 1, queuename,
 										amqp_cstring_bytes(m.route.verb_as_string()),
 										amqp_cstring_bytes(m.route.path_as_string(false).c_str()),
