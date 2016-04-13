@@ -48,7 +48,7 @@ auto hl_api = http_api(
 
 void backend_testsuite(int port)
 {
-  auto c1 = libcurl_json_client(hl_api, "127.0.0.1", port);
+  auto c1 = libcurl_json_client(hl_api, "127.0.0.1", port, _post_encoding = _x_www_form_urlencoded);
   auto c2 = libcurl_json_client(hl_api, "127.0.0.1", port);
 
   auto r1 = c1.http_get.test();

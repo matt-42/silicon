@@ -30,21 +30,21 @@
     iod_define_symbol(before_update)
 #endif
 
-#ifndef IOD_SYMBOL_body
-#define IOD_SYMBOL_body
-    iod_define_symbol(body)
-#endif
-
 #ifndef IOD_SYMBOL_blocking
 #define IOD_SYMBOL_blocking
     iod_define_symbol(blocking)
 #endif
 
-#ifndef IOD_SYMBOL_non_blocking
-#define IOD_SYMBOL_non_blocking
-    iod_define_symbol(non_blocking)
+#ifndef IOD_SYMBOL_body
+#define IOD_SYMBOL_body
+    iod_define_symbol(body)
 #endif
-      
+
+#ifndef IOD_SYMBOL_computed
+#define IOD_SYMBOL_computed
+    iod_define_symbol(computed)
+#endif
+
 #ifndef IOD_SYMBOL_content_type
 #define IOD_SYMBOL_content_type
     iod_define_symbol(content_type)
@@ -78,6 +78,11 @@
 #ifndef IOD_SYMBOL_get_by_id
 #define IOD_SYMBOL_get_by_id
     iod_define_symbol(get_by_id)
+#endif
+
+#ifndef IOD_SYMBOL_handler_id
+#define IOD_SYMBOL_handler_id
+    iod_define_symbol(handler_id)
 #endif
 
 #ifndef IOD_SYMBOL_http_api
@@ -115,14 +120,39 @@
     iod_define_symbol(id)
 #endif
 
+#ifndef IOD_SYMBOL_json
+#define IOD_SYMBOL_json
+    iod_define_symbol(json)
+#endif
+
 #ifndef IOD_SYMBOL_linux_epoll
 #define IOD_SYMBOL_linux_epoll
     iod_define_symbol(linux_epoll)
 #endif
 
+#ifndef IOD_SYMBOL_lwan_req
+#define IOD_SYMBOL_lwan_req
+    iod_define_symbol(lwan_req)
+#endif
+
+#ifndef IOD_SYMBOL_lwan_resp
+#define IOD_SYMBOL_lwan_resp
+    iod_define_symbol(lwan_resp)
+#endif
+
 #ifndef IOD_SYMBOL_methods
 #define IOD_SYMBOL_methods
     iod_define_symbol(methods)
+#endif
+
+#ifndef IOD_SYMBOL_module
+#define IOD_SYMBOL_module
+    iod_define_symbol(module)
+#endif
+
+#ifndef IOD_SYMBOL_non_blocking
+#define IOD_SYMBOL_non_blocking
+    iod_define_symbol(non_blocking)
 #endif
 
 #ifndef IOD_SYMBOL_nthreads
@@ -180,6 +210,16 @@
     iod_define_symbol(path)
 #endif
 
+#ifndef IOD_SYMBOL_post_encoding
+#define IOD_SYMBOL_post_encoding
+    iod_define_symbol(post_encoding)
+#endif
+
+#ifndef IOD_SYMBOL_prefix
+#define IOD_SYMBOL_prefix
+    iod_define_symbol(prefix)
+#endif
+
 #ifndef IOD_SYMBOL_primary_key
 #define IOD_SYMBOL_primary_key
     iod_define_symbol(primary_key)
@@ -203,11 +243,6 @@
 #ifndef IOD_SYMBOL_root
 #define IOD_SYMBOL_root
     iod_define_symbol(root)
-#endif
-
-#ifndef IOD_SYMBOL_save
-#define IOD_SYMBOL_save
-    iod_define_symbol(save)
 #endif
 
 #ifndef IOD_SYMBOL_secure
@@ -258,5 +293,10 @@
 #ifndef IOD_SYMBOL_write_access
 #define IOD_SYMBOL_write_access
     iod_define_symbol(write_access)
+#endif
+
+#ifndef IOD_SYMBOL_x_www_form_urlencoded
+#define IOD_SYMBOL_x_www_form_urlencoded
+    iod_define_symbol(x_www_form_urlencoded)
 #endif
 

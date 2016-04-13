@@ -45,11 +45,12 @@ namespace sl
     }
   };
 
-  struct libcurl_http_client;
-
+  template <typename E>
   inline size_t curl_write_callback(char *ptr, size_t size, size_t nmemb, void *userdata);
+  template <typename E>
   inline size_t curl_read_callback(void *ptr, size_t size, size_t nmemb, void *stream);
 
+  template <typename Encoding>
   struct libcurl_http_client
   {
     libcurl_http_client()
@@ -112,44 +113,52 @@ namespace sl
       curl_easy_setopt(curl_, CURLOPT_URL, url_ss.str().c_str());
 
       // POST parameters.
-      req_body_buffer_.str("");
+      bool is_urlencoded = std::is_same<Encoding, _x_www_form_urlencoded_t>::value;
       std::string rq_body;
-      char* rq_body_encoded = nullptr;
-      static_if<(route.post_params._size > 0 and A::_size > 0)>(
-        [&] (auto args) {
-          auto post_params = iod::intersect(args, route.post_params);
-          std::stringstream post_stream;
-          bool first = true;
-          foreach(post_params) | [&] (auto m)
-          {
-            if (!first) post_stream << "&";
-            post_stream << m.symbol_name() << "=";
-            std::stringstream value_str;
-            static_if<is_sio<std::decay_t<decltype(m.value())>>::value>(
-              [&] (auto m) { value_str << json_encode(m.value()); },
-              [&] (auto m) { value_str << m.value(); }, m);
+      if (is_urlencoded)
+      { // urlencoded
+        req_body_buffer_.str("");
+        static_if<(route.post_params._size > 0 and A::_size > 0)>(
+          [&] (auto args) {
+            auto post_params = iod::intersect(args, route.post_params);
+            std::stringstream post_stream;
+            bool first = true;
+            foreach(post_params) | [&] (auto m)
+            {
+              if (!first) post_stream << "&";
+              post_stream << m.symbol_name() << "=";
+              std::stringstream value_str;
+              static_if<is_sio<std::decay_t<decltype(m.value())>>::value>(
+                [&] (auto m) { value_str << json_encode(m.value()); },
+                [&] (auto m) { value_str << m.value(); }, m);
 
-            char* escaped = curl_easy_escape(curl_, value_str.str().c_str(), value_str.str().size());
-            first = false;
-            post_stream << escaped;
-            curl_free(escaped);
-          };
-          // std::cout << "post_stream.str(): "<< post_stream.str() << std::endl;
-          rq_body = post_stream.str();
-          // rq_body = json_encode(post_params);
-          // rq_body_encoded = curl_easy_escape(curl_ , rq_body.c_str(), rq_body.size());
-          req_body_buffer_.str(rq_body);
-        },
-        [&] (auto args) {}, args);
+              char* escaped = curl_easy_escape(curl_, value_str.str().c_str(), value_str.str().size());
+              first = false;
+              post_stream << escaped;
+              curl_free(escaped);
+            };
+            rq_body = post_stream.str();
+            req_body_buffer_.str(rq_body);
+          },
+          [&] (auto args) {}, args);
+      }
+      else // Json encoded
+        static_if<(route.post_params._size > 0 and A::_size > 0)>(
+          [&] (auto args) {
+            auto post_params = iod::intersect(args, route.post_params);        
+            rq_body = json_encode(post_params);
 
-      //std::cout << url_ss.str() << std::endl;
+          }, [](auto args){}, args);
 
       // HTTP POST
       if (std::is_same<decltype(route.verb), http_post>::value)
       {
         curl_easy_setopt(curl_, CURLOPT_POST, 1);
-        curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, rq_body.c_str());        
-        headers_list = curl_slist_append(headers_list, "Content-Type: application/x-www-form-urlencoded");
+        curl_easy_setopt(curl_, CURLOPT_POSTFIELDS, rq_body.c_str());
+        if (is_urlencoded)
+          headers_list = curl_slist_append(headers_list, "Content-Type: application/x-www-form-urlencoded");
+        else
+          headers_list = curl_slist_append(headers_list, "Content-Type: application/json");
       }
 
       // HTTP GET
@@ -159,7 +168,7 @@ namespace sl
       if (std::is_same<decltype(route.verb), http_put>::value)
       {
         curl_easy_setopt(curl_, CURLOPT_UPLOAD, 1L);
-        curl_easy_setopt(curl_, CURLOPT_READFUNCTION, curl_read_callback);
+        curl_easy_setopt(curl_, CURLOPT_READFUNCTION, curl_read_callback<Encoding>);
         curl_easy_setopt(curl_, CURLOPT_READDATA, this);
         headers_list = curl_slist_append(headers_list, "Content-Type: application/x-www-form-urlencoded");
       }
@@ -172,7 +181,7 @@ namespace sl
       curl_easy_setopt(curl_, CURLOPT_COOKIEJAR, 0); // Enable cookies but do no write a cookiejar.
 
       body_buffer_.clear();
-      curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, curl_write_callback);
+      curl_easy_setopt(curl_, CURLOPT_WRITEFUNCTION, curl_write_callback<Encoding>);
       curl_easy_setopt(curl_, CURLOPT_WRITEDATA, this);
       
       curl_easy_setopt(curl_, CURLOPT_HTTPHEADER, headers_list);
@@ -190,8 +199,6 @@ namespace sl
       // Read response code.
       long response_code;
       curl_easy_getinfo(curl_, CURLINFO_RESPONSE_CODE, &response_code);
-
-      if (rq_body_encoded != nullptr) curl_free(rq_body_encoded);
 
       // Decode result.
       return response_parser<R>::run(response_code, body_buffer_);
@@ -231,15 +238,17 @@ namespace sl
     R route;
   };
 
+  template <typename E>
   inline size_t curl_read_callback(void *ptr, size_t size, size_t nmemb, void *userdata)
   {
-    libcurl_http_client* client = (libcurl_http_client*)userdata;
+    libcurl_http_client<E>* client = (libcurl_http_client<E>*)userdata;
     return client->write((char*) ptr, size * nmemb);
   }
   
+  template <typename E>
   size_t curl_write_callback(char *ptr, size_t size, size_t nmemb, void *userdata)
   {
-    libcurl_http_client* client = (libcurl_http_client*)userdata;
+    libcurl_http_client<E>* client = (libcurl_http_client<E>*)userdata;
     client->read(ptr, size * nmemb);
     return size * nmemb;
   }
@@ -341,10 +350,27 @@ namespace sl
     return process_roots(tu2);
   }
 
-  template <typename A>
-  auto libcurl_json_client(const A& api, std::string host, int port)
+  /*! 
+  ** 
+  ** 
+  ** @param api 
+  ** @param host 
+  ** @param port 
+  ** @param opts Available options are:
+  **         _post_encoding = _x_www_form_urlencoded: Set the post parameter to be decoded as urlencoded.
+  **         _post_encoding = _json: Set the post parameter to be decoded as json (Default).
+
+  ** 
+  ** @return 
+  */
+  template <typename A, typename... O>
+  auto libcurl_json_client(const A& api, std::string host, int port, O... opts)
   {
-    std::shared_ptr<libcurl_http_client> c(new libcurl_http_client());
+    auto options = D(opts...);
+
+    using client_t = libcurl_http_client<std::decay_t<decltype(options.get(_post_encoding, _json))>>;
+    std::shared_ptr<client_t> c(new client_t());
+
     c->connect(host, port);
     return generate_client_methods(c, api, http_route<>());
   }
