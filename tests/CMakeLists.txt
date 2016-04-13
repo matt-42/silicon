@@ -31,7 +31,8 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/mimosa/
 
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib
                 ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib64
-                $ENV{HOME}/local/lib)
+                $ENV{HOME}/local/lib
+				$ENV{HOME}/local/lib/x86_64-linux-gnu)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -ftemplate-depth=1024 -g")
 set(CPPNET_LIBS
@@ -47,6 +48,8 @@ set(MIMOSA_LIBS mimosa-http mimosa-uri mimosa gnutls z pthread lzma)
 
 set(MHD_LIBS gnutls gcrypt pthread microhttpd)
 set(LWAN_LIBS lwan-common curl z pthread dl ubsan)
+
+set(RMQ_LIBS rabbitmq)
 
 # add_executable(cppnet_hello_world cppnet_hello_world.cc)
 # target_link_libraries(cppnet_hello_world ${CPPNET_LIBS})
