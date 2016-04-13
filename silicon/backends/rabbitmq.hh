@@ -111,124 +111,131 @@ namespace rmq
 		}
 	};
 
-	struct context
+	namespace context
 	{
-		template <typename... O>
-		context(unsigned short port, O &&... opts)
+		struct comsume
 		{
-			auto options = D(opts...);
-			auto hostname = options.hostname;
-			auto username = options.username;
-			auto password = options.password;
+			template <typename A, typename... O>
+			comsume(A const & api, unsigned short port, O &&... opts)
+			{
+				auto options = D(opts...);
+				auto hostname = options.hostname;
+				auto username = options.username;
+				auto password = options.password;
 
-			conn = amqp_new_connection();
-			socket = amqp_tcp_socket_new(conn);
+				conn = amqp_new_connection();
+				socket = amqp_tcp_socket_new(conn);
 
-			if (!socket)
-				throw std::runtime_error("creating TCP socket");
+				if (!socket)
+					throw std::runtime_error("creating TCP socket");
 
-			status = amqp_socket_open(socket, hostname.c_str(), port);
-			if (status)
-				throw std::runtime_error("opening TCP socket");
+				status = amqp_socket_open(socket, hostname.c_str(), port);
+				if (status)
+					throw std::runtime_error("opening TCP socket");
 
-			die_on_amqp_error(amqp_login(conn, "/", 0, 131072, 0, AMQP_SASL_METHOD_PLAIN, username.c_str(), password.c_str()), "Loggin in");
-			amqp_channel_open(conn, 1);
-			die_on_amqp_error(amqp_get_rpc_reply(conn), "Opening channel");
-		}
+				die_on_amqp_error(amqp_login(conn, "/", 0, 131072, 0, AMQP_SASL_METHOD_PLAIN, username.c_str(), password.c_str()), "Loggin in");
+				amqp_channel_open(conn, 1);
+				die_on_amqp_error(amqp_get_rpc_reply(conn), "Opening channel");
 
-		int status;
-		amqp_socket_t * socket = nullptr;
-		amqp_connection_state_t conn;
-		std::vector<amqp_bytes_t> queuenames;
+				foreach(api) | [&] (auto& m)
+				{
+					iod::static_if<is_tuple<decltype(m.content)>::value>(
+							[&] (auto m) { // If sio, recursion.
+								throw std::runtime_error("FIXME: m.content is a tuple, not handle today");
+							},
+							[&] (auto m) { // Else, register the procedure.
+								amqp_queue_declare_ok_t * r = amqp_queue_declare(conn, 1, amqp_empty_bytes, 0, 0, 0, 1, amqp_empty_table);
+								amqp_bytes_t queuename;
+
+								die_on_amqp_error(amqp_get_rpc_reply(conn), "Declaring queue");
+								queuename = amqp_bytes_malloc_dup(r->queue);
+								if (queuename.bytes == NULL)
+								{
+									throw std::runtime_error("Out of memory while copying queue name");
+								}
+
+								amqp_queue_bind(conn, 1, queuename,
+												amqp_cstring_bytes(m.route.verb_as_string()),
+												amqp_cstring_bytes(m.route.path_as_string(false).c_str()),
+												amqp_empty_table);
+								die_on_amqp_error(amqp_get_rpc_reply(conn), "Binding queue");
+
+								amqp_basic_consume(conn, 1, queuename, amqp_empty_bytes, 0, 1, 0, amqp_empty_table);
+								die_on_amqp_error(amqp_get_rpc_reply(conn), "Consuming");
+
+								queuenames.emplace_back(queuename);
+							},
+					m);
+				};
+			}
+
+			template <typename S>
+			auto run(S & s)
+			{
+				while (1)
+				{
+					request rq;
+					response resp;
+
+					amqp_maybe_release_buffers(conn);
+
+					resp.res = amqp_consume_message(conn, &rq.envelope, NULL, 0);
+
+					if (AMQP_RESPONSE_NORMAL != resp.res.reply_type)
+						break;
+
+					auto routing_key = get_string(rq.envelope.routing_key);
+					auto exchange = get_string(rq.envelope.exchange);
+
+					try
+					{
+						s(exchange + routing_key, &rq, &resp, *this);
+					}
+					catch(const error::error& e)
+					{
+						std::cerr << "Exception: " << e.status() << " " << e.what() << std::endl;
+					}
+					catch(const std::runtime_error& e)
+					{
+						std::cerr << "Exception: " << e.what() << std::endl;
+					}
+
+					amqp_destroy_envelope(&rq.envelope);
+				}
+
+				die_on_amqp_error(amqp_channel_close(conn, 1, AMQP_REPLY_SUCCESS), "Closing channel");
+				die_on_amqp_error(amqp_connection_close(conn, AMQP_REPLY_SUCCESS), "Closing connection");
+				die_on_error(amqp_destroy_connection(conn), "Ending connection");
+
+				return 0;
+			}
+
+			int status;
+			amqp_socket_t * socket = nullptr;
+			amqp_connection_state_t conn;
+			std::vector<amqp_bytes_t> queuenames;
+		};
 	};
 
-	template <typename A, typename M, typename... O>
+	template <typename C, typename A, typename M, typename... O>
 	auto
 	make_context(A const & api, M const & mf, unsigned short port, O &&... opts)
 	{
-		auto ctx = context(port, opts...);
-		auto options = D(opts...);
-
-		foreach(api) | [&] (auto& m)
-		{
-			iod::static_if<is_tuple<decltype(m.content)>::value>(
-					[&] (auto m) { // If sio, recursion.
-						throw std::runtime_error("FIXME: m.content is a tuple, not handle today");
-					},
-					[&] (auto m) { // Else, register the procedure.
-						amqp_queue_declare_ok_t * r = amqp_queue_declare(ctx.conn, 1, amqp_empty_bytes, 0, 0, 0, 1, amqp_empty_table);
-						amqp_bytes_t queuename;
-
-						die_on_amqp_error(amqp_get_rpc_reply(ctx.conn), "Declaring queue");
-						queuename = amqp_bytes_malloc_dup(r->queue);
-						if (queuename.bytes == NULL)
-						{
-							throw std::runtime_error("Out of memory while copying queue name");
-						}
-
-						amqp_queue_bind(ctx.conn, 1, queuename,
-										amqp_cstring_bytes(m.route.verb_as_string()),
-										amqp_cstring_bytes(m.route.path_as_string(false).c_str()),
-										amqp_empty_table);
-						die_on_amqp_error(amqp_get_rpc_reply(ctx.conn), "Binding queue");
-
-						amqp_basic_consume(ctx.conn, 1, queuename, amqp_empty_bytes, 0, 1, 0, amqp_empty_table);
-						die_on_amqp_error(amqp_get_rpc_reply(ctx.conn), "Consuming");
-
-						ctx.queuenames.emplace_back(queuename);
-					},
-			m);
-		};
-
-		return ctx;
+		return C(api, port, opts...);
 	}
 
 	template <typename A, typename M, typename... O>
 	auto
 	consume(A const & api, M const & mf, unsigned short port, O &&... opts)
 	{
-		auto ctx = make_context(api, mf, port, opts...);
-
+		auto ctx = make_context<context::comsume>(api, mf, port, opts...);
 		auto m2 = std::tuple_cat(std::make_tuple(), mf);
-		using service_t = service<service_utils, decltype(m2), request*, response*, decltype(ctx)>;
-		auto s = service_t(api, m2);
- 
-		while (1)
-		{
-			request rq;
-			response resp;
+		auto s = service<service_utils,
+			 decltype(m2),
+			 request*, response*,
+			 decltype(ctx)>(api, m2);
 
-			amqp_maybe_release_buffers(ctx.conn);
-
-			resp.res = amqp_consume_message(ctx.conn, &rq.envelope, NULL, 0);
-
-			if (AMQP_RESPONSE_NORMAL != resp.res.reply_type)
-				break;
-
-			auto routing_key = get_string(rq.envelope.routing_key);
-			auto exchange = get_string(rq.envelope.exchange);
-
-			try
-			{
-				s(exchange + routing_key, &rq, &resp, ctx);
-			}
-			catch(const error::error& e)
-			{
-				std::cerr << "Exception: " << e.status() << " " << e.what() << std::endl;
-			}
-			catch(const std::runtime_error& e)
-			{
-				std::cerr << "Exception: " << e.what() << std::endl;
-			}
-
-			amqp_destroy_envelope(&rq.envelope);
-		}
-
-		die_on_amqp_error(amqp_channel_close(ctx.conn, 1, AMQP_REPLY_SUCCESS), "Closing channel");
-		die_on_amqp_error(amqp_connection_close(ctx.conn, AMQP_REPLY_SUCCESS), "Closing connection");
-		die_on_error(amqp_destroy_connection(ctx.conn), "Ending connection");
-
-		return 0;
+		return ctx.run(s);
 	}
 
 	template <typename A, typename... O>
