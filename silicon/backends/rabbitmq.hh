@@ -192,7 +192,7 @@ namespace rmq
 
 	template <typename A, typename M, typename... O>
 	auto
-	serve(A const & api, M const & mf, unsigned short port, O &&... opts)
+	consume(A const & api, M const & mf, unsigned short port, O &&... opts)
 	{
 		auto ctx = make_context(api, mf, port, opts...);
 
@@ -240,9 +240,9 @@ namespace rmq
 
 	template <typename A, typename... O>
 	auto
-	serve(A const & api, unsigned short port, O &&... opts)
+	consume(A const & api, unsigned short port, O &&... opts)
 	{
-		return serve(api, std::make_tuple(), port, opts...);
+		return consume(api, std::make_tuple(), port, opts...);
 	}
 };
 };
