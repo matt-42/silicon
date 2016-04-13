@@ -90,10 +90,10 @@ namespace rmq
 		deserialize(request_type * r, P procedure, T & res) const
 		{
 
-			auto routing_key = get_string(r->envelope.routing_key);
 			auto message = get_string(r->envelope.message.body);
-			auto content_type = get_string(r->envelope.message.properties.content_type);
-			auto exchange = get_string(r->envelope.exchange);
+			//auto routing_key = get_string(r->envelope.routing_key);
+			//auto content_type = get_string(r->envelope.message.properties.content_type);
+			//auto exchange = get_string(r->envelope.exchange);
 
 			//std::cout << "Delivery " << (unsigned) r->envelope.delivery_tag << " "
 			//		  << "exchange " << exchange << " "
@@ -154,7 +154,6 @@ namespace rmq
 	{
 		auto ctx = context(port, opts...);
 		auto options = D(opts...);
-		auto exchange = options.exchange;
 
 		foreach(api) | [&] (auto& m)
 		{
@@ -173,7 +172,11 @@ namespace rmq
 							throw std::runtime_error("Out of memory while copying queue name");
 						}
 
-						amqp_queue_bind(ctx.conn, 1, queuename, amqp_cstring_bytes(exchange.c_str()), amqp_cstring_bytes(m.route.string_id().c_str()), amqp_empty_table);
+						std::cout << m.route.path_as_string(false) << std::endl;
+						amqp_queue_bind(ctx.conn, 1, queuename,
+										amqp_cstring_bytes(m.route.verb_as_string()),
+										amqp_cstring_bytes(m.route.path_as_string(false).c_str()),
+										amqp_empty_table);
 						die_on_amqp_error(amqp_get_rpc_reply(ctx.conn), "Binding queue");
 
 						amqp_basic_consume(ctx.conn, 1, queuename, amqp_empty_bytes, 0, 1, 0, amqp_empty_table);
@@ -210,11 +213,11 @@ namespace rmq
 				break;
 
 			auto routing_key = get_string(rq.envelope.routing_key);
+			auto exchange = get_string(rq.envelope.exchange);
 
 			try
 			{
-				// FIXME: should get the prefix from the type of the current envelope.
-				s(routing_key, &rq, &resp, ctx);
+				s(exchange + routing_key, &rq, &resp, ctx);
 			}
 			catch(const error::error& e)
 			{
