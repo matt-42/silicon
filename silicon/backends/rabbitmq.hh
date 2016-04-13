@@ -12,12 +12,6 @@
 # include <silicon/symbols.hh>
 # include <silicon/service.hh>
 
-iod_define_symbol(hostname)
-iod_define_symbol(exchange)
-iod_define_symbol(bindingkey)
-iod_define_symbol(username)
-iod_define_symbol(password)
-
 namespace sl
 {
 namespace rmq
