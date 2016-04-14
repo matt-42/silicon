@@ -64,59 +64,62 @@ namespace rmq
 		}
 	}
 
-	struct request
+	namespace utils
 	{
-		amqp_envelope_t envelope;
-	};
-
-	struct response
-	{
-		amqp_rpc_reply_t res;
-	};
-
-	struct service_utils
-	{
-		typedef request request_type;
-		typedef response response_type;
-
-		template <typename P, typename T>
-		auto
-		deserialize(request_type * r, P procedure, T & res) const
+		struct request
 		{
+			amqp_envelope_t envelope;
+		};
 
-			auto message = get_string(r->envelope.message.body);
-			//auto routing_key = get_string(r->envelope.routing_key);
-			//auto content_type = get_string(r->envelope.message.properties.content_type);
-			//auto exchange = get_string(r->envelope.exchange);
+		struct response
+		{
+			amqp_rpc_reply_t res;
+		};
 
-			//std::cout << "Delivery " << (unsigned) r->envelope.delivery_tag << " "
-			//		  << "exchange " << exchange << " "
-			//		  << "routingkey " << routing_key << " "
-			//		  << std::endl;
+		struct service
+		{
+			typedef request request_type;
+			typedef response response_type;
 
-			if (r->envelope.message.properties._flags & AMQP_BASIC_CONTENT_TYPE_FLAG)
+			template <typename P, typename T>
+			auto
+			deserialize(request_type * r, P procedure, T & res) const
 			{
-				//std::cout << "Content-type: " << content_type << std::endl;
-				//std::cout << "Message: " << message << std::endl;
 
-				iod::json_decode<typename P::route_type::parameters_type>(res, message);
+				auto message = get_string(r->envelope.message.body);
+				//auto routing_key = get_string(r->envelope.routing_key);
+				//auto content_type = get_string(r->envelope.message.properties.content_type);
+				//auto exchange = get_string(r->envelope.exchange);
+
+				//std::cout << "Delivery " << (unsigned) r->envelope.delivery_tag << " "
+				//		  << "exchange " << exchange << " "
+				//		  << "routingkey " << routing_key << " "
+				//		  << std::endl;
+
+				if (r->envelope.message.properties._flags & AMQP_BASIC_CONTENT_TYPE_FLAG)
+				{
+					//std::cout << "Content-type: " << content_type << std::endl;
+					//std::cout << "Message: " << message << std::endl;
+
+					iod::json_decode<typename P::route_type::parameters_type>(res, message);
+				}
+				//std::cout << "----" << std::endl;
 			}
-			//std::cout << "----" << std::endl;
-		}
 
-		template <typename T>
-		auto
-		serialize(response_type * r, T const & res) const
-		{
-		}
+			template <typename T>
+			auto
+			serialize(response_type * r, T const & res) const
+			{
+			}
+		};
 	};
 
 	namespace context
 	{
-		struct comsume
+		struct basic
 		{
 			template <typename A, typename... O>
-			comsume(A const & api, unsigned short port, O &&... opts)
+			basic(A const & api, unsigned short port, O &&... opts)
 			{
 				auto options = D(opts...);
 				auto hostname = options.hostname;
@@ -129,14 +132,42 @@ namespace rmq
 				if (!socket)
 					throw std::runtime_error("creating TCP socket");
 
-				status = amqp_socket_open(socket, hostname.c_str(), port);
+				auto status = amqp_socket_open(socket, hostname.c_str(), port);
 				if (status)
 					throw std::runtime_error("opening TCP socket");
 
 				die_on_amqp_error(amqp_login(conn, "/", 0, 131072, 0, AMQP_SASL_METHOD_PLAIN, username.c_str(), password.c_str()), "Loggin in");
 				amqp_channel_open(conn, 1);
 				die_on_amqp_error(amqp_get_rpc_reply(conn), "Opening channel");
+			}
 
+			amqp_socket_t * socket = nullptr;
+			amqp_connection_state_t conn;
+		};
+
+		struct worker:
+			public basic
+		{
+			template <typename A, typename... O>
+			worker(A const & api, unsigned short port, O &&... opts):
+				basic(api, port, opts...)
+			{
+			}
+
+			template <typename S>
+			auto run(S & s)
+			{
+				return 0;
+			}
+		};
+
+		struct consumer:
+			public basic
+		{
+			template <typename A, typename... O>
+			consumer(A const & api, unsigned short port, O &&... opts):
+				basic(api, port, opts...)
+			{
 				foreach(api) | [&] (auto& m)
 				{
 					iod::static_if<is_tuple<decltype(m.content)>::value>(
@@ -174,8 +205,8 @@ namespace rmq
 			{
 				while (1)
 				{
-					request rq;
-					response resp;
+					utils::request rq;
+					utils::response resp;
 
 					amqp_maybe_release_buffers(conn);
 
@@ -210,9 +241,6 @@ namespace rmq
 				return 0;
 			}
 
-			int status;
-			amqp_socket_t * socket = nullptr;
-			amqp_connection_state_t conn;
 			std::vector<amqp_bytes_t> queuenames;
 		};
 	};
@@ -221,28 +249,41 @@ namespace rmq
 	auto
 	make_context(A const & api, M const & mf, unsigned short port, O &&... opts)
 	{
-		return C(api, port, opts...);
+		auto ctx = C(api, port, opts...);
+		auto m2 = std::tuple_cat(std::make_tuple(), mf);
+
+		using service_t = service<utils::service, decltype(m2), utils::request*, utils::response*, C>;
+		auto s = service_t(api, m2);
+
+		return ctx.run(s);
 	}
 
 	template <typename A, typename M, typename... O>
 	auto
 	consume(A const & api, M const & mf, unsigned short port, O &&... opts)
 	{
-		auto ctx = make_context<context::comsume>(api, mf, port, opts...);
-		auto m2 = std::tuple_cat(std::make_tuple(), mf);
-		auto s = service<service_utils,
-			 decltype(m2),
-			 request*, response*,
-			 decltype(ctx)>(api, m2);
-
-		return ctx.run(s);
+		return make_context<context::consumer>(api, mf, port, opts...);
 	}
 
 	template <typename A, typename... O>
 	auto
 	consume(A const & api, unsigned short port, O &&... opts)
 	{
-		return consume(api, std::make_tuple(), port, opts...);
+		return make_context<context::consumer>(api, std::make_tuple(), port, opts...);
+	}
+
+	template <typename A, typename M, typename... O>
+	auto
+	work(A const & api, M const & mf, unsigned short port, O &&... opts)
+	{
+		return make_context<context::worker>(api, mf, port, opts...);
+	}
+
+	template <typename A, typename... O>
+	auto
+	work(A const & api, unsigned short port, O &&... opts)
+	{
+		return make_context<context::worker>(api, std::make_tuple(), port, opts...);
 	}
 };
 };

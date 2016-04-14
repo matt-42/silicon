@@ -81,6 +81,9 @@ target_link_libraries(microhttpd_hello_world ${MHD_LIBS} curl)
 add_executable(rmq_listen rmq_listen.cc)
 target_link_libraries(rmq_listen ${RMQ_LIBS})
 
+add_executable(rmq_worker rmq_worker.cc)
+target_link_libraries(rmq_worker ${RMQ_LIBS})
+
 add_executable(lwan_hello_world lwan_hello_world.cc)
 target_link_libraries(lwan_hello_world ${LWAN_LIBS})
 
