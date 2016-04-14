@@ -112,19 +112,21 @@ namespace rmq
 			{
 			}
 		};
-	};
 
-	namespace context
-	{
-		struct basic
+		struct socket
 		{
-			template <typename A, typename... O>
-			basic(A const & api, unsigned short port, O &&... opts)
+			amqp_socket_t * socket = nullptr;
+			amqp_connection_state_t conn;
+		};
+
+		struct tcp_socket:
+			public socket
+		{
+			template <typename... O>
+			tcp_socket(unsigned short port, O &&... opts)
 			{
 				auto options = D(opts...);
 				auto hostname = options.hostname;
-				auto username = options.username;
-				auto password = options.password;
 
 				conn = amqp_new_connection();
 				socket = amqp_tcp_socket_new(conn);
@@ -135,38 +137,55 @@ namespace rmq
 				auto status = amqp_socket_open(socket, hostname.c_str(), port);
 				if (status)
 					throw std::runtime_error("opening TCP socket");
+			}
+		};
+	};
 
-				die_on_amqp_error(amqp_login(conn, "/", 0, 131072, 0, AMQP_SASL_METHOD_PLAIN, username.c_str(), password.c_str()), "Loggin in");
-				amqp_channel_open(conn, 1);
-				die_on_amqp_error(amqp_get_rpc_reply(conn), "Opening channel");
+	namespace context
+	{
+		template <typename S>
+		struct basic
+		{
+			template <typename A, typename... O>
+			basic(A const & api, unsigned short port, O &&... opts):
+				socket(port, opts...)
+			{
+				auto options = D(opts...);
+				auto username = options.username;
+				auto password = options.password;
+
+				die_on_amqp_error(amqp_login(socket.conn, "/", 0, 131072, 0, AMQP_SASL_METHOD_PLAIN, username.c_str(), password.c_str()), "Loggin in");
+				amqp_channel_open(socket.conn, 1);
+				die_on_amqp_error(amqp_get_rpc_reply(socket.conn), "Opening channel");
 			}
 
-			amqp_socket_t * socket = nullptr;
-			amqp_connection_state_t conn;
+			S socket;
 		};
 
+		template <typename S>
 		struct worker:
-			public basic
+			public basic<S>
 		{
 			template <typename A, typename... O>
 			worker(A const & api, unsigned short port, O &&... opts):
-				basic(api, port, opts...)
+				basic<S>(api, port, opts...)
 			{
 			}
 
-			template <typename S>
-			auto run(S & s)
+			template <typename Service>
+			auto run(Service & s)
 			{
 				return 0;
 			}
 		};
 
+		template <typename S>
 		struct consumer:
-			public basic
+			public basic<S>
 		{
 			template <typename A, typename... O>
 			consumer(A const & api, unsigned short port, O &&... opts):
-				basic(api, port, opts...)
+				basic<S>(api, port, opts...)
 			{
 				foreach(api) | [&] (auto& m)
 				{
@@ -175,24 +194,24 @@ namespace rmq
 								throw std::runtime_error("FIXME: m.content is a tuple, not handle today");
 							},
 							[&] (auto m) { // Else, register the procedure.
-								amqp_queue_declare_ok_t * r = amqp_queue_declare(conn, 1, amqp_empty_bytes, 0, 0, 0, 1, amqp_empty_table);
+								amqp_queue_declare_ok_t * r = amqp_queue_declare(basic<S>::socket.conn, 1, amqp_empty_bytes, 0, 0, 0, 1, amqp_empty_table);
 								amqp_bytes_t queuename;
 
-								die_on_amqp_error(amqp_get_rpc_reply(conn), "Declaring queue");
+								die_on_amqp_error(amqp_get_rpc_reply(basic<S>::socket.conn), "Declaring queue");
 								queuename = amqp_bytes_malloc_dup(r->queue);
 								if (queuename.bytes == NULL)
 								{
 									throw std::runtime_error("Out of memory while copying queue name");
 								}
 
-								amqp_queue_bind(conn, 1, queuename,
+								amqp_queue_bind(basic<S>::socket.conn, 1, queuename,
 												amqp_cstring_bytes(m.route.verb_as_string()),
 												amqp_cstring_bytes(m.route.path_as_string(false).c_str()),
 												amqp_empty_table);
-								die_on_amqp_error(amqp_get_rpc_reply(conn), "Binding queue");
+								die_on_amqp_error(amqp_get_rpc_reply(basic<S>::socket.conn), "Binding queue");
 
-								amqp_basic_consume(conn, 1, queuename, amqp_empty_bytes, 0, 1, 0, amqp_empty_table);
-								die_on_amqp_error(amqp_get_rpc_reply(conn), "Consuming");
+								amqp_basic_consume(basic<S>::socket.conn, 1, queuename, amqp_empty_bytes, 0, 1, 0, amqp_empty_table);
+								die_on_amqp_error(amqp_get_rpc_reply(basic<S>::socket.conn), "Consuming");
 
 								queuenames.emplace_back(queuename);
 							},
@@ -200,17 +219,17 @@ namespace rmq
 				};
 			}
 
-			template <typename S>
-			auto run(S & s)
+			template <typename Service>
+			auto run(Service & s)
 			{
 				while (1)
 				{
 					utils::request rq;
 					utils::response resp;
 
-					amqp_maybe_release_buffers(conn);
+					amqp_maybe_release_buffers(basic<S>::socket.conn);
 
-					resp.res = amqp_consume_message(conn, &rq.envelope, NULL, 0);
+					resp.res = amqp_consume_message(basic<S>::socket.conn, &rq.envelope, NULL, 0);
 
 					if (AMQP_RESPONSE_NORMAL != resp.res.reply_type)
 						break;
@@ -234,9 +253,9 @@ namespace rmq
 					amqp_destroy_envelope(&rq.envelope);
 				}
 
-				die_on_amqp_error(amqp_channel_close(conn, 1, AMQP_REPLY_SUCCESS), "Closing channel");
-				die_on_amqp_error(amqp_connection_close(conn, AMQP_REPLY_SUCCESS), "Closing connection");
-				die_on_error(amqp_destroy_connection(conn), "Ending connection");
+				die_on_amqp_error(amqp_channel_close(basic<S>::socket.conn, 1, AMQP_REPLY_SUCCESS), "Closing channel");
+				die_on_amqp_error(amqp_connection_close(basic<S>::socket.conn, AMQP_REPLY_SUCCESS), "Closing connection");
+				die_on_error(amqp_destroy_connection(basic<S>::socket.conn), "Ending connection");
 
 				return 0;
 			}
@@ -258,32 +277,32 @@ namespace rmq
 		return ctx.run(s);
 	}
 
-	template <typename A, typename M, typename... O>
+	template <typename S, typename A, typename M, typename... O>
 	auto
 	consume(A const & api, M const & mf, unsigned short port, O &&... opts)
 	{
-		return make_context<context::consumer>(api, mf, port, opts...);
+		return make_context<context::consumer<S>>(api, mf, port, opts...);
 	}
 
-	template <typename A, typename... O>
+	template <typename S, typename A, typename... O>
 	auto
 	consume(A const & api, unsigned short port, O &&... opts)
 	{
-		return make_context<context::consumer>(api, std::make_tuple(), port, opts...);
+		return make_context<context::consumer<S>>(api, std::make_tuple(), port, opts...);
 	}
 
-	template <typename A, typename M, typename... O>
+	template <typename S, typename A, typename M, typename... O>
 	auto
 	work(A const & api, M const & mf, unsigned short port, O &&... opts)
 	{
-		return make_context<context::worker>(api, mf, port, opts...);
+		return make_context<context::worker<S>>(api, mf, port, opts...);
 	}
 
-	template <typename A, typename... O>
+	template <typename S, typename A, typename... O>
 	auto
 	work(A const & api, unsigned short port, O &&... opts)
 	{
-		return make_context<context::worker>(api, std::make_tuple(), port, opts...);
+		return make_context<context::worker<S>>(api, std::make_tuple(), port, opts...);
 	}
 };
 };

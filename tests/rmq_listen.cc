@@ -25,7 +25,8 @@ int main(int argc, char* argv[])
 {
 	std::cout << sl::api_description(hello_api);
 
-	auto ctx = sl::rmq::consume(hello_api, atoi(argv[2]), s::_hostname		= std::string(argv[1]),
-														  s::_username		= std::string("guest"),
-														  s::_password		= std::string("guest"));
+	auto ctx = sl::rmq::consume<sl::rmq::utils::tcp_socket>(hello_api, atoi(argv[2]),
+			s::_hostname = std::string(argv[1]),
+			s::_username = std::string("guest"),
+			s::_password = std::string("guest"));
 };
