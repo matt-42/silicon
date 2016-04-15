@@ -15,8 +15,14 @@ install:
     - git clone https://github.com/matt-42/iod.git
     - mkdir -p iod/build
     - cd iod/build
-    - cmake ..
+    - cmake .. -DCMAKE_INSTALL_PREFIX=$HOME/local
+    - make install
 
 before_script:
+    echo before_script
+
+script:
+    echo script
 
 after_script:
+    echo after_script
