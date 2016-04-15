@@ -1,21 +1,52 @@
-# Travis-CI Build for SimpleAmqpClient
-# see travis-ci.org for details
-
+# Use new trusty images, should yield newer compilers and packages
+sudo: required
+dist: trusty
 language: cpp
 
-sudo: required
-
-compiler:
-    - clang
+addons:
+  apt:
+    packages:
 
 matrix:
-    include:
-        - env: COMPILER=clang++-3.6
-            addons: *clang36
+  include:
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-4.9
+      env: COMPILER=g++-4.9
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-5
+      env: COMPILER=g++-5
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.6
+          packages:
+            - clang-3.6
+      env: COMPILER=clang++-3.6
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.7
+          packages:
+            - clang-3.7
+      env: COMPILER=clang++-3.7
 
 before_install:
     - sudo apt-get update -qq
-    - sudo apt-get install libboost-all-dev
+    - sudo apt-get install -qq libboost-all-dev
     - git clone https://github.com/matt-42/iod.git
     - mkdir -p iod/build
     - cd iod/build
