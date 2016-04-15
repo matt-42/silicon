@@ -12,7 +12,9 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-5
-      env: COMPILER=g++-5
+      env:
+        - CXX=g++-5
+        - GCOV=gcov-5
     - compiler: gcc
       addons:
         apt:
@@ -20,7 +22,9 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - g++-6
-      env: COMPILER=g++-6
+      env:
+        - CXX=g++-6
+        - GCOV=gcov-6
     - compiler: clang
       addons:
         apt:
@@ -29,7 +33,9 @@ matrix:
             - llvm-toolchain-precise-3.6
           packages:
             - clang-3.6
-      env: COMPILER=clang++-3.6
+      env:
+        - CXX=clang++-3.6
+        - GCOV=llvm-cov-3.6
     - compiler: clang
       addons:
         apt:
@@ -38,12 +44,15 @@ matrix:
             - llvm-toolchain-precise-3.7
           packages:
             - clang-3.7
-      env: COMPILER=clang++-3.7
+      env:
+        - CXX=clang++-3.7
+        - GCOV=llvm-cov-3.7
 
 before_install:
+    - $CXX --version
     - sudo apt-get update -qq
     # Install deps
-    - sudo apt-get install -qq libboost-all-dev libssl-dev
+    - sudo apt-get install -qq libboost-all-dev libssl-dev lcov
     # Create env
     - mkdir -p $HOME/build
     # Install Rabbitmq-c
@@ -72,7 +81,7 @@ before_install:
     - git clone https://github.com/matt-42/iod.git
     - mkdir -p iod/build
     - cd iod/build
-    - cmake .. -DCMAKE_CXX_COMPILER=${COMPILER} -DCMAKE_INSTALL_PREFIX=$HOME/local
+    - cmake .. -DCMAKE_CXX_COMPILER=${CXX} -DCMAKE_INSTALL_PREFIX=$HOME/local
     - make -j 4 install
 
 install:
@@ -80,18 +89,26 @@ install:
     - cd $HOME/build/$TRAVIS_REPO_SLUG
     - mkdir -p build 
     - cd build
-    - cmake .. -DCMAKE_CXX_COMPILER=${COMPILER} -DCMAKE_INSTALL_PREFIX=$HOME/local
+    - cmake .. -DCMAKE_CXX_COMPILER=${CXX} -DCMAKE_INSTALL_PREFIX=$HOME/local
     - make -j 4 install
 
 before_script:
     - cd $HOME/build/$TRAVIS_REPO_SLUG
     - mkdir -p tests/build 
     - cd tests/build 
-    - cmake .. -DCMAKE_CXX_COMPILER=${COMPILER} -DCMAKE_INSTALL_PREFIX=$HOME/local
+    - lcov --directory . --zerocounters
+    - cmake .. -DCMAKE_CXX_COMPILER=${CXX} -DCMAKE_INSTALL_PREFIX=$HOME/local
 
 script:
     - cd $HOME/build/$TRAVIS_REPO_SLUG/tests/build 
     - make all test
+
+after_success:
+    - cd ${TRAVIS_BUILD_DIR}
+    - lcov --directory . --capture --gcov-tool `which $GCOV` --output-file coverage.info
+    - lcov --remove coverage.info 'tests/*' '/usr/*' --gcov-tool `which $GCOV` --output-file coverage.info
+    - lcov --list coverage.info
+    - coveralls-lcov --repo-token ${COVERALLS_TOKEN} coverage.info
 
 after_script:
     echo after_script

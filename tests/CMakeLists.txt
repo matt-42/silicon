@@ -36,7 +36,8 @@ link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib
                 $ENV{HOME}/local/lib
 				$ENV{HOME}/local/lib/x86_64-linux-gnu)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -ftemplate-depth=1024 -g")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -ftemplate-depth=1024 -g -O0")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage") # enabling coverage
 set(CPPNET_LIBS
     ${Boost_LIBRARIES}
     cppnetlib-uri cppnetlib-client-connections
