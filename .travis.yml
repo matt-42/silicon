@@ -3,20 +3,8 @@ sudo: required
 dist: trusty
 language: cpp
 
-addons:
-  apt:
-    packages:
-
 matrix:
   include:
-    - compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-4.9
-      env: COMPILER=g++-4.9
     - compiler: gcc
       addons:
         apt:
@@ -46,18 +34,50 @@ matrix:
 
 before_install:
     - sudo apt-get update -qq
-    - sudo apt-get install -qq libboost-all-dev
+    # Install deps
+    - sudo apt-get install -qq libboost-all-dev libssl-dev
+    # Create env
+    - mkdir -p $HOME/build
+    # Install Rabbitmq-c
+    - cd $HOME/build
+    - git clone https://github.com/alanxz/rabbitmq-c.git
+    - mkdir -p rabbitmq-c/build
+    - cd rabbitmq-c/build
+    - cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME/local
+    - make -j 4 install
+    # Install libmicrohttpd
+    - cd $HOME/build
+    - wget http://ftp.gnu.org/gnu/libmicrohttpd/libmicrohttpd-0.9.48.tar.gz
+    - tar xzf libmicrohttpd-0.9.48.tar.gz
+    - cd libmicrohttpd-0.9.48
+    - ./configure  --prefix=$HOME/local
+    - make -j 4 install
+    # Install Iod
+    - cd $HOME/build
     - git clone https://github.com/matt-42/iod.git
     - mkdir -p iod/build
     - cd iod/build
     - cmake .. -DCMAKE_CXX_COMPILER=${COMPILER} -DCMAKE_INSTALL_PREFIX=$HOME/local
-    - make install
+    - make -j 4 install
+
+install:
+    # Install Silicon
+    - cd $HOME/build/$TRAVIS_REPO_SLUG
+    - mkdir -p build 
+    - cd build
+    - cmake .. -DCMAKE_CXX_COMPILER=${COMPILER} -DCMAKE_INSTALL_PREFIX=$HOME/local
+    - make -j 4 install
 
 before_script:
-    echo before_script
+    - cd $HOME/build/$TRAVIS_REPO_SLUG
+    - mkdir -p tests/build 
+    - cd tests/build 
+    - cmake .. -DCMAKE_CXX_COMPILER=${COMPILER} -DCMAKE_INSTALL_PREFIX=$HOME/local
+    - cd -
 
 script:
-    echo script
+    - cd $HOME/build/$TRAVIS_REPO_SLUG/tests/build 
+    - make all test
 
 after_script:
     echo after_script
