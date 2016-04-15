@@ -73,7 +73,6 @@ before_script:
     - mkdir -p tests/build 
     - cd tests/build 
     - cmake .. -DCMAKE_CXX_COMPILER=${COMPILER} -DCMAKE_INSTALL_PREFIX=$HOME/local
-    - cd -
 
 script:
     - cd $HOME/build/$TRAVIS_REPO_SLUG/tests/build 
