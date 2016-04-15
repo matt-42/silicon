@@ -1,0 +1,14 @@
+# Travis-CI Build for SimpleAmqpClient
+# see travis-ci.org for details
+
+language: cpp
+
+compiler:
+    - gcc
+    - clang
+
+install:
+    - git clone https://github.com/matt-42/iod.git
+    - mkdir -p iod/build
+    - cd iod/build
+    - cmake ..
