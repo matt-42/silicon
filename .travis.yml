@@ -35,7 +35,7 @@ matrix:
 before_install:
     - sudo apt-get update -qq
     # Install deps
-    - sudo apt-get install -qq libboost-all-dev libssl-dev libwebsocketpp-dev
+    - sudo apt-get install -qq libboost-all-dev libssl-dev
     # Create env
     - mkdir -p $HOME/build
     # Install Rabbitmq-c

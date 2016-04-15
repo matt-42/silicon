@@ -98,11 +98,11 @@ target_link_libraries(mysql ${MHD_LIBS} mysqlclient)
 add_executable(javascript_client javascript_client.cc)
 target_link_libraries(javascript_client ${MHD_LIBS})
 
-add_executable(ws_echo_server ws_echo_server.cc)
-target_link_libraries(ws_echo_server ${WEBSOCKETS_LIBS})
+#add_executable(ws_echo_server ws_echo_server.cc)
+#target_link_libraries(ws_echo_server ${WEBSOCKETS_LIBS})
 
-add_executable(ws_chat_server ws_chat_server.cc)
-target_link_libraries(ws_chat_server ${WEBSOCKETS_LIBS})
+#add_executable(ws_chat_server ws_chat_server.cc)
+#target_link_libraries(ws_chat_server ${WEBSOCKETS_LIBS})
 
 add_executable(rest rest.cc)
 target_link_libraries(rest sqlite3 ${MHD_LIBS} curl)
