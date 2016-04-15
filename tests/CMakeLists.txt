@@ -135,7 +135,7 @@ add_executable(optional optional.cc)
 target_link_libraries(optional ${MHD_LIBS} curl)
 
 add_test(crud crud)
-add_test(crud_lwan crud_lwan)
+#add_test(crud_lwan crud_lwan)
 add_test(user_tracking user_tracking)
 add_test(hashmap_session hashmap_session)
 add_test(lwan lwan)

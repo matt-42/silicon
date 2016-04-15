@@ -33,6 +33,7 @@ matrix:
             - llvm-toolchain-precise-3.6
           packages:
             - clang-3.6
+            - llvm-3.6
       env:
         - LOCAL_CXX=clang++-3.6
         - LOCAL_GCOV=llvm-cov-3.6
@@ -44,12 +45,14 @@ matrix:
             - llvm-toolchain-precise-3.7
           packages:
             - clang-3.7
+            - llvm-3.7
       env:
         - LOCAL_CXX=clang++-3.7
         - LOCAL_GCOV=llvm-cov-3.7
 
 before_install:
     - $LOCAL_CXX --version
+    - $LOCAL_GCOV --version
     - sudo apt-get update -qq
     # Install deps
     - sudo apt-get install -qq libboost-all-dev libssl-dev lcov
@@ -104,7 +107,7 @@ script:
     - make all test
 
 after_success:
-    - cd ${TRAVIS_BUILD_DIR}
+    - cd $HOME/build/$TRAVIS_REPO_SLUG/tests/build
     - lcov --directory . --capture --gcov-tool `which $LOCAL_GCOV` --output-file coverage.info
     - lcov --remove coverage.info 'tests/*' '/usr/*' --gcov-tool `which $LOCAL_GCOV` --output-file coverage.info
     - lcov --list coverage.info
