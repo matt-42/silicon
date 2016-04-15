@@ -52,6 +52,13 @@ before_install:
     - cd libmicrohttpd-0.9.48
     - ./configure  --prefix=$HOME/local
     - make -j 4 install
+    # Install LWan
+    - cd $HOME/build
+    - git clone git://github.com/lpereira/lwan
+    - mkdir -p lwan/build
+    - cd lwan/build
+    - cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME/local
+    - make -j 4 install
     # Install Iod
     - cd $HOME/build
     - git clone https://github.com/matt-42/iod.git
