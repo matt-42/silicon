@@ -1,7 +1,6 @@
 #include <silicon/middlewares/hashmap_session.hh>
 #include <thread>
 #include <iostream>
-#include <silicon/backends/lwan.hh>
 #include <silicon/api.hh>
 #include <silicon/clients/libcurl_client.hh>
 #include "symbols.hh"

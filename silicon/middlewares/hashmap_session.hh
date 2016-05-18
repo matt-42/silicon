@@ -14,8 +14,8 @@ namespace sl
   struct hashmap_session_factory
   {
     //typedef decltype(iod::cat(D(_created_at
-    template <typename... O>
-    hashmap_session_factory(O... opts)
+    // template <typename... O>
+    hashmap_session_factory()//(O... opts)
       : mutex_(new std::mutex)
     //: expires_(D(opts...).get(_expires, 10000))
     {

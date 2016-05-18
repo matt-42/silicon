@@ -27,13 +27,7 @@ namespace sl
   template <typename T1, typename... T>
   auto filter_symbols_from_tuple(std::tuple<T1, T...> path)
   {
-    return iod::foreach(path) | [] (auto e)
-    {
-      return iod::static_if<iod::is_symbol<decltype(e)>::value>(
-        [&] () { return e; },
-        [] () { }
-        );
-    };
+    return iod::tuple_filter<iod::is_symbol>(path);
   }
 
   using boost::string_ref;
