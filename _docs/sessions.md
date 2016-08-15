@@ -6,7 +6,7 @@ title: Session middlewares
 Session middlewares
 ======================
 
-There are several silicon middlewares helping the managment of the
+There are several silicon middlewares helping the management of the
 client sessions.
 
 
