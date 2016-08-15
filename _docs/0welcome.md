@@ -6,9 +6,9 @@ layout: post
 What is Silicon?
 =================================
 
-Silicon is a C++ abstraction built on top of high performance
+Silicon is a C++ abstraction built on top of high-performance
 networking libraries. Its goal is to ease the writing of web APIs without
-compromising on performances.
+compromising on performance.
 
 <!--
 C++ has never been a popular language to write web servers for many
@@ -52,7 +52,7 @@ Quick Tour
 
 ###Hello world
 
-A simple mono-procedure api serving a static string under the route /hello/world.
+A simple mono-procedure API serving a static string under the route /hello/world.
 
 ```c++
 auto my_api = http_api(GET / _hello / _world  = [] () { return "hello world";});
