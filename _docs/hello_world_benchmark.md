@@ -6,7 +6,7 @@ title: Hello world benchmark
 Hello world benchmark
 ===========================
 
-This benchmark compares the performances of several frameworks on a
+This benchmark compares the performance of several frameworks on a
 simple case: on each request, serializes the json object
 ```{"message":"hello world."}``` and sends it back to the http client.
 
