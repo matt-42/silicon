@@ -160,6 +160,25 @@ namespace sl
     }
 
 
+
+    template <typename T, typename... D>
+    void decode_post_parameter(sio<D...>*, T& res, const char* s) const
+    {
+      json_decode<sio<D...>>(res, s);
+    }
+
+    template <typename T>
+    void decode_post_parameter(json_string*, T& res, const char* s) const
+    {
+      json_decode<json_string>(res, s);
+    }
+    
+    template <typename T, typename U>
+    void decode_post_parameter(T*, U& res, const char* s) const
+    {
+      res = boost::lexical_cast<T>(s);
+    }
+    
     template <typename P, typename O>
     void decode_post_parameters(O& res, lwan_request_t* r) const
     {
@@ -171,9 +190,8 @@ namespace sl
         {
           try
           {
-            static_if<is_sio<std::decay_t<decltype(m.value())>>::value>(
-              [&] (auto m, auto& res) { json_decode<std::decay_t<decltype(m.value())>>(res[m.symbol()], value); },
-              [&] (auto m, auto& res) { res[m.symbol()] = boost::lexical_cast<std::decay_t<decltype(m.value())>>(value); }, m, res);
+            decode_post_parameter((std::decay_t<decltype(m.value())>*) 0,
+                                             res[m.symbol()], value);
           }
           catch (const std::exception& e)
           {

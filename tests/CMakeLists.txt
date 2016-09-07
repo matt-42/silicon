@@ -46,7 +46,7 @@ message(STATUS ${WEBSOCKETS_LIBS})
 set(MIMOSA_LIBS mimosa-http mimosa-uri mimosa gnutls z pthread lzma)
 
 set(MHD_LIBS gnutls gcrypt pthread microhttpd)
-set(LWAN_LIBS lwan-common curl z pthread dl ubsan)
+set(LWAN_LIBS -llwan curl z pthread dl ubsan luajit-5.1)
 
 # add_executable(cppnet_hello_world cppnet_hello_world.cc)
 # target_link_libraries(cppnet_hello_world ${CPPNET_LIBS})
