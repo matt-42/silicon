@@ -123,6 +123,10 @@ target_link_libraries(api_nesting ${MHD_LIBS} curl)
 add_executable(optional optional.cc)
 target_link_libraries(optional ${MHD_LIBS} curl)
 
+
+add_executable(type_string type_string.cc)
+target_link_libraries(type_string)
+
 add_test(crud crud)
 add_test(crud_lwan crud_lwan)
 add_test(user_tracking user_tracking)
@@ -132,3 +136,4 @@ add_test(mhd mhd)
 add_test(sql_authentication sql_authentication)
 add_test(mysql mysql)
 add_test(optional optional)
+add_test(type_string type_string)

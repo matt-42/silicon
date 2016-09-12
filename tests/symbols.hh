@@ -30,6 +30,11 @@
     iod_define_symbol(before_create)
 #endif
 
+#ifndef IOD_SYMBOL_blocking
+#define IOD_SYMBOL_blocking
+    iod_define_symbol(blocking)
+#endif
+
 #ifndef IOD_SYMBOL_broadcast
 #define IOD_SYMBOL_broadcast
     iod_define_symbol(broadcast)
@@ -48,11 +53,6 @@
 #ifndef IOD_SYMBOL_con
 #define IOD_SYMBOL_con
     iod_define_symbol(con)
-#endif
-
-#ifndef IOD_SYMBOL_destroy
-#define IOD_SYMBOL_destroy
-    iod_define_symbol(destroy)
 #endif
 
 #ifndef IOD_SYMBOL_echo
@@ -103,6 +103,11 @@
 #ifndef IOD_SYMBOL_js_client
 #define IOD_SYMBOL_js_client
     iod_define_symbol(js_client)
+#endif
+
+#ifndef IOD_SYMBOL_json
+#define IOD_SYMBOL_json
+    iod_define_symbol(json)
 #endif
 
 #ifndef IOD_SYMBOL_login
@@ -180,6 +185,11 @@
     iod_define_symbol(pm)
 #endif
 
+#ifndef IOD_SYMBOL_post_encoding
+#define IOD_SYMBOL_post_encoding
+    iod_define_symbol(post_encoding)
+#endif
+
 #ifndef IOD_SYMBOL_primary_key
 #define IOD_SYMBOL_primary_key
     iod_define_symbol(primary_key)
@@ -188,11 +198,6 @@
 #ifndef IOD_SYMBOL_read_only
 #define IOD_SYMBOL_read_only
     iod_define_symbol(read_only)
-#endif
-
-#ifndef IOD_SYMBOL_save
-#define IOD_SYMBOL_save
-    iod_define_symbol(save)
 #endif
 
 #ifndef IOD_SYMBOL_scope
@@ -243,6 +248,11 @@
 #ifndef IOD_SYMBOL_test
 #define IOD_SYMBOL_test
     iod_define_symbol(test)
+#endif
+
+#ifndef IOD_SYMBOL_test1
+#define IOD_SYMBOL_test1
+    iod_define_symbol(test1)
 #endif
 
 #ifndef IOD_SYMBOL_test2
@@ -303,5 +313,10 @@
 #ifndef IOD_SYMBOL_write_access
 #define IOD_SYMBOL_write_access
     iod_define_symbol(write_access)
+#endif
+
+#ifndef IOD_SYMBOL_x_www_form_urlencoded
+#define IOD_SYMBOL_x_www_form_urlencoded
+    iod_define_symbol(x_www_form_urlencoded)
 #endif
 

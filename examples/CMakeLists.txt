@@ -20,7 +20,7 @@ link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib
 set(WEBSOCKETS_LIBS
     ${Boost_LIBRARIES} pthread)
 
-add_definitions(-std=c++14  -ftemplate-depth=1024 -g)
+add_definitions(-std=c++1y  -ftemplate-depth=1024 -g)
 
 set(MHD_LIBS gnutls gcrypt pthread microhttpd)
 

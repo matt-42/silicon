@@ -1,6 +1,11 @@
 #pragma once
 
-# include <silicon/file.hh>
+#include <vector>
+#include <string>
+#include <sstream>
+#include <iod/sio.hh>
+
+#include <silicon/file.hh>
 
 namespace sl
 {
@@ -24,6 +29,14 @@ namespace sl
       res << m.symbol().name() << ": " << type_string(&m.value());
     };
     res << "}";
+    return std::move(res.str());
+  }
+
+  template <typename... T>
+  std::string type_string(const std::vector<sio<T...>>* o)
+  {
+    std::stringstream res;
+    res << "vector of " << type_string((sio<T...>*)0);
     return std::move(res.str());
   }
   

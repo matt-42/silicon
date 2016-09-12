@@ -235,5 +235,10 @@ namespace sl
   {
     return parse_api(std::make_tuple(procs...), http_route<>());
   }
+
+  inline auto http_api()
+  {
+    return D();
+  }
   
 }
