@@ -11,12 +11,17 @@ namespace sl
 {
   using namespace iod;
 
-  const char* type_string(const file*) { return "file"; }
-  const char* type_string(const void*) { return "void"; }
-  const char* type_string(const std::string*) { return "string"; }
-  const char* type_string(const int*) { return "int"; }
-  const char* type_string(const float*) { return "float"; }
-  const char* type_string(const double*) { return "double"; }
+  template <typename T>
+  const char* type_string(const T* v) { void* x = v; return "unknown_type"; }
+
+  inline const char* type_string(const file*) { return "file"; }
+  inline const char* type_string(const std::string*) { return "string"; }
+  inline const char* type_string(const int*) { return "int"; }
+  inline const char* type_string(const float*) { return "float"; }
+  inline const char* type_string(const double*) { return "double"; }
+
+  template <typename T, typename A>
+  std::string type_string(const std::vector<T, A>* o);
 
   template <typename... T>
   std::string type_string(const sio<T...>* o)
@@ -32,11 +37,11 @@ namespace sl
     return std::move(res.str());
   }
 
-  template <typename... T>
-  std::string type_string(const std::vector<sio<T...>>* o)
+  template <typename T, typename A>
+  std::string type_string(const std::vector<T, A>* o)
   {
     std::stringstream res;
-    res << "vector of " << type_string((sio<T...>*)0);
+    res << "vector of " << type_string((const T*)0);
     return std::move(res.str());
   }
   
