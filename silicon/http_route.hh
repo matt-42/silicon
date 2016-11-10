@@ -146,22 +146,22 @@ namespace sl
       // Forward default values and set default string parameters.
       auto params2 = foreach(params.params) | [&] (auto& m) {
         return static_if<!iod::is_symbol<decltype(m)>::value>(
-          [&] (auto x) {
-            return x.symbol() = x.value();
+          [] (auto m) {
+            return m.symbol() = std::move(m.value());
           },
-          [] (auto x) {
-            return x = std::string();
+          [] (auto m) {
+            return m = std::string();
           }, m);
       };
       
       // Set the optional tag for the iod deserializer and default values.
       return foreach(params2) | [&] (auto& m) {
         return static_if<is_optional<decltype(m.value())>::value>(
-          [&] (auto x) {
-            return x.symbol()(_optional) = x.value().value;
+          [] (auto m) {
+            return m.symbol()(_optional) = std::move(m.value().value);
           },
-          [] (auto x) {
-            return x.symbol() = x.value();
+          [] (auto m) {
+            return m.symbol() = std::move(m.value());
           }, m);
       };
 

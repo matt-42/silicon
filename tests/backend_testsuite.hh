@@ -22,19 +22,19 @@ auto hl_api = http_api(
   GET / _test = [] () { return D(_message = "get"); },
 
   // get params
-  GET / _test2 * get_parameters(_id = int()) = [] (auto p) { return D(_id = p.id); },
+  GET / _test2 * get_parameters(_id = int(0)) = [] (auto p) { return D(_id = p.id); },
   
   // post params
-  POST / _test2 * post_parameters(_id = int(), _name = std::string()) = [] (auto p) { return D(_id = p.id, _name = p.name ); },
+  POST / _test2 * post_parameters(_id = int(0), _name = std::string()) = [] (auto p) { return D(_id = p.id, _name = p.name ); },
 
   // post object params
   POST / _test4 * post_parameters(_id = D(_name = std::string())) = [] (auto p) { return D(_name = p.id.name ); },
   
   // url params
-  GET / _test3 / _id[int()] = [] (auto p) { return D(_id = p.id); },
+  GET / _test3 / _id[int(0)] = [] (auto p) { return D(_id = p.id); },
 
   // cookie
-  GET / _set_id / _id[int()] = [] (auto p, session& s) {
+  GET / _set_id / _id[int(0)] = [] (auto p, session& s) {
     s.id = p.id;
     return D(_id = s.id);
   },

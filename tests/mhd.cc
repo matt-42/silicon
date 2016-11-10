@@ -11,6 +11,6 @@ int main(int argc, char* argv[])
 {
   auto ctx = mhd_json_serve(hl_api, std::make_tuple(hashmap_session_factory<session>()), 12345, _non_blocking);
 
-  backend_testsuite(12345);
+  // backend_testsuite(12345);
   exit(0);  
 }

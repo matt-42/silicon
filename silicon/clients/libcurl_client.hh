@@ -25,12 +25,25 @@ namespace sl
     }
   };
 
+  template <typename T>
+  struct static_str_to_std_str_helper { typedef T type; };
+  template <>
+  struct static_str_to_std_str_helper<const char*> { typedef std::string type; };
+
+  template <typename A>
+  auto static_str_to_std_str(A v)
+  {
+    typedef typename static_str_to_std_str_helper<std::remove_reference_t<decltype(v.value())>>::type
+      new_value_type;
+    return typename A::symbol_type::template variable_type<new_value_type>();
+  }
+  
   template <typename... T>
   struct response_parser<sio<T...>>
   {
     static auto run(long response_code, const std::string& body)
     {
-      sio<T...> result;
+      sio<decltype(static_str_to_std_str(std::declval<T>()))...> result;
 
       std::string error_message;
       if (response_code == 200)
