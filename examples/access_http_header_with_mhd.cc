@@ -12,7 +12,7 @@ auto test_api = http_api(
       return t;
   });
 
-int main(int argc, char* argv)
+int main()
 {
   auto ctx = mhd_json_serve(test_api, 9999, _blocking);
 }
