@@ -17,14 +17,23 @@ namespace sl
     {
       // Get and decode the session data
       //auto sio = iod::cat(T::sio_info(), D(_created_at = sql_date()));
+
       auto sio = T::sio_info();
-      if (con_("SELECT * from " + table_name_ + " WHERE key = ?")(key) >> sio)
+
+      std::stringstream field_ss;
+      bool first = true;
+      foreach(sio) | [&] (auto& m)
+      {
+        if (!first) field_ss << ",";
+        first = false;
+        field_ss << m.symbol().name();
+      };
+      
+      if (con_("SELECT " + field_ss.str() + " from " + table_name_ + " WHERE silicon_session_key = ?")(key) >> sio)
         foreach(sio) | [this] (auto& m) { m.symbol().member_access(data_) = m.value(); };
       else
-        con_("INSERT into " + table_name_ + " (key) VALUES (?)")(key);
+        con_("INSERT into " + table_name_ + " (silicon_session_key) VALUES (?)")(key);
 
-      // if (created_at_ - )
-      //   {}
     }
 
     data_type* operator->() { return &data_; }
@@ -41,7 +50,7 @@ namespace sl
         first = false;
         ss << m.symbol().name() << " = ? ";
       };
-      ss << " WHERE key = \"" << key_ << "\"";
+      ss << " WHERE silicon_session_key = \"" << key_ << "\"";
 
       auto values = foreach(data().sio_info()) | [this] (auto& m)
       {
@@ -54,7 +63,7 @@ namespace sl
 
     void destroy()
     {
-      con_("DELETE from  " + table_name_ + " WHERE key = ?")(key_);
+      con_("DELETE from  " + table_name_ + " WHERE silicon_session_key = ?")(key_);
     }
 
     //private:
@@ -79,8 +88,7 @@ namespace sl
     {
       std::stringstream ss;
       ss << "CREATE TABLE if not exists " <<  table_name_ << " ("
-         << "key CHAR(32) PRIMARY KEY NOT NULL,";
-      //<< "created_at DATE NOT NULL,";
+         << "silicon_session_key CHAR(32) PRIMARY KEY NOT NULL,";
 
       bool first = true;
       foreach(D().sio_info()) | [&] (auto& m)

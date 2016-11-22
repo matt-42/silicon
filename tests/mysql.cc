@@ -17,7 +17,6 @@ INSERT into users(id, name, age) values (1, "John", 42);
 INSERT into users(id, name, age) values (2, "Bob", 24);
 */
 
-
 inline double get_time_in_seconds()
 {
   timespec ts;
@@ -33,6 +32,11 @@ int main()
   {
     auto m = mysql_connection_factory("localhost", "silicon", "my_silicon", "silicon_test");
     auto c = m.instantiate();
+
+    c("DROP table if exists users;")();
+    c("CREATE TABLE users (id int,name varchar(255),age int);")();
+    c("INSERT into users(id, name, age) values (1, \"John\", 42);")();
+    c("INSERT into users(id, name, age) values (2, \"Bob\", 24);")();
 
     typedef unsigned int US;
     typedef decltype(D(_id = int(), _age = US(),  _name = std::string())) User;

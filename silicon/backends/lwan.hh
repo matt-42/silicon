@@ -341,12 +341,16 @@ namespace sl
       : thread_(nullptr),
         lwan_(lwan),
         service_(service)
-      {}
+      {
+        sptr_ = std::shared_ptr<int>((int*)13, [this] (int*)
+                                     {
+                                       stop();
+                                       delete lwan_;
+                                       delete service_;                                       
+                                     });
+      }
 
     inline ~lwan_ctx() {
-      stop();
-      delete lwan_;
-      delete service_;
     }
 
     inline void wait() { thread_->join(); }
@@ -369,6 +373,7 @@ namespace sl
         thread_ = nullptr;
       }
     }
+    std::shared_ptr<int> sptr_;
     std::thread* thread_;
     lwan_t* lwan_;
     S* service_;

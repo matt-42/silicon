@@ -53,18 +53,31 @@ namespace sl
 
   struct mysql_statement
   {
-    mysql_statement() : metadata_(nullptr), stmt_(nullptr) {}
+    mysql_statement()
+      : stmt_(nullptr),
+        stmt_sptr_(nullptr),
+        num_fields_(-1),
+        metadata_(nullptr),
+        metadata_sptr_(nullptr),
+        fields_(nullptr) {}
 
     mysql_statement(MYSQL_STMT* s) : stmt_(s)
     {
       metadata_ = mysql_stmt_result_metadata(stmt_);
+      stmt_sptr_ = std::shared_ptr<MYSQL_STMT>(stmt_, mysql_stmt_close);
 
       if (metadata_)
       {
         metadata_sptr_ = std::shared_ptr<MYSQL_RES>(metadata_, mysql_free_result);
-        stmt_sptr_ = std::shared_ptr<MYSQL_STMT>(stmt_, mysql_stmt_close);
         fields_ = mysql_fetch_fields(metadata_);
         num_fields_ = mysql_num_fields(metadata_);
+      }
+      else
+      {
+        num_fields_ = -1;
+        metadata_ = nullptr;
+        metadata_sptr_ = nullptr;
+        fields_ = nullptr;
       }
     }
 
@@ -127,7 +140,7 @@ namespace sl
     }
     void bind(MYSQL_BIND& b, const blob& s) { bind(b, *const_cast<blob*>(&s)); }
     
-    void bind(MYSQL_BIND& b, null_t& n)
+    void bind(MYSQL_BIND& b, null_t n)
     {
       b.buffer_type = MYSQL_TYPE_NULL;
     }
@@ -241,15 +254,32 @@ namespace sl
     void prepare_fetch(MYSQL_BIND* bind, unsigned long* real_lengths, sio<A...>& o)
     {
       if (num_fields_ != sizeof...(A))
-        throw std::runtime_error("mysql_statement error: The number of column in the result set does not match the number of attributes of the object to bind.");
-      
+      {
+        throw std::runtime_error("mysql_statement error: Not enough columns in the result set to fill the object.");
+      }
+
       foreach(o) | [&] (auto& m) {
         // Find m.symbol().name() position.
         for (int i = 0; i < num_fields_; i++)
           if (!strcmp(fields_[i].name, m.symbol().name()))
             // bind the column.
+          {
             this->bind_output(bind[i], real_lengths + i, m.value());
+          }
       };
+
+      for (int i = 0; i < num_fields_; i++)
+      {
+        if (!bind[i].buffer_type)
+        {
+          std::stringstream ss;
+          ss << "Error while binding the mysql request to a SIO object: " << std::endl
+             << "   Field " << fields_[i].name << " could not be bound." << std::endl;
+          throw std::runtime_error(ss.str());
+        }
+
+      }
+      
       mysql_stmt_bind_result(stmt_, bind);
     }
 
@@ -319,6 +349,8 @@ namespace sl
     MYSQL_FIELD* fields_;
   };
 
+  struct mysql_connection_pool;
+  
   struct mysql_connection
   {
     mysql_connection(MYSQL* con)
@@ -326,18 +358,8 @@ namespace sl
     {
     }
 
-    template <typename POOL>
-    mysql_connection(MYSQL* con,
-                     std::shared_ptr<std::mutex>& pool_mutex,
-                     POOL& pool)
-      : con_(con)
-    {
-      sptr_ = std::shared_ptr<int>((int*)42, [&] (int* p)
-                                   {
-                                     std::unique_lock<std::mutex> l(*pool_mutex);
-                                     pool.push_back(con_);
-                                   });
-    }
+    inline mysql_connection(MYSQL* con,
+                            std::shared_ptr<mysql_connection_pool> pool);
     
     int last_insert_rowid()
     {
@@ -370,33 +392,37 @@ namespace sl
     std::unordered_map<std::string, mysql_statement> stm_cache_;
     MYSQL* con_;
     std::shared_ptr<int> sptr_;
+    std::shared_ptr<mysql_connection_pool> pool_;
   };
 
-  struct mysql_connection_factory
+  struct mysql_connection_pool : std::enable_shared_from_this<mysql_connection_pool>
   {
-    template <typename... O>
-    mysql_connection_factory(const std::string& host,
-                             const std::string& user,
-                             const std::string& passwd,
-                             const std::string& database,
-                             O... options)
+    inline mysql_connection_pool(const std::string& host,
+                                 const std::string& user,
+                                 const std::string& passwd,
+                                 const std::string& database)
       : host_(host),
         user_(user),
         passwd_(passwd),
-        database_(database),
-        pool_mutex_(new std::mutex)
+        database_(database)
     {
       if (mysql_library_init(0, NULL, NULL))
         throw std::runtime_error("Could not initialize MySQL library."); 
       if (!mysql_thread_safe())
-        throw std::runtime_error("Mysql is not compiled as thread safe.");
+        throw std::runtime_error("Mysql is not compiled as thread safe.");      
     }
 
-    mysql_connection instantiate()
+    inline void free_connection(MYSQL* c)
+    {
+      std::unique_lock<std::mutex> l(mutex_);
+      pool_.push_back(c);
+    }
+
+    inline mysql_connection new_connection()
     {
       MYSQL* con_ = nullptr;
       {
-        std::unique_lock<std::mutex> l(*pool_mutex_);
+        std::unique_lock<std::mutex> l(mutex_);
         if (!pool_.empty())
         {
           con_ = pool_.back();
@@ -412,15 +438,48 @@ namespace sl
           throw error::internal_server_error("Cannot connect to the database");
 
         mysql_set_character_set(con_, "utf8");
-        return mysql_connection(con_, pool_mutex_, pool_);
       }
-      else
-        return mysql_connection(con_, pool_mutex_, pool_);
+
+      assert(con_);
+      return mysql_connection(con_, shared_from_this());
     }
     
-    std::shared_ptr<std::mutex> pool_mutex_;
+    std::mutex mutex_;
     std::string host_, user_, passwd_, database_;
-    std::deque<MYSQL*> pool_;
+    std::deque<MYSQL*> pool_;    
+  };
+
+
+  mysql_connection::mysql_connection(MYSQL* con,
+                                     std::shared_ptr<mysql_connection_pool> pool)
+    : con_(con),
+      pool_(pool)
+  {
+    sptr_ = std::shared_ptr<int>((int*)42, [pool,con] (int* p)
+                                 {
+                                   pool->free_connection(con);
+                                 });
+  }
+  
+  struct mysql_connection_factory
+  {
+    template <typename... O>
+    mysql_connection_factory(const std::string& host,
+                             const std::string& user,
+                             const std::string& passwd,
+                             const std::string& database,
+                             O... options)
+      : pool_(new mysql_connection_pool(host, user, passwd, database))
+    {
+    }
+
+    mysql_connection instantiate()
+    {
+      return pool_->new_connection();
+    }
+
+    
+    std::shared_ptr<mysql_connection_pool> pool_;
   };
 
 }

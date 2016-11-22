@@ -51,8 +51,12 @@ set(LWAN_LIBS -llwan curl z pthread dl ubsan luajit-5.1)
 # add_executable(cppnet_hello_world cppnet_hello_world.cc)
 # target_link_libraries(cppnet_hello_world ${CPPNET_LIBS})
 
-add_executable(sql_authentication sql_authentication.cc)
-target_link_libraries(sql_authentication sqlite3 ${MHD_LIBS} curl)
+add_executable(sqlite_authentication sql_authentication.cc)
+target_link_libraries(sqlite_authentication sqlite3 ${MHD_LIBS} curl)
+
+
+add_executable(mysql_authentication mysql_authentication.cc)
+target_link_libraries(mysql_authentication mysqlclient ${MHD_LIBS} curl)
 
 add_executable(user_tracking user_tracking.cc)
 target_link_libraries(user_tracking  ${MHD_LIBS} curl)
@@ -99,7 +103,7 @@ target_link_libraries(rest sqlite3 ${MHD_LIBS} curl)
 
 
 add_executable(hashmap_session hashmap_session.cc)
-target_link_libraries(hashmap_session ${LWAN_LIBS} curl)
+target_link_libraries(hashmap_session ${MHD_LIBS} curl)
 
 add_executable(lwan lwan.cc)
 target_link_libraries(lwan ${LWAN_LIBS} curl)
@@ -128,12 +132,13 @@ add_executable(type_string type_string.cc)
 target_link_libraries(type_string)
 
 add_test(crud crud)
-add_test(crud_lwan crud_lwan)
+#add_test(crud_lwan crud_lwan)
 add_test(user_tracking user_tracking)
 add_test(hashmap_session hashmap_session)
-add_test(lwan lwan)
+#add_test(lwan lwan)
 add_test(mhd mhd)
-add_test(sql_authentication sql_authentication)
+add_test(sqlite_authentication sqlite_authentication)
+add_test(mysql_authentication mysql_authentication)
 add_test(mysql mysql)
 add_test(optional optional)
 add_test(type_string type_string)

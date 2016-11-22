@@ -65,7 +65,16 @@ namespace sl
 
     int find_by_id(int id, O& o)
     {
-      return con_("SELECT * from " + table_name_ + " where id = ?")(id) >> o;
+      std::stringstream field_ss;
+      bool first = true;
+      foreach(o) | [&] (auto& m)
+      {
+        if (!first) field_ss << ",";
+        first = false;
+        field_ss << m.symbol().name();
+      };
+      
+      return con_("SELECT " + field_ss.str() + " from " + table_name_ + " where id = ?")(id) >> o;
     }
 
     // save all fields except auto increment.

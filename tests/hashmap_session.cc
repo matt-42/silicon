@@ -1,7 +1,6 @@
 #include <thread>
 #include <iostream>
-//#include <silicon/backends/mhd.hh>
-#include <silicon/backends/lwan.hh>
+#include <silicon/backends/mhd.hh>
 #include <silicon/api.hh>
 #include <silicon/clients/libcurl_client.hh>
 #include <silicon/middlewares/hashmap_session.hh>
@@ -33,7 +32,7 @@ int main()
     );
 
   // Start server.
-  auto ctx = lwan_json_serve(api, std::make_tuple(hashmap_session_factory<session>()), 12345, _non_blocking);
+  auto ctx = mhd_json_serve(api, std::make_tuple(hashmap_session_factory<session>()), 12345, _non_blocking);
 
   // Test.
   {

@@ -4,9 +4,9 @@
 #include <silicon/api.hh>
 #include <silicon/middleware_factories.hh>
 #include <silicon/backends/mhd.hh>
-#include <silicon/middlewares/sqlite_connection.hh>
-#include <silicon/middlewares/sqlite_session.hh>
-#include <silicon/middlewares/sqlite_orm.hh>
+#include <silicon/middlewares/mysql_connection.hh>
+#include <silicon/middlewares/mysql_session.hh>
+#include <silicon/middlewares/mysql_orm.hh>
 #include <silicon/clients/libcurl_client.hh>
 #include "symbols.hh"
 
@@ -30,8 +30,8 @@ struct session_data
   int user_id;
 };
 
-// Wrap the session data in a sqlite session middleware.
-typedef sqlite_session<session_data> session;
+// Wrap the session data in a mysql session middleware.
+typedef mysql_session<session_data> session;
 
 // ==================================================
 // Current user middleware.
@@ -41,14 +41,15 @@ struct current_user : public User
 {
   User& user_data() { return *static_cast<User*>(this); }
 
-  // Requires the session and a sqlite connection.
-  static auto instantiate(session& sess, sqlite_orm<User> orm)
+  // Requires the session and a mysql connection.
+  static auto instantiate(session& sess, mysql_orm<User> orm)
   {
     if (!sess->authenticated())
       throw error::unauthorized("Access to this procedure is reserved to logged users.");
 
     current_user u;
 
+    std::cout << sess->user_id << std::endl;
     if (!orm.find_by_id(sess->user_id, u.user_data()))
       throw error::internal_server_error("Session user_id not in user table.");
 
@@ -59,17 +60,17 @@ struct current_user : public User
 // Authenticator middleware
 struct authenticator
 {
-  authenticator(session& _sess, sqlite_connection& _con) : sess(_sess), con(_con) {}
+  authenticator(session& _sess, mysql_connection& _con) : sess(_sess), con(_con) {}
 
   bool authenticate(std::string name)
   {
     int count = 0;
-    User u;
-    // 1/ check if the user is valid (user_is_valid function).
-    if (con("SELECT * from users where name == ?")(name) >> u)
+    int user_id;
+    // 1/ check if the user is valid.
+    if (con("SELECT id from users where name = ?")(name) >> user_id)
     {
-      // 2/ store data in the session (session.store(user)).
-      sess->user_id = u.id;
+      // 2/ store data in the session.
+      sess->user_id = user_id;
       sess.save();
       return true;
     }
@@ -77,14 +78,14 @@ struct authenticator
     return false;
   };
 
-  // Requires the session and a sqlite connection.
-  static auto instantiate(session& sess, sqlite_connection& con)
+  // Requires the session and a mysql connection.
+  static auto instantiate(session& sess, mysql_connection& con)
   {
     return authenticator(sess, con);
   }
 
   session sess;
-  sqlite_connection& con;
+  mysql_connection con;
 };
 
 int main()
@@ -111,29 +112,27 @@ int main()
     );
 
   auto mf = middleware_factories(
-      sqlite_connection_factory("/tmp/sl_test_authentication.sqlite"), // sqlite middleware.
-      sqlite_orm_factory<User>("users"), // Orm middleware for users.
-      sqlite_session_factory<session_data>("sessions"),
+      mysql_connection_factory("localhost", "silicon", "my_silicon", "silicon_test"), // mysql middleware.
+      mysql_orm_factory<User>("users"), // Orm middleware for users.
+      mysql_session_factory<session_data>("sessions"),
       mhd_session_cookie()
       );
-
 
   
   { // Setup database for testing.
 
     // Drop user table.
-    auto con = instantiate_factory<sqlite_connection>(mf);
+    auto con = instantiate_factory<mysql_connection>(mf);
     con("DROP table if exists users;")();
     con("DROP table if exists session;")();
 
     // Create user table.
-    sqlite_orm_factory<User>("users").initialize(con);
+    mysql_orm_factory<User>("users").initialize(con);
 
     // Insert data.
-    auto orm = instantiate_factory<sqlite_orm<User>>(mf);
+    auto orm = instantiate_factory<mysql_orm<User>>(mf);
     std::cout << orm.insert(User(0, "John Doe")) << std::endl;
   }
-  
   
   // Start server.
   auto server = mhd_json_serve(api, mf, 12345, _non_blocking);
@@ -157,8 +156,7 @@ int main()
   assert(logout_r.status == 200);
 
   auto who_r2 = c.http_get.who_am_I();
-  std::cout << json_encode(who_r2) << std::endl;
+  std::cout << who_r2.status << " " << who_r2.error << std::endl;
   assert(who_r2.status == 401);
   
-  exit(0);
 }
