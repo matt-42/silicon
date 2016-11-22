@@ -36,3 +36,7 @@ target_link_libraries(blog_test sqlite3 nettle ${MHD_LIBS} curl)
 add_executable(ws_broadcast_server ws_broadcast_server.cc)
 target_link_libraries(ws_broadcast_server ${WEBSOCKETS_LIBS})
 
+
+add_executable(access_http_header_with_mhd access_http_header_with_mhd.cc)
+target_link_libraries(access_http_header_with_mhd ${MHD_LIBS})
+

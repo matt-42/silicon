@@ -1,5 +1,6 @@
 #pragma once
 
+#include <iostream>
 #include <sstream>
 #include <iod/utils.hh>
 #include <silicon/symbols.hh>
