@@ -21,6 +21,6 @@ int main(int argc, char* argv[])
   auto c = libcurl_json_client(hl_api, "127.0.0.1", 12345);
   auto r1 = c.http_get.test();
 
-  assert(r1.message == "hello world.");
+  assert(r1.response.message == "hello world.");
   std::cout << iod::json_encode(r1) << std::endl;
 }
