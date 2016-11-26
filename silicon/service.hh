@@ -67,7 +67,7 @@ namespace sl
   template <typename R, typename P, typename... PA, typename... GA>
   auto apply_global_middleware3(R route, P proc, std::tuple<PA...>*, std::tuple<GA...>*)
   {
-    return make_procedure(0, route, [=] (PA&&... pa, const GA&... ga)
+    return make_procedure(0, route, [=] (PA... pa, const GA&... ga)
     {
       return proc.function()(pa...);
     });

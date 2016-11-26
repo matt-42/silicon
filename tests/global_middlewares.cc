@@ -46,7 +46,7 @@ int main(int argc, char* argv[])
 
   auto hello_api = http_api(
 
-    GET / _test / _test[int()] = [] (const auto& params) {
+    GET / _test / _test[int()] = [] (auto params) {
 
       std::stringstream ss;
       ss << "hello " << params.test;
@@ -62,7 +62,6 @@ int main(int argc, char* argv[])
     );
 
   auto hello_api_ga = add_global_middlewares<request_logger>::to(hello_api);
-  
   auto server = mhd_json_serve(hello_api_ga, 12345, _nthreads = 1, _non_blocking);
 
   // Test.
