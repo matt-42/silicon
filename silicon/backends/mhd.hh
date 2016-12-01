@@ -179,7 +179,7 @@ namespace sl
 
       const std::string& body = r->body;
       int last = 0;
-      for (int i = 0; i < body.size();)
+      for (unsigned int i = 0; i < body.size();)
       {
         std::string key, value;
 
@@ -336,7 +336,6 @@ namespace sl
                   size_t * upload_data_size,
                   void ** ptr)
   {
-    static int dummy;
     MHD_Response* response;
     int ret;
 
@@ -453,7 +452,7 @@ namespace sl
     else if (options.has(_select))
       flags = MHD_USE_SELECT_INTERNALLY;
     else if (options.has(_linux_epoll))
-      flags = MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY;
+      flags = MHD_USE_EPOLL_INTERNALLY;
 
     int thread_pool_size = options.get(_nthreads, std::thread::hardware_concurrency());
 

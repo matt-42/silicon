@@ -28,7 +28,7 @@ namespace sl
 
       auto end() { return iterator{nullptr, string_ref(), V()}; }
       
-      auto& find_or_create(const string_ref& r, int c)
+      auto& find_or_create(const string_ref& r, unsigned int c)
       {
         if (c == r.size())
           return v;
@@ -43,7 +43,7 @@ namespace sl
         return v;
       }
 
-      iterator find(const string_ref& r, int c)
+      iterator find(const string_ref& r, unsigned int c)
       {
         if (c == r.size() and v != nullptr)
           return iterator{this, r, v};
