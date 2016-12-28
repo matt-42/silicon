@@ -452,7 +452,7 @@ namespace sl
     else if (options.has(_select))
       flags = MHD_USE_SELECT_INTERNALLY;
     else if (options.has(_linux_epoll))
-      flags = MHD_USE_EPOLL_INTERNALLY;
+      flags = MHD_USE_EPOLL_LINUX_ONLY;
 
     int thread_pool_size = options.get(_nthreads, std::thread::hardware_concurrency());
 
