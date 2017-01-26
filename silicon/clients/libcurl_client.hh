@@ -29,6 +29,8 @@ namespace sl
   struct static_str_to_std_str_helper { typedef T type; };
   template <>
   struct static_str_to_std_str_helper<const char*> { typedef std::string type; };
+  template <unsigned N>
+  struct static_str_to_std_str_helper<const char[N]> { typedef std::string type; };
 
   template <typename A>
   auto static_str_to_std_str(A v)
@@ -287,7 +289,7 @@ namespace sl
   }
 
   template <typename S>
-  auto process_roots(S o)
+  decltype(auto) process_roots(S o)
   {
     auto res = sio_iterate(o, D(_root = int(), _methods = sio<>())) | [] (auto m, auto prev)
     {
@@ -313,7 +315,7 @@ namespace sl
         }, m);
     };
 
-    return static_if<std::is_same<decltype(res.root), int>::value>(
+    return static_if<std::is_same<std::decay_t<decltype(res.root)>, int>::value>(
       [] (auto res) {
         return res.methods;
       },
@@ -357,8 +359,8 @@ namespace sl
 
     };
 
-    // if in the tuple tu, there is a method without a path, this is the root
-    // and with must make it accessible via the operator() of the result object.
+    // If in the tuple tu, there is a method without a path, this is the root
+    // and we must make it accessible via the operator() of the result object.
     auto tu2 = deep_merge_sios_in_tuple(tu);
     return process_roots(tu2);
   }
