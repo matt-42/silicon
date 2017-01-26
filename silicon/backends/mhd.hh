@@ -452,7 +452,11 @@ namespace sl
     else if (options.has(_select))
       flags = MHD_USE_SELECT_INTERNALLY;
     else if (options.has(_linux_epoll))
+#if MHD_VERSION >= 0x00095100
+      flags = MHD_USE_EPOLL;
+#else
       flags = MHD_USE_EPOLL_LINUX_ONLY;
+#endif
 
     int thread_pool_size = options.get(_nthreads, std::thread::hardware_concurrency());
 
