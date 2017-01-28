@@ -10,6 +10,8 @@ auto test_api = http_api(
     const char* t = req->get_header("User-Agent");
     if (t)
       return t;
+    else
+      return "Header not found";
   });
 
 int main()
