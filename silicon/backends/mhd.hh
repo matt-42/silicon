@@ -1,5 +1,8 @@
 #pragma once
 
+#include <sys/stat.h>
+#include <fcntl.h>
+
 #include <iostream>
 #include <memory>
 #include <unordered_map>
@@ -12,6 +15,7 @@
 #include <iod/json.hh>
 #include <iod/utils.hh>
 
+#include <silicon/file.hh>
 #include <silicon/symbols.hh>
 #include <silicon/error.hh>
 #include <silicon/service.hh>
@@ -38,11 +42,13 @@ namespace sl
 
   struct mhd_response
   {
+    inline mhd_response() : file_descriptor(-1) {}
     inline void set_header(std::string k, std::string v) { headers[k] = v; }
     inline void set_cookie(std::string k, std::string v) { cookies[k] = v; }
 
     int status;
     std::string body;
+    int file_descriptor;
     std::unordered_map<std::string, std::string> cookies;
     std::unordered_map<std::string, std::string> headers;
   };
@@ -266,6 +272,17 @@ namespace sl
       r->body = res;
     }
 
+    void serialize2(response_type* r, const file f) const
+    {
+      int fd = open(f.path().c_str(), O_RDONLY);
+
+      if (fd == -1)
+        throw error::not_found("File not found.");
+
+      r->file_descriptor = fd;
+      r->status = 200;
+    }
+    
     void serialize2(response_type* r, const string_ref res) const
     {
       r->status = 200;
@@ -375,11 +392,21 @@ namespace sl
       resp.body = "Internal server error.";
     }
 
-    const std::string& str = resp.body;
-    response = MHD_create_response_from_buffer(str.size(),
-                                               (void*) str.c_str(),
-                                               MHD_RESPMEM_MUST_COPY);
-
+    if (resp.file_descriptor > -1)
+    {
+      struct stat st;
+      if (fstat(resp.file_descriptor, &st) != 0)
+        throw error::not_found("Cannot fstat this file");
+      response = MHD_create_response_from_fd(st.st_size, resp.file_descriptor);
+    }
+    else
+    {
+      const std::string& str = resp.body;
+      response = MHD_create_response_from_buffer(str.size(),
+                                                 (void*) str.c_str(),
+                                                 MHD_RESPMEM_MUST_COPY);
+    }
+    
     for(auto kv : resp.headers)
     {
       if (MHD_NO == MHD_add_response_header (response,
