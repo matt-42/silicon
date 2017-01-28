@@ -14,7 +14,7 @@ auto hello_api = http_api(
 
 int main(int argc, char* argv[])
 {
-  auto ctx = sl::mhd_json_serve(hello_api, 12345, _blocking,
+  auto ctx = sl::mhd_json_serve(hello_api, 12345,
                                 _https_cert = "./server.pem",
                                 _https_key = "./server.key");
 }

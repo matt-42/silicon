@@ -16,5 +16,5 @@ auto test_api = http_api(
 
 int main()
 {
-  auto ctx = mhd_json_serve(test_api, 9999, _blocking);
+  auto ctx = mhd_json_serve(test_api, 9999);
 }
