@@ -440,11 +440,24 @@ namespace sl
   template <typename S>
   struct silicon_mhd_ctx
   {
-    silicon_mhd_ctx(MHD_Daemon* d, S* s) : daemon_(d), service_(s) {}
-    ~silicon_mhd_ctx() { MHD_stop_daemon(daemon_); }
+    silicon_mhd_ctx(MHD_Daemon* d, S* s, char* cert, char* key)
+      : daemon_(d),
+        service_(s),
+        cert_(cert),
+        key_(key) {}
+
+    ~silicon_mhd_ctx()
+    {
+      MHD_stop_daemon(daemon_);
+      if (cert_)
+        free(cert_);
+      if (key_)
+        free(key_);
+    }
 
     MHD_Daemon* daemon_;
     std::shared_ptr<S> service_;
+    char* cert_, *key_;
   };
 
   /*! 
@@ -460,6 +473,8 @@ namespace sl
   **         _nthreads: Set the number of thread. Default: The numbers of CPU cores.
   **         _non_blocking: Run the server in a thread and return in a non blocking way.
   **         _blocking: (Active by default) Blocking call.
+  **         _https_key: path to the https key file.
+  **         _https_cert: path to the https cert file.
   ** 
   ** @return If set as non_blocking, this function returns a
   ** silicon_mhd_ctx that will stop and cleanup the server at the end
@@ -479,12 +494,45 @@ namespace sl
     else if (options.has(_select))
       flags = MHD_USE_SELECT_INTERNALLY;
     else if (options.has(_linux_epoll))
+    {
 #if MHD_VERSION >= 0x00095100
       flags = MHD_USE_EPOLL;
 #else
       flags = MHD_USE_EPOLL_LINUX_ONLY;
 #endif
+    }
 
+    //std::string
+    auto read_file = [] (std::string path) {
+      std::ifstream in(path);
+      if (!in.good())
+      {
+        std::stringstream err_ss;
+        err_ss << "Cannot read " << path << " " << strerror(errno);
+        throw std::runtime_error(err_ss.str());
+      }
+      std::ostringstream ss{};
+      ss << in.rdbuf();
+      return ss.str();
+    };
+
+    std::string https_cert, https_key;
+    if (options.has(_https_cert) || options.has(_https_key))
+    {
+      std::string cert_file = options.get(_https_cert, "");
+      std::string key_file = options.get(_https_key, "");
+      flags |= MHD_USE_SSL;
+      if (cert_file.size() == 0) throw std::runtime_error("Missing HTTPS certificate file"); 
+      if (key_file.size() == 0) throw std::runtime_error("Missing HTTPS key file");
+
+      https_key = std::move(read_file(key_file));
+      https_cert = std::move(read_file(cert_file));
+      
+    }
+
+    char* https_cert_buffer = https_cert.size() ? strdup(https_cert.c_str()) : 0;
+    char* https_key_buffer = https_key.size() ? strdup(https_key.c_str()) : 0;
+  
     int thread_pool_size = options.get(_nthreads, std::thread::hardware_concurrency());
 
     auto m2 = std::tuple_cat(std::make_tuple(mhd_session_cookie()),
@@ -507,6 +555,8 @@ namespace sl
         &mhd_handler<service_t>,
         s,
         MHD_OPTION_THREAD_POOL_SIZE, thread_pool_size,
+        MHD_OPTION_HTTPS_MEM_KEY, https_key_buffer,
+        MHD_OPTION_HTTPS_MEM_CERT, https_cert_buffer,
         MHD_OPTION_END);
     else
       d = MHD_start_daemon(
@@ -516,6 +566,8 @@ namespace sl
         NULL,
         &mhd_handler<service_t>,
         s,
+        MHD_OPTION_HTTPS_MEM_KEY, https_key_buffer,
+        MHD_OPTION_HTTPS_MEM_CERT, https_cert_buffer,
         MHD_OPTION_END);
       
     
@@ -528,7 +580,7 @@ namespace sl
     }
 
     return silicon_mhd_ctx<service_t>
-      (d, s);
+      (d, s, https_cert_buffer, https_key_buffer);
   }
   
   template <typename A, typename... O>

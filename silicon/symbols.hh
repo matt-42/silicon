@@ -115,6 +115,16 @@
     iod_define_symbol(http_put)
 #endif
 
+#ifndef IOD_SYMBOL_https_cert
+#define IOD_SYMBOL_https_cert
+    iod_define_symbol(https_cert)
+#endif
+
+#ifndef IOD_SYMBOL_https_key
+#define IOD_SYMBOL_https_key
+    iod_define_symbol(https_key)
+#endif
+
 #ifndef IOD_SYMBOL_id
 #define IOD_SYMBOL_id
     iod_define_symbol(id)
