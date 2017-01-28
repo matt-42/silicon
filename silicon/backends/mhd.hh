@@ -153,11 +153,10 @@ namespace sl
         else
           json_decode(res, "{}");
       }
-      catch (const std::runtime_error& e)
+      catch (const std::exception& e)
       {
         throw error::bad_request("Error when decoding procedure arguments: ", e.what());
       }
-
     }
 
     template <typename T, typename... D>
