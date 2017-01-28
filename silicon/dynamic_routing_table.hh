@@ -45,7 +45,8 @@ namespace sl
 
       iterator find(const string_ref& r, unsigned int c)
       {
-        if (c == r.size() and v != nullptr)
+        if ((c == r.size() and v != nullptr) or
+            (childs.size() == 0))
           return iterator{this, r, v};
         if (c == r.size() and v == nullptr)
           return iterator{nullptr, r, v};
