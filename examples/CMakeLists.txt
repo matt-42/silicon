@@ -40,6 +40,9 @@ target_link_libraries(ws_broadcast_server ${WEBSOCKETS_LIBS})
 add_executable(https https.cc)
 target_link_libraries(https ${MHD_LIBS})
 
+add_executable(file_streaming file_streaming.cc)
+target_link_libraries(file_streaming ${MHD_LIBS})
+
 add_executable(access_http_header_with_mhd access_http_header_with_mhd.cc)
 target_link_libraries(access_http_header_with_mhd ${MHD_LIBS})
 
