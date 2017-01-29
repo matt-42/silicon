@@ -494,14 +494,13 @@ namespace sl
       flags = MHD_USE_SELECT_INTERNALLY;
     else if (options.has(_linux_epoll))
     {
-#if MHD_VERSION >= 0x00095100
-      flags = MHD_USE_EPOLL;
+#ifdef MHD_USE_EPOLL_INTERNALLY
+      flags = MHD_USE_EPOLL_INTERNALLY;
 #else
-      flags = MHD_USE_EPOLL_LINUX_ONLY;
+      flags = MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY;
 #endif
     }
 
-    //std::string
     auto read_file = [] (std::string path) {
       std::ifstream in(path);
       if (!in.good())
@@ -520,7 +519,12 @@ namespace sl
     {
       std::string cert_file = options.get(_https_cert, "");
       std::string key_file = options.get(_https_key, "");
+#ifdef MHD_USE_TLS
+      flags |= MHD_USE_TLS;
+#else
       flags |= MHD_USE_SSL;
+#endif
+      
       if (cert_file.size() == 0) throw std::runtime_error("Missing HTTPS certificate file"); 
       if (key_file.size() == 0) throw std::runtime_error("Missing HTTPS key file");
 
@@ -545,31 +549,61 @@ namespace sl
       
     MHD_Daemon* d;
 
-    if (flags != MHD_USE_THREAD_PER_CONNECTION)
-      d = MHD_start_daemon(
-        flags,
-        port,
-        NULL,
-        NULL,
-        &mhd_handler<service_t>,
-        s,
-        MHD_OPTION_THREAD_POOL_SIZE, thread_pool_size,
-        MHD_OPTION_HTTPS_MEM_KEY, https_key_buffer,
-        MHD_OPTION_HTTPS_MEM_CERT, https_cert_buffer,
-        MHD_OPTION_END);
-    else
-      d = MHD_start_daemon(
-        flags,
-        port,
-        NULL,
-        NULL,
-        &mhd_handler<service_t>,
-        s,
-        MHD_OPTION_HTTPS_MEM_KEY, https_key_buffer,
-        MHD_OPTION_HTTPS_MEM_CERT, https_cert_buffer,
-        MHD_OPTION_END);
+    if (https_key.size() > 0)
+    {
+      if (MHD_is_feature_supported(MHD_FEATURE_SSL) == MHD_NO)
+        throw std::runtime_error("microhttpd has not been compiled with SSL support.");
+        
+      if (flags != MHD_USE_THREAD_PER_CONNECTION)
+        d = MHD_start_daemon(
+                             flags,
+                             port,
+                             NULL,
+                             NULL,
+                             &mhd_handler<service_t>,
+                             s,
+                             MHD_OPTION_THREAD_POOL_SIZE, thread_pool_size,
+                             MHD_OPTION_HTTPS_MEM_KEY, https_key_buffer,
+                             MHD_OPTION_HTTPS_MEM_CERT, https_cert_buffer,
+                             MHD_OPTION_END);
+      else
+        d = MHD_start_daemon(
+                             flags,
+                             port,
+                             NULL,
+                             NULL,
+                             &mhd_handler<service_t>,
+                             s,
+                             MHD_OPTION_HTTPS_MEM_KEY, https_key_buffer,
+                             MHD_OPTION_HTTPS_MEM_CERT, https_cert_buffer,
+                             MHD_OPTION_END);
       
-    
+    }
+    else // Without SSL
+    {
+      if (flags != MHD_USE_THREAD_PER_CONNECTION)
+        d = MHD_start_daemon(
+                             flags,
+                             port,
+                             NULL,
+                             NULL,
+                             &mhd_handler<service_t>,
+                             s,
+                             MHD_OPTION_THREAD_POOL_SIZE, thread_pool_size,
+                             MHD_OPTION_END);
+      else
+        d = MHD_start_daemon(
+                             flags,
+                             port,
+                             NULL,
+                             NULL,
+                             &mhd_handler<service_t>,
+                             s,
+                             MHD_OPTION_END);
+      
+
+    }
+
     if (d == NULL)
       throw std::runtime_error("Cannot start the microhttpd daemon");
 
