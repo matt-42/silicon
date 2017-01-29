@@ -621,5 +621,41 @@ namespace sl
   {
     return mhd_json_serve(api, std::make_tuple(), port, opts...);
   }
-  
+
+  auto file_server(const std::string& base_path)
+  {
+    static char dot = '.', slash = '/';
+    if(!base_path.empty() && base_path[base_path.size() - 1] != '/'){
+      base_path.append('/');
+    }
+    return [&base_path, &dot, slash](mhd_request* r){
+      std::string path(r->url);
+      size_t len = path.size();
+      if(!path.empty() && path[0] == slash)
+      {
+        path.erase(0, 1);
+      }
+      if(path.empty())
+      {
+        throw error::bad_request("No file path given, directory listing not supported.");
+      }
+      if(len == 1 && path[0] == dot)
+      {
+        throw error::bad_request("Invalid URI ", path);
+      }else if(len == 2 && path[0] == dot && path[1] == dot)
+      {
+        throw error::bad_request("Invalid URI ", path);
+      }else{
+        char prev0 = slash, prev1 = slash;
+        for(size_t i; i < len; ++i){
+          if(prev0 == dot && prev1 == dot && path[i] == slash){
+            throw error::bad_request("Unsupported URI, ../ is not allowed in the URI");
+          }
+          prev0 = prev1;
+          prev1 = path[i];
+        }
+      }
+      return file(base_path + path);
+    };
+  }
 }
