@@ -494,7 +494,7 @@ namespace sl
       flags = MHD_USE_SELECT_INTERNALLY;
     else if (options.has(_linux_epoll))
     {
-#ifdef MHD_VERSION >= 0x00095100
+#if MHD_VERSION >= 0x00095100
       flags = MHD_USE_EPOLL_INTERNALLY;
 #else
       flags = MHD_USE_EPOLL_INTERNALLY_LINUX_ONLY;
