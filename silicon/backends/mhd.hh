@@ -622,13 +622,14 @@ namespace sl
     return mhd_json_serve(api, std::make_tuple(), port, opts...);
   }
 
-  auto file_server(const std::string& base_path)
+  auto file_server(const std::string& fixed_base_path)
   {
-    static char dot = '.', slash = '/';
+    std::string base_path = fixed_base_path;
     if(!base_path.empty() && base_path[base_path.size() - 1] != '/'){
-      base_path.append('/');
+      base_path.push_back('/');
     }
-    return [&base_path, &dot, slash](mhd_request* r){
+    return [base_path](mhd_request* r){
+      static char dot = '.', slash = '/';
       std::string path(r->url);
       size_t len = path.size();
       if(!path.empty() && path[0] == slash)
@@ -647,7 +648,7 @@ namespace sl
         throw error::bad_request("Invalid URI ", path);
       }else{
         char prev0 = slash, prev1 = slash;
-        for(size_t i; i < len; ++i){
+        for(size_t i = 0; i < len; ++i){
           if(prev0 == dot && prev1 == dot && path[i] == slash){
             throw error::bad_request("Unsupported URI, ../ is not allowed in the URI");
           }

@@ -320,3 +320,12 @@
     iod_define_symbol(x_www_form_urlencoded)
 #endif
 
+#ifndef IOD_SYMBOL_my_files
+#define IOD_SYMBOL_my_files
+iod_define_symbol(my_files)
+#endif
+
+#ifndef IOD_SYMBOL_my_file
+#define IOD_SYMBOL_my_file
+    iod_define_symbol(my_file)
+#endif
