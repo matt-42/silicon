@@ -131,6 +131,10 @@ target_link_libraries(optional ${MHD_LIBS} curl)
 add_executable(type_string type_string.cc)
 target_link_libraries(type_string)
 
+
+add_executable(prefix_path prefix_path.cc)
+target_link_libraries(prefix_path ${MHD_LIBS} curl)
+
 add_test(crud crud)
 #add_test(crud_lwan crud_lwan)
 add_test(user_tracking user_tracking)
@@ -142,4 +146,5 @@ add_test(mysql_authentication mysql_authentication)
 add_test(mysql mysql)
 add_test(optional optional)
 add_test(type_string type_string)
+add_test(prefix_path prefix_path)
 add_test(global_middlewares global_middlewares)

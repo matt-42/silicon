@@ -25,6 +25,28 @@ namespace sl
                             ARGS&...) = 0;
 
   };
+
+  struct prefix_path
+  {
+    const std::string& string() { return str_; }
+    const std::string str_;
+  };
+
+  template <typename R>
+  struct prefix_path_middleware
+  {
+    inline prefix_path_middleware(const R& route)
+      : route_(route)
+    {
+    }
+
+    inline prefix_path instantiate() const
+    {
+      return prefix_path{route_.path_as_string(false)};
+    }
+    
+    const R& route_;
+  };
   
   template <typename P, typename M, typename S, typename... ARGS>
   struct ws_handler : public ws_handler_base<M, S, ARGS...>
@@ -45,15 +67,16 @@ namespace sl
       di_call_method(s, method, arguments, procedure_, args...);
 
       // Call the procedure and serialize its result.
-      
+
+      prefix_path_middleware<typename P::route_type> prefix_path_m(procedure_.route());
       static_if<std::is_same<return_type, void>::value>(
         [&, this] (auto& arguments, auto f) { // If the procedure does not return a value just call it.
-          di_factories_call(f, middlewares, arguments, args...);
+          di_factories_call(f, middlewares, prefix_path_m, arguments, args...);
           auto method = &S::template serialize<const std::string>;
           di_call_method(s, method, std::string(""), args...);
         },
         [&, this] (auto& arguments, auto f) { // If the procedure returns a value, serialize it.
-          auto ret = di_factories_call(f, middlewares, arguments, args...);
+          auto ret = di_factories_call(f, middlewares, prefix_path_m, arguments, args...);
           auto method = &S::template serialize<decltype(ret)>;
           di_call_method(s, method, ret, args...);
         }, arguments, f);

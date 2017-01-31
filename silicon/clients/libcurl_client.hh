@@ -21,7 +21,13 @@ namespace sl
   {
     static auto run(long response_code, const std::string& body)
     {
-      return D(s::_status = response_code, s::_error = body);
+      std::string error_message;
+      std::string body_200;
+      if (response_code == 200)
+        body_200 = body;
+      else
+        error_message = body;
+      return D(s::_status = response_code, s::_error = error_message, s::_response = body_200);
     }
   };
 

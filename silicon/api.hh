@@ -63,6 +63,7 @@ namespace sl
     auto function() const { return f_; }
     auto default_arguments() const { return default_args_; }
     auto path() const { return route_.path; }
+    auto route() const { return route_; }
 
   private:
     F f_;
