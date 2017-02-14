@@ -628,9 +628,9 @@ namespace sl
     if(!base_path.empty() && base_path[base_path.size() - 1] != '/'){
       base_path.push_back('/');
     }
-    return [base_path](mhd_request* r){
+    return [base_path](mhd_request* r, prefix_path prefix){
       static char dot = '.', slash = '/';
-      std::string path(r->url);
+      std::string path(r->url.substr(prefix.string().size(), r->url.size() - prefix.string().size()));
       size_t len = path.size();
       if(!path.empty() && path[0] == slash)
       {
