@@ -352,8 +352,8 @@ namespace sl
                   size_t * upload_data_size,
                   void ** ptr)
   {
-    MHD_Response* response;
-    int ret;
+    MHD_Response* response = nullptr;
+    int ret = 0;
 
     std::string* pp = (std::string*)*ptr;
     if (!pp)
@@ -376,7 +376,16 @@ namespace sl
 
     try
     {
-      service(std::string("/") + std::string(method) + url, &rq, &resp, connection);
+      service(std::string("/") + std::string(method) + url, &rq, &resp, connection);      
+
+      if (resp.file_descriptor > -1)
+      {
+        struct stat st;
+        if (fstat(resp.file_descriptor, &st) != 0)
+          throw error::not_found("Cannot fstat this file");
+        response = MHD_create_response_from_fd(st.st_size, resp.file_descriptor);
+      }
+      
     }
     catch(const error::error& e)
     {
@@ -391,47 +400,54 @@ namespace sl
       resp.body = "Internal server error.";
     }
 
-    if (resp.file_descriptor > -1)
-    {
-      struct stat st;
-      if (fstat(resp.file_descriptor, &st) != 0)
-        throw error::not_found("Cannot fstat this file");
-      response = MHD_create_response_from_fd(st.st_size, resp.file_descriptor);
-    }
-    else
+
+
+    if (resp.file_descriptor == -1)
     {
       const std::string& str = resp.body;
       response = MHD_create_response_from_buffer(str.size(),
                                                  (void*) str.c_str(),
                                                  MHD_RESPMEM_MUST_COPY);
     }
-    
-    for(auto kv : resp.headers)
+
+    if (!response)
     {
-      if (MHD_NO == MHD_add_response_header (response,
-                                             kv.first.c_str(),
-                                             kv.second.c_str()))
-        throw error::internal_server_error("Failed to set http header");
+      resp.status = 500;
+      resp.body = "Failed to create response object.";
+    }
+    else
+    {
+      for(auto kv : resp.headers)
+      {
+        if (kv.first.size() != 0 and kv.second.size() != 0)
+          if (MHD_NO == MHD_add_response_header (response,
+                                                 kv.first.c_str(),
+                                                 kv.second.c_str()))
+            std::cerr << "Failed to set header" << std::endl;
+      }
+
+      // Set cookies.
+      for(auto kv : resp.cookies)
+        if (kv.first.size() != 0 and kv.second.size() != 0)
+        {
+          std::string set_cookie_string = kv.first + '=' + kv.second + "; Path=/";
+          if (MHD_NO == MHD_add_response_header (response,
+                                                 MHD_HTTP_HEADER_SET_COOKIE,
+                                                 set_cookie_string.c_str()))
+            std::cerr << "Failed to set cookie" << std::endl;
+        }
+
+      MHD_add_response_header (response,
+                               MHD_HTTP_HEADER_SERVER,
+                               "silicon");
+
+      ret = MHD_queue_response(connection,
+                               resp.status,
+                               response);
+
+      MHD_destroy_response(response);
     }
 
-    // Set cookies.
-    for(auto kv : resp.cookies)
-    {
-      std::string set_cookie_string = kv.first + '=' + kv.second + "; Path=/";
-      if (MHD_NO == MHD_add_response_header (response,
-                                             MHD_HTTP_HEADER_SET_COOKIE,
-                                             set_cookie_string.c_str()))
-        throw error::internal_server_error("Failed to set session cookie header");
-    }
-    
-    MHD_add_response_header (response,
-                             MHD_HTTP_HEADER_SERVER,
-                             "silicon");
-
-    ret = MHD_queue_response(connection,
-                             resp.status,
-                             response);
-    MHD_destroy_response(response);
     delete pp;
     return ret;
   }
