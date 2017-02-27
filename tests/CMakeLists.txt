@@ -4,7 +4,9 @@ SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
 
 enable_testing()
 
-set(CMAKE_CXX_COMPILER clang++) # Gcc fails to compile sql_crud and sql_rest.
+#if(NOT DEFINED CMAKE_CXX_COMPILER)
+#	set(CMAKE_CXX_COMPILER clang++) # Gcc fails to compile sql_crud and sql_rest.
+#endif()
 
 find_package( Iod )
 find_package( OpenSSL )
@@ -31,9 +33,11 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/mimosa/
 
 link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib
                 ${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib64
-                $ENV{HOME}/local/lib)
+                $ENV{HOME}/local/lib
+				$ENV{HOME}/local/lib/x86_64-linux-gnu)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -ftemplate-depth=1024 -g")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -ftemplate-depth=1024 -g -O0")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage") # enabling coverage
 set(CPPNET_LIBS
     ${Boost_LIBRARIES}
     cppnetlib-uri cppnetlib-client-connections
@@ -47,6 +51,8 @@ set(MIMOSA_LIBS mimosa-http mimosa-uri mimosa gnutls z pthread lzma)
 
 set(MHD_LIBS gnutls gcrypt pthread microhttpd)
 set(LWAN_LIBS -llwan curl z pthread dl ubsan luajit-5.1)
+
+set(RMQ_LIBS rabbitmq)
 
 # add_executable(cppnet_hello_world cppnet_hello_world.cc)
 # target_link_libraries(cppnet_hello_world ${CPPNET_LIBS})
@@ -79,6 +85,11 @@ target_link_libraries(libcurl_client  ${MHD_LIBS} curl)
 add_executable(microhttpd_hello_world microhttpd_hello_world.cc)
 target_link_libraries(microhttpd_hello_world ${MHD_LIBS} curl)
 
+add_executable(rmq_listen rmq_listen.cc)
+target_link_libraries(rmq_listen ${RMQ_LIBS})
+
+add_executable(rmq_worker rmq_worker.cc)
+target_link_libraries(rmq_worker ${RMQ_LIBS})
 
 add_executable(lwan_hello_world lwan_hello_world.cc)
 target_link_libraries(lwan_hello_world ${LWAN_LIBS})
@@ -92,11 +103,11 @@ target_link_libraries(mysql ${MHD_LIBS} mysqlclient)
 add_executable(javascript_client javascript_client.cc)
 target_link_libraries(javascript_client ${MHD_LIBS})
 
-add_executable(ws_echo_server ws_echo_server.cc)
-target_link_libraries(ws_echo_server ${WEBSOCKETS_LIBS})
+#add_executable(ws_echo_server ws_echo_server.cc)
+#target_link_libraries(ws_echo_server ${WEBSOCKETS_LIBS})
 
-add_executable(ws_chat_server ws_chat_server.cc)
-target_link_libraries(ws_chat_server ${WEBSOCKETS_LIBS})
+#add_executable(ws_chat_server ws_chat_server.cc)
+#target_link_libraries(ws_chat_server ${WEBSOCKETS_LIBS})
 
 add_executable(rest rest.cc)
 target_link_libraries(rest sqlite3 ${MHD_LIBS} curl)

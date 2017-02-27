@@ -10,6 +10,7 @@
 #include <iod/bind_method.hh>
 #include <silicon/di_factories.hh>
 #include <silicon/http_route.hh>
+#include <silicon/rmq_route.hh>
 #include <silicon/middleware_factories.hh>
 
 namespace sl
@@ -242,4 +243,12 @@ namespace sl
     return D();
   }
   
+namespace rmq
+{
+  template <typename... P>
+  auto api(P... procs)
+  {
+    return parse_api(std::make_tuple(procs...), route<>());
+  }
+};
 }
