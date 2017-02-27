@@ -22,14 +22,17 @@
 namespace sl
 {
 
+  typedef ::lwan_request lwan_request_internal;
+  typedef struct ::lwan_response lwan_response_internal;
+
   struct lwan_request
   {
-    lwan_request_t* lwan_req;
+    lwan_request_internal* lwan_req;
   };
 
   struct lwan_response
   {
-    lwan_response(lwan_request_t* _lwan_req, lwan_response_t* _lwan_resp)
+    lwan_response(lwan_request_internal* _lwan_req, lwan_response_internal* _lwan_resp)
       : lwan_req(_lwan_req),
         lwan_resp(_lwan_resp),
         status(0),
@@ -38,7 +41,7 @@ namespace sl
         headers_cpt(0)
     {
       
-      headers = (lwan_key_value_t*) coro_malloc(lwan_req->conn->coro, headers_size * sizeof(lwan_key_value_t));
+      headers = (lwan_key_value*) coro_malloc(lwan_req->conn->coro, headers_size * sizeof(lwan_key_value));
       assert(headers != NULL);
       for (int i = 0; i < headers_size; i++)
       {
@@ -53,12 +56,12 @@ namespace sl
       if (headers_cpt == headers_size)
       {
         int old_size = headers_size;
-        lwan_key_value_t* old_headers = headers;
+        lwan_key_value* old_headers = headers;
 
         headers_size *= 2;
-        headers = (lwan_key_value_t*) coro_malloc(lwan_req->conn->coro, headers_size * sizeof(lwan_key_value_t));
+        headers = (lwan_key_value*) coro_malloc(lwan_req->conn->coro, headers_size * sizeof(lwan_key_value));
         assert(headers != NULL);        
-        memcpy(headers, old_headers, old_size * sizeof(lwan_key_value_t));
+        memcpy(headers, old_headers, old_size * sizeof(lwan_key_value));
 
         for (int i = old_size; i < headers_size; i++)
         {
@@ -81,12 +84,12 @@ namespace sl
       add_header("Set-Cookie", k + '=' + v + ";Path=/");
     }
     
-    lwan_request_t* lwan_req;
-    lwan_response_t* lwan_resp;
+    lwan_request_internal* lwan_req;
+    lwan_response_internal* lwan_resp;
     int status;
     std::string body;
 
-    lwan_key_value_t* headers;
+    lwan_key_value* headers;
     int headers_size;
     int headers_cpt;
   };
@@ -181,7 +184,7 @@ namespace sl
     }
     
     template <typename P, typename O>
-    void decode_post_parameters(O& res, lwan_request_t* r) const
+    void decode_post_parameters(O& res, lwan_request_internal* r) const
     {
       foreach(P()) | [&] (auto m)
       {
@@ -295,9 +298,9 @@ namespace sl
   
   
   template <typename S>
-  static lwan_http_status_t
-  lwan_silicon_handler(lwan_request_t *request,
-                       lwan_response_t *response, void *data)
+  static lwan_http_status
+  lwan_silicon_handler(lwan_request_internal *request,
+                       lwan_response_internal *response, void *data)
   {
     auto& service = * (S*)data;
 
@@ -330,14 +333,14 @@ namespace sl
       response->mime_type = "text/plain";
     strbuf_set(response->buffer, resp.body.c_str(), resp.body.size());
 
-    return lwan_http_status_t(resp.status);
+    return lwan_http_status(resp.status);
   }
 
   template <typename S>
   struct lwan_ctx
   {
 
-    inline lwan_ctx(lwan_t* lwan, S* service)
+    inline lwan_ctx(::lwan* lwan, S* service)
       : thread_(nullptr),
         lwan_(lwan),
         service_(service)
@@ -375,7 +378,7 @@ namespace sl
     }
     std::shared_ptr<int> sptr_;
     std::thread* thread_;
-    lwan_t* lwan_;
+    ::lwan* lwan_;
     S* service_;
   };
 
@@ -391,7 +394,7 @@ namespace sl
                                              middleware_factories);
     
     using service_t = service<lwan_json_service_utils, decltype(m2),
-                              lwan_request*, lwan_response*, lwan_request_t*, lwan_response_t*>;
+                              lwan_request*, lwan_response*, lwan_request_internal*, lwan_response_internal*>;
     
     auto s = new service_t(api, m2);
 
@@ -402,7 +405,7 @@ namespace sl
     // };
 
 
-    lwan_url_map_t default_map[2];
+    lwan_url_map default_map[2];
     memset(default_map, 0, sizeof(default_map));
     default_map[1].prefix = NULL;
     default_map[0].prefix = "/";
@@ -410,8 +413,8 @@ namespace sl
     default_map[0].data = s;
            
     
-    lwan_t* l = new lwan_t;
-    lwan_config_t c;
+    ::lwan* l = new ::lwan;
+    lwan_config c;
 
 
     c = *lwan_get_default_config();
