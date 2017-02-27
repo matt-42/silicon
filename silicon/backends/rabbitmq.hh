@@ -194,24 +194,24 @@ namespace rmq
 								throw std::runtime_error("FIXME: m.content is a tuple, not handle today");
 							},
 							[&] (auto m) { // Else, register the procedure.
-								amqp_queue_declare_ok_t * r = amqp_queue_declare(basic<S>::socket.conn, 1, amqp_empty_bytes, 0, 0, 0, 1, amqp_empty_table);
+								amqp_queue_declare_ok_t * r = amqp_queue_declare(this->socket.conn, 1, amqp_empty_bytes, 0, 0, 0, 1, amqp_empty_table);
 								amqp_bytes_t queuename;
 
-								die_on_amqp_error(amqp_get_rpc_reply(basic<S>::socket.conn), "Declaring queue");
+								die_on_amqp_error(amqp_get_rpc_reply(this->socket.conn), "Declaring queue");
 								queuename = amqp_bytes_malloc_dup(r->queue);
 								if (queuename.bytes == NULL)
 								{
 									throw std::runtime_error("Out of memory while copying queue name");
 								}
 
-								amqp_queue_bind(basic<S>::socket.conn, 1, queuename,
+								amqp_queue_bind(this->socket.conn, 1, queuename,
 												amqp_cstring_bytes(m.route.verb_as_string()),
 												amqp_cstring_bytes(m.route.path_as_string(false).c_str()),
 												amqp_empty_table);
-								die_on_amqp_error(amqp_get_rpc_reply(basic<S>::socket.conn), "Binding queue");
+								die_on_amqp_error(amqp_get_rpc_reply(this->socket.conn), "Binding queue");
 
-								amqp_basic_consume(basic<S>::socket.conn, 1, queuename, amqp_empty_bytes, 0, 1, 0, amqp_empty_table);
-								die_on_amqp_error(amqp_get_rpc_reply(basic<S>::socket.conn), "Consuming");
+								amqp_basic_consume(this->socket.conn, 1, queuename, amqp_empty_bytes, 0, 1, 0, amqp_empty_table);
+								die_on_amqp_error(amqp_get_rpc_reply(this->socket.conn), "Consuming");
 
 								queuenames.emplace_back(queuename);
 							},
