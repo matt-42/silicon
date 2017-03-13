@@ -66,7 +66,7 @@ only have to define one remote function: the function ```message```
 taking as argument the new message to display.
 
 ```c++
-auto rclient = make_wspp_remote_client * parameters( _message(_text) );
+auto rclient = make_wspp_remote_client( _message * parameters(_text) );
 ```
 
 
