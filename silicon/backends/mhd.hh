@@ -1,5 +1,6 @@
 #pragma once
 
+#include <set>
 #include <sys/stat.h>
 #include <fcntl.h>
 
@@ -23,6 +24,7 @@
 #include <silicon/optional.hh>
 #include <silicon/middlewares/tracking_cookie.hh>
 #include <silicon/middlewares/get_parameters.hh>
+#include <silicon/backends/urldecode.hh>
 
 namespace sl
 {
@@ -76,33 +78,49 @@ namespace sl
     template <typename S, typename O, typename C>
     void decode_get_arguments(O& res, C* req) const
     {
-      std::map<std::string, std::string> map;
-      auto add = [&] (const char* k, const char* v) { map[k] = v; };
+      std::set<void*> found;
+      auto add = [&] (const char* k, const char* v) {
+        urldecode2(found, std::string(k) + "=" + v, res, true);
+      };
+
       MHD_get_connection_values(req->connection, MHD_GET_ARGUMENT_KIND,
                                 &mhd_keyvalue_iterator<decltype(add)>,
                                 &add);
 
-      foreach(S()) | [&] (auto m)
-      {
-        auto it = map.find(m.symbol().name());
-        if (it != map.end())
-        {
-          try
-          {
-            res[m.symbol()] = boost::lexical_cast<std::decay_t<decltype(res[m.symbol()])>>(it->second);
-          }
-          catch (const std::exception& e)
-          {
-            throw error::bad_request(std::string("Error while decoding the GET parameter ") +
-                                     m.symbol().name() + ": " + e.what());
-          }
-        }
-        else
-        {
-          if(!m.attributes().has(_optional))
-            throw std::runtime_error(std::string("Missing required GET parameter ") + m.symbol().name());
-        }
-      };
+      // Check for missing fields.
+      std::string missing = urldecode_check_missing_fields_on_subset<S>(found, res, true);
+      if (missing.size())
+        throw error::bad_request("Error while decoding the GET parameter: ", missing);
+      
+      // std::map<std::string, std::string> map;
+      // auto add = [&] (const char* k, const char* v) {
+      //   map[k] = v;
+      // };
+      
+      // MHD_get_connection_values(req->connection, MHD_GET_ARGUMENT_KIND,
+      //                           &mhd_keyvalue_iterator<decltype(add)>,
+      //                           &add);
+      // foreach(S()) | [&] (auto m)
+      // {
+      //   auto it = map.find(m.symbol().name());
+      //   if (it != map.end())
+      //   {
+      //     try
+      //     {
+      //       res[m.symbol()] = boost::lexical_cast<std::decay_t<decltype(res[m.symbol()])>>(it->second);
+      //     }
+      //     catch (const std::exception& e)
+      //     {
+      //       throw error::bad_request(std::string("Error while decoding the GET parameter ") +
+      //                                m.symbol().name() + ": " + e.what());
+      //     }
+      //   }
+      //   else
+      //   {
+      //     if(!m.attributes().has(_optional))
+      //       throw std::runtime_error(std::string("Missing required GET parameter ") + m.symbol().name());
+      //   }
+      // };
     }
 
     template <typename P, typename O, typename C>
@@ -159,81 +177,18 @@ namespace sl
       }
     }
 
-    template <typename T, typename... D>
-    void decode_post_parameter_urlencoded(sio<D...>*, T& res, const std::string& s) const
-    {
-      json_decode<sio<D...>>(res, s);
-    }
-
-    template <typename T>
-    void decode_post_parameter_urlencoded(json_string*, T& res, const std::string& s) const
-    {
-      json_decode<json_string>(res, s);
-    }
-    
-    template <typename T, typename U>
-    void decode_post_parameter_urlencoded(T*, U& res, const std::string& s) const
-    {
-      res = boost::lexical_cast<T>(s);
-    }
-
     template <typename P, typename O>
     void decode_post_parameters_urlencoded(O& res, mhd_request* r) const
     {
-      std::map<std::string, std::string> map;
-
-      const std::string& body = r->body;
-      int last = 0;
-      for (unsigned int i = 0; i < body.size();)
+      try
       {
-        std::string key, value;
-
-        for (; i < body.size() and body[i] != '='; i++);
-
-        key = std::string(&body[last], i - last);
-
-        i++; // skip =
-
-        if (i >= body.size()) break;
-
-        last = i;
-
-        for (; i < body.size() and body[i] != '&'; i++);
-
-        value = std::string(&body[last], i - last);
-        value.resize(MHD_http_unescape(&value[0]));
-
-        map.insert(std::make_pair(key, value));
-
-        i++; // skip &;
-        last=i;
+        urldecode(r->body, res);
       }
-      
-      foreach(P()) | [&] (auto m)
+      catch (error::error err)
       {
-        auto it = map.find(m.symbol().name());
-        if (it != map.end())
-        {
-          try
-          {
-            decode_post_parameter_urlencoded((std::decay_t<decltype(m.value())>*) 0,
-                                             res[m.symbol()], it->second);
-          }
-          catch (const std::exception& e)
-          {
-            throw error::bad_request(std::string("Error while decoding the POST parameter ") +
-                                     m.symbol().name() + ": " + e.what());
-          }
-        }
-        else
-        {
-          if(!m.attributes().has(_optional))
-            throw std::runtime_error(std::string("Missing required POST parameter ") + m.symbol().name());
-        }
-            
-      };
+        throw error::bad_request("Error in POST parameters: ", err.what());
+      }
     }
-
     
     template <typename P, typename T>
     auto deserialize(request_type* r, P procedure, T& res) const

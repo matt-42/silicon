@@ -127,6 +127,8 @@ target_link_libraries(api_nesting ${MHD_LIBS} curl)
 add_executable(optional optional.cc)
 target_link_libraries(optional ${MHD_LIBS} curl)
 
+add_executable(urldecode urldecode.cc)
+target_link_libraries(urldecode ${MHD_LIBS})
 
 add_executable(type_string type_string.cc)
 target_link_libraries(type_string)

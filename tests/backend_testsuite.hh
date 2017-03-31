@@ -29,6 +29,10 @@ auto hl_api = http_api(
 
   // post object params
   POST / _test4 * post_parameters(_id = D(_name = std::string())) = [] (auto p) { return D(_name = p.id.name ); },
+
+
+  // post array params
+  POST / _test5 * post_parameters(_id = std::vector<int>()) = [] (auto p) { return D(_name = p.id ); },
   
   // url params
   GET / _test3 / _id[int(0)] = [] (auto p) { return D(_id = p.id); },
@@ -63,7 +67,7 @@ void backend_testsuite(int port)
   assert(r4.response.id == 12);
   assert(r4.response.name == "s pa ces");
 
-  auto r41 = c1.http_post.test4(_id = D(_name = "John"));
+  auto r41 = c2.http_post.test4(_id = D(_name = "John"));
   assert(r41.status == 200);
   assert(r41.response.name == "John");
   
