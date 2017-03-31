@@ -310,3 +310,18 @@
     iod_define_symbol(x_www_form_urlencoded)
 #endif
 
+#ifndef IOD_SYMBOL_hostname
+#define IOD_SYMBOL_hostname
+    iod_define_symbol(hostname)
+#endif
+
+#ifndef IOD_SYMBOL_username
+#define IOD_SYMBOL_username
+    iod_define_symbol(username)
+#endif
+
+#ifndef IOD_SYMBOL_password
+#define IOD_SYMBOL_password
+    iod_define_symbol(password)
+#endif
+

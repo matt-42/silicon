@@ -94,6 +94,38 @@ namespace sl
     return res.str();
   }
   
+  template <typename... R, typename P>
+  std::string procedure_description(const rmq::route<R...>& route, P f)
+  {
+    std::stringstream res;
+
+    res << route.verb_as_string() << ": ";
+
+    foreach(route.path) | [&] (auto e)
+    {
+      static_if<is_symbol<decltype(e)>::value>(
+        [&] (auto e2) { res << std::string("/") + e2.name(); },
+        [&] (auto e2) { res << std::string("/[") << e2.symbol().name() << ": "
+                            << type_string(&e2.value()) << "]"; }, e);
+    };
+
+    res << "(";
+    typedef std::remove_reference_t<decltype(f.function())> F;
+    typedef callable_return_type_t<F> ret_type;
+    first_sio_of_tuple_t<callable_arguments_tuple_t<F>> args;
+
+    auto params = route.all_params();
+
+    bool first = true;
+    foreach(params) | [&] (auto& a) {
+      if (!first) res << ", ";
+      first = false;
+      res << a.symbol().name() << ": " << type_string(&a.value());
+    };
+    res << ") -> " << type_string((ret_type*) 0);
+    return res.str();
+  }
+
   template <typename A>
   std::string api_description(A& api)
   {

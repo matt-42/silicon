@@ -1,0 +1,117 @@
+# Use new trusty images, should yield newer compilers and packages
+sudo: required
+dist: trusty
+language: cpp
+
+matrix:
+  include:
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-5
+      env:
+        - LOCAL_CXX=g++-5
+        - LOCAL_GCOV=gcov-5
+    - compiler: gcc
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - g++-6
+      env:
+        - LOCAL_CXX=g++-6
+        - LOCAL_GCOV=gcov-6
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.6
+          packages:
+            - clang-3.6
+            - llvm-3.6
+      env:
+        - LOCAL_CXX=clang++-3.6
+        - LOCAL_GCOV=llvm-cov-3.6
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+            - llvm-toolchain-precise-3.7
+          packages:
+            - clang-3.7
+            - llvm-3.7
+      env:
+        - LOCAL_CXX=clang++-3.7
+        - LOCAL_GCOV=llvm-cov-3.7
+
+before_install:
+    - $LOCAL_CXX --version
+    - $LOCAL_GCOV --version
+    - sudo apt-get update -qq
+    # Install deps
+    - sudo apt-get install -qq libboost-all-dev libssl-dev lcov
+    # Create env
+    - mkdir -p $HOME/build
+    # Install Rabbitmq-c
+    - cd $HOME/build
+    - git clone https://github.com/alanxz/rabbitmq-c.git
+    - mkdir -p rabbitmq-c/build
+    - cd rabbitmq-c/build
+    - cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME/local
+    - make -j 4 install
+    # Install libmicrohttpd
+    - cd $HOME/build
+    - wget http://ftp.gnu.org/gnu/libmicrohttpd/libmicrohttpd-0.9.48.tar.gz
+    - tar xzf libmicrohttpd-0.9.48.tar.gz
+    - cd libmicrohttpd-0.9.48
+    - ./configure  --prefix=$HOME/local
+    - make -j 4 install
+    # Install LWan
+    - cd $HOME/build
+    - git clone git://github.com/lpereira/lwan
+    - mkdir -p lwan/build
+    - cd lwan/build
+    - cmake .. -DCMAKE_BUILD_TYPE=Release -DCMAKE_INSTALL_PREFIX=$HOME/local
+    - make -j 4 install
+    # Install Iod
+    - cd $HOME/build
+    - git clone https://github.com/matt-42/iod.git
+    - mkdir -p iod/build
+    - cd iod/build
+    - cmake .. -DCMAKE_CXX_COMPILER=${LOCAL_CXX} -DCMAKE_INSTALL_PREFIX=$HOME/local
+    - make -j 4 install
+
+install:
+    # Install Silicon
+    - cd $HOME/build/$TRAVIS_REPO_SLUG
+    - mkdir -p build 
+    - cd build
+    - cmake .. -DCMAKE_CXX_COMPILER=${LOCAL_CXX} -DCMAKE_INSTALL_PREFIX=$HOME/local
+    - make -j 4 install
+
+before_script:
+    - cd $HOME/build/$TRAVIS_REPO_SLUG
+    - mkdir -p tests/build 
+    - cd tests/build 
+    - lcov --directory . --zerocounters
+    - cmake .. -DCMAKE_CXX_COMPILER=${LOCAL_CXX} -DCMAKE_INSTALL_PREFIX=$HOME/local
+
+script:
+    - cd $HOME/build/$TRAVIS_REPO_SLUG/tests/build 
+    - make all test
+
+after_success:
+    - cd $HOME/build/$TRAVIS_REPO_SLUG/tests/build
+    - lcov --directory . --capture --gcov-tool `which $LOCAL_GCOV` --output-file coverage.info
+    - lcov --remove coverage.info 'tests/*' '/usr/*' --gcov-tool `which $LOCAL_GCOV` --output-file coverage.info
+    - lcov --list coverage.info
+    - coveralls-lcov --repo-token ${COVERALLS_TOKEN} coverage.info
+
+after_script:
+    echo after_script
