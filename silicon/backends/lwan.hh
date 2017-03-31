@@ -171,6 +171,13 @@ namespace sl
       json_decode<sio<D...>>(res, s);
     }
 
+
+    template <typename T, typename D>
+    void decode_post_parameter(std::vector<D>*, T& res, const char* s) const
+    {
+      // FIXME handle vectors. json_decode<std::vector<D>>(res, s);
+    }
+    
     template <typename T>
     void decode_post_parameter(json_string*, T& res, const char* s) const
     {
