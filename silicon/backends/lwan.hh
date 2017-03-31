@@ -272,7 +272,7 @@ namespace sl
     {
       serialize2(r, res.body);
       if (res.has(_content_type))
-        r->lwan_resp->mime_type = &res.get(_content_type, string_ref("")).front();
+        r->lwan_resp->mime_type = &res.get(_content_type, string_ref(""))[0];
     }
     
   };
