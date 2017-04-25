@@ -10,6 +10,8 @@ Websocketpp is a C++ implementation of the websocket
 protocol. Websockets allow bidirectional communications between the
 server and the client, in opposition to HTTP where all communications
 are initiated by the client.
+Please note that the source code Websocketpp is not provided by silicon. You
+need to install it by yourself before compiling silicon-websocketpp code.
 
 The websocketpp silicon backend enables the server to remotely call function on
 the set of client connected clients. It implements a very basic
