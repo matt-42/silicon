@@ -228,11 +228,26 @@ namespace sl
 
     void serialize2(response_type* r, const file f) const
     {
-      int fd = open(f.path().c_str(), O_RDONLY);
+      const std::string& path = f.path();
+      int fd = open(path.c_str(), O_RDONLY);
 
       if (fd == -1)
         throw error::not_found("File not found.");
 
+      // Read extension.
+      int c = path.size();
+      while (c >= 1 and path[c - 1] != '.')
+        c--;
+      if (c > 1 and c < path.size())
+      {
+        const char* ext = path.c_str() + c;
+        if (!strcmp(ext, "js"))
+            r->set_header("Content-Type", "text/javascript");
+        if (!strcmp(ext, "css"))
+            r->set_header("Content-Type", "text/css");
+        if (!strcmp(ext, "html"))
+            r->set_header("Content-Type", "text/html");
+      }
       r->file_descriptor = fd;
       r->status = 200;
     }
