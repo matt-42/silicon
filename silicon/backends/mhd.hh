@@ -13,6 +13,10 @@
 #include <string.h>
 #include <stdio.h>
 
+#if defined(__GNUC__) && defined(__MINGW32__)
+#include <unistd.h>
+#endif
+
 #include <iod/json.hh>
 #include <iod/utils.hh>
 
