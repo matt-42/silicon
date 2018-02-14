@@ -250,5 +250,5 @@ namespace rmq
   {
     return parse_api(std::make_tuple(procs...), route<>());
   }
-};
+}
 }
