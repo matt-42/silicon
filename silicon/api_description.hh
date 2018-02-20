@@ -99,15 +99,7 @@ namespace sl
   {
     std::stringstream res;
 
-    res << route.verb_as_string() << ": ";
-
-    foreach(route.path) | [&] (auto e)
-    {
-      static_if<is_symbol<decltype(e)>::value>(
-        [&] (auto e2) { res << std::string("/") + e2.name(); },
-        [&] (auto e2) { res << std::string("/[") << e2.symbol().name() << ": "
-                            << type_string(&e2.value()) << "]"; }, e);
-    };
+    res << route.exchange_as_string() << ": " << route.path_as_string(false);
 
     res << "(";
     typedef std::remove_reference_t<decltype(f.function())> F;
