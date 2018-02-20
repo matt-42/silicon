@@ -25,14 +25,15 @@ namespace rmq
   }
 
   template <typename T>
-  struct verb: public T, public iod::assignable<verb<T>>, public iod::Exp<verb<T>>
+  struct exchange: public T, public iod::assignable<exchange<T>>, public iod::Exp<exchange<T>>
   {
-    using iod::assignable<verb<T>>::operator=;
+    using iod::assignable<exchange<T>>::operator=;
   };
 
-  struct verb_direct { char const * to_string() { return "amq.direct"; } }; verb<verb_direct> RMQ_DIRECT;
+  struct exchange_empty  { char const * to_string() { return ""; } }; exchange<exchange_empty> RMQ_EMPTY;
+  struct exchange_direct { char const * to_string() { return "amq.direct"; } }; exchange<exchange_direct> RMQ_DIRECT;
 
-  template <typename V = verb_direct,
+  template <typename E = exchange_empty,
             typename S = std::tuple<>,
             typename P = iod::sio<>>
   struct route
@@ -46,7 +47,7 @@ namespace rmq
     template <typename NS, typename NP>
     auto route_builder(NS /*s*/, NP p) const
     {
-      return route<V, NS, NP>(p);
+      return route<E, NS, NP>(p);
     }
 
 
@@ -101,21 +102,22 @@ namespace rmq
       return params;
     }
 
-    auto verb_as_string(verb_direct v) const { return v.to_string(); }
-    auto verb_as_string() const { return verb_as_string(verb); }
+    auto exchange_as_string(E e) const { return e.to_string(); }
+    auto exchange_as_string() const { return exchange_as_string(exchange); }
 
-    std::string path_as_string(bool with_verb = true) const
+    std::string path_as_string(bool with_exchange = true) const
     {
       std::string s;
+      bool first = true;
 
-      if (with_verb)
-        s += verb_as_string(verb);
+      if (with_exchange)
+        s += exchange_as_string(exchange);
 
       foreach(path) | [&] (auto e)
       {
         iod::static_if<iod::is_symbol<decltype(e)>::value>(
-              [&] (auto e2) { s += std::string("/") + e2.name(); },
-              [&] (auto)    { s += std::string("/*"); }, e);
+              [&] (auto e2) { s += (first ? std::string() : std::string(".")) + e2.name(); first = false; },
+              [&] (auto)    { s += std::string(".*"); }, e);
       };
       return s;
     }
@@ -125,7 +127,7 @@ namespace rmq
       return path_as_string();
     }
 
-    V verb;
+    E exchange;
     S path;
     P params;
   };
@@ -138,22 +140,22 @@ namespace rmq
       return b.path_append(s);
     }
 
-    template <typename B, typename V>
-    auto make_route(B b, verb<V> const & v)
+    template <typename B, typename E>
+    auto make_route(B b, exchange<E> const & e)
     {
-      return b.set_verb(v);
+      return b.set_exchange(e);
     }
 
     template <typename B, typename P>
-    auto make_route(B b, const params_t<P>& new_params)
+    auto make_route(B b, params_t<P> const & new_params)
     {
       return b.set_params(new_params);
     }
 
-    template <typename B, typename S, typename V>
-    auto make_route(B b, iod::array_subscript_exp<S, V> const & v)
+    template <typename B, typename S, typename E>
+    auto make_route(B b, iod::array_subscript_exp<S, E> const & e)
     {
-      return b.path_append(v);
+      return b.path_append(e);
     }
 
     template <typename B, typename L, typename R>
@@ -186,14 +188,14 @@ namespace rmq
     return rmq::internal::make_route(r1, r2);
   }
 
-  template <typename V, typename S, typename P>
-  auto make_route(const rmq::route<V, S, P>& r)
+  template <typename E, typename S, typename P>
+  auto make_route(rmq::route<E, S, P> const & r)
   {
     return r;
   }
 
   template <typename E>
-  auto make_route(const E& exp)
+  auto make_route(E const & exp)
   {
     rmq::route<> b;
     return rmq::internal::make_route(b, exp);
