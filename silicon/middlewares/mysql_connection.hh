@@ -438,6 +438,10 @@ namespace sl
           throw error::internal_server_error("Cannot connect to the database");
 
         mysql_set_character_set(con_, "utf8");
+        
+        // auto reconnect
+        bool reconnect = true;
+        mysql_options(con_, MYSQL_OPT_RECONNECT, &reconnect);
       }
 
       assert(con_);
