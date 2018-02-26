@@ -30,10 +30,10 @@ namespace rmq
     using iod::assignable<exchange<T>>::operator=;
   };
 
-  struct exchange_empty  { char const * to_string() { return ""; } }; exchange<exchange_empty> RMQ_EMPTY;
+  struct exchange_empty { char const * to_string() { return ""; } }; exchange<exchange_empty> RMQ_EMPTY;
   struct exchange_direct { char const * to_string() { return "amq.direct"; } }; exchange<exchange_direct> RMQ_DIRECT;
 
-  template <typename E = exchange_empty,
+  template <typename E = exchange_direct,
             typename S = std::tuple<>,
             typename P = iod::sio<>>
   struct route
@@ -49,7 +49,6 @@ namespace rmq
     {
       return route<E, NS, NP>(p);
     }
-
 
     template <typename T>
     auto path_append(iod::symbol<T> const & /*s*/) const

@@ -10,6 +10,7 @@ iod_define_symbol(message)
 auto hello_api = sl::rmq::api(
   s::_test = [] ()
   {
+    std::cout << "coucou test " << std::endl;
   },
   s::_test / s::_test1 * sl::rmq::parameters(s::_id = int()) = [] (auto params)
   {
