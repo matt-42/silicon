@@ -182,6 +182,10 @@ namespace rmq
       consumer(A const & api, unsigned short port, O &&... opts):
         basic<S>(api, port, opts...)
       {
+        auto options = D(opts...);
+
+        no_ack = options.get(s::_no_ack, false);
+
         foreach(api) | [&] (auto& m)
         {
           iod::static_if<is_tuple<decltype(m.content)>::value>(
@@ -194,21 +198,14 @@ namespace rmq
             {
               // Else, register the procedure.
               amqp_channel_t chan = 1;
-              bool passive = false;
-              bool durable = true;
-              bool exclusive = false;
-              bool auto_delete = false;
-              bool no_ack = false;
-              bool no_local = false;
-              unsigned int prefetch_count = 1;
 
               // declare queue
               auto r = amqp_queue_declare(this->socket.conn, chan,
                                           amqp_cstring_bytes(m.route.path_as_string(false).c_str()),
-                                          passive,
-                                          durable,
-                                          exclusive,
-                                          auto_delete,
+                                          options.get(s::_passive, false),
+                                          options.get(s::_durable, false),
+                                          options.get(s::_exclusive, false),
+                                          options.get(s::_auto_delete, false),
                                           amqp_empty_table);
 
               die_on_amqp_error(amqp_get_rpc_reply(this->socket.conn), "amqp.queue.declare");
@@ -225,17 +222,20 @@ namespace rmq
                               amqp_empty_table);
               die_on_amqp_error(amqp_get_rpc_reply(this->socket.conn), "amqp.queue.bind");
 
-              // set prefetch count
-              amqp_basic_qos(this->socket.conn, chan, 0, prefetch_count, false);
-              die_on_amqp_error(amqp_get_rpc_reply(this->socket.conn), "amqp.basic.qos");
+              if (options.has(s::_prefetch_count))
+              {
+                // set prefetch count
+                amqp_basic_qos(this->socket.conn, chan, 0, options.get(s::_prefetch_count, 1), false);
+                die_on_amqp_error(amqp_get_rpc_reply(this->socket.conn), "amqp.basic.qos");
+              }
 
               // register to consume
               amqp_basic_consume(this->socket.conn, chan,
                                  queuename,
                                  amqp_empty_bytes,
-                                 no_local,
-                                 no_ack,
-                                 exclusive,
+                                 options.get(s::_no_local, false),
+                                 options.get(s::_no_ack, false),
+                                 options.get(s::_exclusive, false),
                                  amqp_empty_table);
               die_on_amqp_error(amqp_get_rpc_reply(this->socket.conn), "amqp.basic.consume");
 
@@ -329,6 +329,7 @@ namespace rmq
           {
             auto routing_key = get_string(rq.envelope.routing_key);
             auto exchange = get_string(rq.envelope.exchange);
+            auto local_no_ack = no_ack;
 
             try
             {
@@ -337,15 +338,18 @@ namespace rmq
             catch(error::error const & e)
             {
               std::cerr << "Exception: " << e.status() << " " << e.what() << std::endl;
+              local_no_ack = false;
             }
             catch(std::runtime_error const & e)
             {
               std::cerr << "Exception: " << e.what() << std::endl;
+              local_no_ack = false;
             }
 
-            die_on_error(amqp_basic_ack(basic<S>::socket.conn, rq.envelope.channel,
-                                        rq.envelope.delivery_tag, 0),
-                         "amqp.basic.ack");
+            if (!local_no_ack)
+              die_on_error(amqp_basic_ack(basic<S>::socket.conn, rq.envelope.channel,
+                                          rq.envelope.delivery_tag, 0),
+                           "amqp.basic.ack");
 
             amqp_destroy_envelope(&rq.envelope);
           }
@@ -360,6 +364,8 @@ namespace rmq
 
         return 0;
       }
+
+      bool no_ack;
     };
   }
 

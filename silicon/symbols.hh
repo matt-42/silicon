@@ -325,3 +325,37 @@
     iod_define_symbol(password)
 #endif
 
+#ifndef IOD_SYMBOL_passive
+#define IOD_SYMBOL_passive
+    iod_define_symbol(passive)
+#endif
+
+#ifndef IOD_SYMBOL_durable
+#define IOD_SYMBOL_durable
+    iod_define_symbol(durable)
+#endif
+
+#ifndef IOD_SYMBOL_exclusive
+#define IOD_SYMBOL_exclusive
+    iod_define_symbol(exclusive)
+#endif
+
+#ifndef IOD_SYMBOL_auto_delete
+#define IOD_SYMBOL_auto_delete
+    iod_define_symbol(auto_delete)
+#endif
+
+#ifndef IOD_SYMBOL_no_ack
+#define IOD_SYMBOL_no_ack
+    iod_define_symbol(no_ack)
+#endif
+
+#ifndef IOD_SYMBOL_no_local
+#define IOD_SYMBOL_no_local
+    iod_define_symbol(no_local)
+#endif
+
+#ifndef IOD_SYMBOL_prefetch_count
+#define IOD_SYMBOL_prefetch_count
+    iod_define_symbol(prefetch_count)
+#endif
