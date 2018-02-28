@@ -201,7 +201,7 @@ namespace rmq
 
               // declare queue
               auto r = amqp_queue_declare(this->socket.conn, chan,
-                                          amqp_cstring_bytes(m.route.path_as_string(false).c_str()),
+                                          amqp_cstring_bytes(m.route.queue_name_as_string().c_str()),
                                           options.get(s::_passive, false),
                                           options.get(s::_durable, false),
                                           options.get(s::_exclusive, false),
@@ -218,7 +218,7 @@ namespace rmq
               amqp_queue_bind(this->socket.conn, chan,
                               queuename,                                                  // Queue name
                               amqp_cstring_bytes(m.route.exchange_as_string()),           // Exchange name
-                              amqp_cstring_bytes(m.route.path_as_string(false).c_str()),  // Routing key
+                              amqp_cstring_bytes(m.route.routing_key_as_string().c_str()),// Routing key
                               amqp_empty_table);
               die_on_amqp_error(amqp_get_rpc_reply(this->socket.conn), "amqp.queue.bind");
 
@@ -333,7 +333,11 @@ namespace rmq
 
             try
             {
-              s(exchange + routing_key, &rq, &resp, *this);
+              std::stringstream ss;
+
+              ss << exchange << ": " << routing_key;
+
+              s(ss.str(), &rq, &resp, *this);
             }
             catch(error::error const & e)
             {

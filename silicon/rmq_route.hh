@@ -1,6 +1,7 @@
 #pragma once
 
 #include <sstream>
+#include <iostream>
 
 #include <iod/sio_utils.hh>
 #include <silicon/symbols.hh>
@@ -10,10 +11,11 @@ namespace sl
 {
 namespace rmq
 {
+  // parameters
   template <typename P>
   struct params_t
   {
-    params_t(P p) : params(p) {}
+    params_t(P p): params(p) {}
     P params;
   };
 
@@ -24,37 +26,70 @@ namespace rmq
     return params_t<sio_type>(D(p...));
   }
 
+  // exchanges
   template <typename T>
   struct exchange: public T, public iod::assignable<exchange<T>>, public iod::Exp<exchange<T>>
   {
     using iod::assignable<exchange<T>>::operator=;
   };
 
-  struct exchange_empty { char const * to_string() { return ""; } }; exchange<exchange_empty> RMQ_EMPTY;
-  struct exchange_direct { char const * to_string() { return "amq.direct"; } }; exchange<exchange_direct> RMQ_DIRECT;
+  struct exchange_empty
+  {
+    char const * to_string() const { return ""; }
+  };
+  exchange<exchange_empty> EXCHANGE_EMPTY;
 
+  struct exchange_direct
+  {
+    char const * to_string() const { return "amq.direct"; }
+  };
+  exchange<exchange_direct> EXCHANGE_DIRECT;
+
+  // route composition
   template <typename E = exchange_direct,
-            typename S = std::tuple<>,
+            typename R = std::tuple<>,
+            typename Q = std::tuple<>,
             typename P = iod::sio<>>
   struct route
   {
-    typedef S path_type;
+    typedef R path_type;
+    typedef R routing_key_type;
+    typedef Q queue_type;
     typedef P parameters_type;
 
     route() {}
-    route(P p1): params(p1) {}
+    route(P p): params(p) {}
 
-    template <typename NS, typename NP>
-    auto route_builder(NS /*s*/, NP p) const
+    static constexpr auto has_qn = !std::is_same<Q, std::tuple<>>::value;
+
+    // route builder
+    template <typename NR, typename NQ, typename NP>
+    auto route_builder(NR /*r*/, NQ /*q*/, NP p) const
     {
-      return route<E, NS, NP>(p);
+      return route<E, NR, NQ, NP>(p);
     }
 
+    // routing key append
     template <typename T>
-    auto path_append(iod::symbol<T> const & /*s*/) const
+    auto rk_append(iod::symbol<T> const & /*s*/) const
     {
-      auto new_path = std::tuple_cat(path, std::make_tuple(T()));
-      return route_builder(new_path, params);
+      auto new_rk = std::tuple_cat(routing_key, std::make_tuple(T()));
+      return route_builder(new_rk, queue_name, params);
+    }
+
+    // queue name append
+    template <typename T>
+    auto qn_append(iod::symbol<T> const & /*s*/) const
+    {
+      auto new_qn = std::tuple_cat(queue_name, std::make_tuple(T()));
+      return route_builder(routing_key, new_qn, params);
+    }
+
+    // Set params.
+    template <typename NP>
+    auto set_params(params_t<NP> const & np) const
+    {
+      return route_builder(routing_key, queue_name, format_params(np));
     }
 
     template <typename NP>
@@ -89,36 +124,62 @@ namespace rmq
       };
     }
 
-    // Set get params.
-    template <typename NP>
-    auto set_params(params_t<NP> const & new_params) const
-    {
-      return route_builder(path, format_params(new_params));
-    }
-
     auto all_params() const
     {
       return params;
     }
 
-    auto exchange_as_string(E e) const { return e.to_string(); }
-    auto exchange_as_string() const { return exchange_as_string(exchange); }
+    auto exchange_as_string() const { return exchange.to_string(); }
+
+    template <typename NE>
+    auto set_exchange(exchange<NE> const &) const
+    {
+      return route<NE, R, Q, P>(params);
+    }
+
+    std::string routing_key_as_string() const
+    {
+      std::stringstream ss;
+      bool first = true;
+
+      foreach(routing_key) | [&] (auto e)
+      {
+        iod::static_if<iod::is_symbol<decltype(e)>::value>(
+              [&] (auto e2) { ss << (first ? std::string() : std::string(".")) << e2.name(); first = false; },
+              [&] (auto)    { ss << std::string(".*"); }, e);
+      };
+
+      return ss.str();
+    }
+
+    std::string queue_name_as_string() const
+    {
+      std::stringstream ss;
+      bool first = true;
+
+      foreach(queue_name) | [&] (auto e)
+      {
+        iod::static_if<iod::is_symbol<decltype(e)>::value>(
+              [&] (auto e2) { ss << (first ? std::string() : std::string(".")) << e2.name(); first = false; },
+              [&] (auto)    { ss << std::string(".*"); }, e);
+      };
+
+      return ss.str();
+    }
 
     std::string path_as_string(bool with_exchange = true) const
     {
-      std::string s;
-      bool first = true;
+      std::stringstream ss;
 
       if (with_exchange)
-        s += exchange_as_string(exchange);
+        ss << exchange_as_string() << ": ";
 
-      foreach(path) | [&] (auto e)
-      {
-        iod::static_if<iod::is_symbol<decltype(e)>::value>(
-              [&] (auto e2) { s += (first ? std::string() : std::string(".")) + e2.name(); first = false; },
-              [&] (auto)    { s += std::string(".*"); }, e);
-      };
-      return s;
+      ss << routing_key_as_string();
+
+      //if (has_qn)
+      //  ss << " -> " << queue_name_as_string();
+
+      return ss.str();
     }
 
     std::string string_id() const
@@ -127,49 +188,62 @@ namespace rmq
     }
 
     E exchange;
-    S path;
+    R routing_key;
+    Q queue_name;
     P params;
   };
 
   namespace internal
   {
-    template <typename B, typename S>
-    auto make_route(B b, iod::symbol<S> const & s)
+    template <bool has_qn, typename B, typename R>
+    auto make_route(B b, iod::symbol<R> const & s)
     {
-      return b.path_append(s);
+      return iod::static_if<has_qn>(
+            [&]() { return b.qn_append(s); },
+            [&]() { return b.rk_append(s); });
     }
 
-    template <typename B, typename E>
+    template <bool has_qn, typename B, typename R, typename E>
+    auto make_route(B b, iod::array_subscript_exp<R, E> const & a)
+    {
+      return iod::static_if<has_qn>(
+            [&]() { return b.qn_append(a); },
+            [&]() { return b.rk_append(a); });
+    }
+
+    template <bool, typename B, typename E>
     auto make_route(B b, exchange<E> const & e)
     {
       return b.set_exchange(e);
     }
 
-    template <typename B, typename P>
-    auto make_route(B b, params_t<P> const & new_params)
+    template <bool, typename B, typename P>
+    auto make_route(B b, params_t<P> const & p)
     {
-      return b.set_params(new_params);
+      return b.set_params(p);
     }
 
-    template <typename B, typename S, typename E>
-    auto make_route(B b, iod::array_subscript_exp<S, E> const & e)
-    {
-      return b.path_append(e);
-    }
-
-    template <typename B, typename L, typename R>
+    template <bool, typename B, typename L, typename R>
     auto make_route(B b, iod::div_exp<L, R> const & r);
 
-    template <typename B, typename L, typename R>
+    template <bool, typename B, typename L, typename R>
     auto make_route(B b, iod::mult_exp<L, R> const & r)
     {
-      return make_route(make_route(b, r.lhs), r.rhs);
+      auto lhs = make_route<B::has_qn>(b, r.lhs);
+      return make_route<decltype(lhs)::has_qn>(lhs, r.rhs);
     }
 
-    template <typename B, typename L, typename R>
+    template <bool, typename B, typename L, typename R>
+    auto make_route(B b, iod::logical_and_exp<L, R> const & r)
+    {
+      auto lhs = make_route<B::has_qn>(b, r.lhs);
+      return make_route<decltype(lhs)::has_qn>(lhs, r.rhs);
+    }
+
+    template <bool, typename B, typename L, typename R>
     auto make_route(B b, iod::div_exp<L, R> const & r)
     {
-      return make_route(make_route(b, r.lhs), r.rhs);
+      return make_route<true>(make_route<B::has_qn>(b, r.lhs), r.rhs);
     }
   }
 }
@@ -184,11 +258,11 @@ namespace rmq
   auto route_cat(rmq::route<R1...> const & r1,
                  R2 const & r2)
   {
-    return rmq::internal::make_route(r1, r2);
+    return rmq::internal::make_route<rmq::route<R1...>::has_qn>(r1, r2);
   }
 
-  template <typename E, typename S, typename P>
-  auto make_route(rmq::route<E, S, P> const & r)
+  template <typename E, typename R, typename Q, typename P>
+  auto make_route(rmq::route<E, R, Q, P> const & r)
   {
     return r;
   }
@@ -197,6 +271,6 @@ namespace rmq
   auto make_route(E const & exp)
   {
     rmq::route<> b;
-    return rmq::internal::make_route(b, exp);
+    return rmq::internal::make_route<decltype(b)::has_qn>(b, exp);
   }
 }
