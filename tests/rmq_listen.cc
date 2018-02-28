@@ -2,26 +2,25 @@
 #include <silicon/api_description.hh>
 #include <silicon/backends/rabbitmq.hh>
 
-iod_define_symbol(test)
-iod_define_symbol(test1)
-iod_define_symbol(test2)
+iod_define_symbol(rk1)
+iod_define_symbol(rk2)
+iod_define_symbol(qn1)
+iod_define_symbol(qn2)
+
 iod_define_symbol(message)
 
 auto hello_api = sl::rmq::api(
-  s::_test = [] ()
-  {
-    std::cout << "coucou test " << std::endl;
-  },
-  s::_test / s::_test1 * sl::rmq::parameters(s::_id = int()) = [] (auto params)
-  {
-    std::cout << "coucou test/test1 " << params.id << std::endl;
-    //return D(s::_message = "test/test1");
-  },
-  s::_test / s::_test2 * sl::rmq::parameters(s::_str = std::string()) = [] (auto params)
-  {
-    std::cout << "coucou test/test2 " << params.str << std::endl;
-    //return D(s::_message = "test/test1");
-  }
+  s::_rk1 = []() { },
+  s::_rk2 & sl::rmq::parameters(s::_str = std::string()) = [](auto) { },
+
+  s::_rk1 * s::_rk1 = []() { },
+  s::_rk2 * s::_rk2 & sl::rmq::parameters(s::_str = std::string()) = [](auto) { },
+
+  s::_rk1 * s::_rk1 / s::_qn1 = []() { },
+  s::_rk2 * s::_rk2 / s::_qn2 & sl::rmq::parameters(s::_str = std::string()) = [](auto) { },
+
+  s::_rk1 * s::_rk1 / s::_qn1 * s::_qn1 = []() { },
+  s::_rk2 * s::_rk2 / s::_qn2 * s::_qn2 & sl::rmq::parameters(s::_str = std::string()) = [](auto) { }
 );
 
 int main(int /*argc*/, char* argv[])
@@ -34,4 +33,5 @@ int main(int /*argc*/, char* argv[])
                                                           s::_password = std::string("guest"),
                                                           s::_durable = true,
                                                           s::_prefetch_count = 1);
+
 };
