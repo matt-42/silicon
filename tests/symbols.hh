@@ -329,3 +329,23 @@ iod_define_symbol(my_files)
 #define IOD_SYMBOL_my_file
     iod_define_symbol(my_file)
 #endif
+
+#ifndef IOD_SYMBOL_rk1
+#define IOD_SYMBOL_rk1
+    iod_define_symbol(rk1)
+#endif
+
+#ifndef IOD_SYMBOL_rk2
+#define IOD_SYMBOL_rk2
+    iod_define_symbol(rk2)
+#endif
+
+#ifndef IOD_SYMBOL_qn1
+#define IOD_SYMBOL_qn1
+    iod_define_symbol(qn1)
+#endif
+
+#ifndef IOD_SYMBOL_qn2
+#define IOD_SYMBOL_qn2
+    iod_define_symbol(qn2)
+#endif

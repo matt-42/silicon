@@ -38,12 +38,14 @@ namespace rmq
     char const * to_string() const { return ""; }
   };
   exchange<exchange_empty> EXCHANGE_EMPTY;
+  auto exchange_to_symbol(exchange_empty) { return s::_empty; }
 
   struct exchange_direct
   {
     char const * to_string() const { return "amq.direct"; }
   };
   exchange<exchange_direct> EXCHANGE_DIRECT;
+  auto exchange_to_symbol(exchange_direct) { return s::_direct; }
 
   // route composition
   template <typename E = exchange_direct,

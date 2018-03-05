@@ -3,6 +3,9 @@
 #include <iostream>
 #include <silicon/api.hh>
 #include <silicon/clients/libcurl_client.hh>
+#include <silicon/backends/rabbitmq.hh>
+#include <silicon/clients/rmq_client.hh>
+
 #include "symbols.hh"
 
 using namespace s;
@@ -49,7 +52,22 @@ auto hl_api = http_api(
   
 );
 
-void backend_testsuite(int port)
+auto rmq_api = sl::rmq::api(
+  s::_test = []() { },
+  s::_test1 & sl::rmq::parameters(s::_str = std::string()) = [](auto) { },
+
+  s::_test2 * s::_rk1 = []() { },
+  s::_test3 * s::_rk2 & sl::rmq::parameters(s::_str = std::string()) = [](auto) { },
+
+  s::_test4 * s::_rk1 / s::_qn1 = []() { },
+  s::_test5 * s::_rk2 / s::_qn2 & sl::rmq::parameters(s::_str = std::string()) = [](auto) { },
+
+  s::_rk1 * s::_rk1 / s::_qn1 * s::_qn1 = []() { },
+  s::_rk2 * s::_rk2 / s::_qn2 * s::_qn2 & sl::rmq::parameters(s::_str = std::string()) = [](auto) { }
+);
+
+template <typename T>
+void backend_testsuite(T port)
 {
   auto c1 = libcurl_json_client(hl_api, "127.0.0.1", port, _post_encoding = _x_www_form_urlencoded);
   auto c2 = libcurl_json_client(hl_api, "127.0.0.1", port);

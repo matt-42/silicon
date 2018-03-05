@@ -128,7 +128,7 @@ namespace sl
             curl_free(escaped);
           };
         },
-        [&] (auto args) {}, args);
+        [&] (auto /*args*/) {}, args);
 
       // Pass the url to libcurl.
       curl_easy_setopt(curl_, CURLOPT_URL, url_ss.str().c_str());
@@ -161,7 +161,7 @@ namespace sl
             rq_body = post_stream.str();
             req_body_buffer_.str(rq_body);
           },
-          [&] (auto args) {}, args);
+          [&] (auto /*args*/) {}, args);
       }
       else // Json encoded
         static_if<(route.post_params._size > 0 and A::_size > 0)>(
@@ -169,7 +169,7 @@ namespace sl
             auto post_params = iod::intersect(args, route.post_params);        
             rq_body = json_encode(post_params);
 
-          }, [](auto args){}, args);
+          }, [](auto /*args*/){}, args);
 
       // HTTP POST
       if (std::is_same<decltype(route.verb), http_post>::value)

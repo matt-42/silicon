@@ -90,7 +90,7 @@ namespace sl
   template <typename R, typename P, typename... PA, typename... GA>
   auto apply_global_middleware3(R route, P proc, std::tuple<PA...>*, std::tuple<GA...>*)
   {
-    return make_procedure(0, route, [=] (PA... pa, const GA&... ga)
+    return make_procedure(0, route, [=] (PA... pa, const GA&... /*ga*/)
     {
       return proc.function()(pa...);
     });
@@ -167,7 +167,7 @@ namespace sl
             typedef std::remove_reference_t<decltype(m)> X_;
             di_factories_call(bind_method(m, &X_::initialize), middlewares_);
           },
-          [] (auto& m) {}, m);
+          [] (auto& /*m*/) {}, m);
       };
     }
     

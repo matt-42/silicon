@@ -104,7 +104,7 @@ namespace sl
     {}
 
     template <typename NS, typename NP1, typename NP2, typename NP3>
-    auto http_route_builder(NS s, NP1 p1, NP2 p2, NP3 p3) const
+    auto http_route_builder(NS /*s*/, NP1 p1, NP2 p2, NP3 p3) const
     {
       return http_route<V, NS, NP1, NP2, NP3>(p1, p2, p3);
     }
@@ -124,7 +124,7 @@ namespace sl
 
     // Add a path symbol.
     template <typename T>
-    auto path_append(const iod::symbol<T>& s) const
+    auto path_append(const iod::symbol<T>& /*s*/) const
     {
       auto new_path = std::tuple_cat(path, std::make_tuple(T()));
       return http_route_builder(new_path, url_params, get_params, post_params);
