@@ -15,6 +15,4 @@ int main(int /*argc*/, char* argv[])
   c.direct.test3.rk2(s::_str = "string");
   c.direct.test4.rk1();
   c.direct.test5.rk2(s::_str = "string");
-  c.direct.rk1.rk1();
-  c.direct.rk2.rk2(s::_str = "string");
 };
