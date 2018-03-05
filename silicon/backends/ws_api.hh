@@ -39,7 +39,7 @@ namespace sl
     {}
 
     template <typename NS, typename NP>
-    auto ws_route_builder(NS s, NP p1) const
+    auto ws_route_builder(NS /*s*/, NP p1) const
     {
       return ws_route<NS, NP>(p1);
     }
@@ -53,7 +53,7 @@ namespace sl
 
     // Add a path symbol.
     template <typename T>
-    auto path_append(const iod::symbol<T>& s) const
+    auto path_append(const iod::symbol<T>& /*s*/) const
     {
       auto new_path = std::tuple_cat(path, std::make_tuple(T()));
       return ws_route_builder(new_path, params);

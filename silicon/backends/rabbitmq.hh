@@ -129,20 +129,24 @@ namespace rmq
       public socket
     {
       template <typename... O>
-      tcp_socket(unsigned short port, O &&... opts)
+      tcp_socket(std::string const & host, unsigned short port, O &&... )
       {
-        auto options = D(opts...);
-        auto hostname = options.hostname;
-
         conn = amqp_new_connection();
         socket = amqp_tcp_socket_new(conn);
         if (!socket)
           throw std::runtime_error("amqp.tcp.socket.new");
 
-        auto status = amqp_socket_open(socket, hostname.c_str(), port);
+        auto status = amqp_socket_open(socket, host.c_str(), port);
         if (status)
           throw std::runtime_error("amqp.socket.open");
       }
+
+      //~tcp_socket()
+      //{
+      //  die_on_amqp_error(amqp_connection_close(conn, AMQP_REPLY_SUCCESS),
+      //                    "amqp.connection.close");
+      //  die_on_error(amqp_destroy_connection(conn), "amqp.destroy.connection");
+      //}
     };
   }
 
@@ -151,9 +155,9 @@ namespace rmq
     template <typename S>
     struct basic
     {
-      template <typename A, typename... O>
-        basic(A const & /*api*/, unsigned short port, O &&... opts):
-          socket(port, opts...)
+      template <typename... O>
+        basic( std::string const & host, unsigned short port, O &&... opts):
+          socket(host, port, opts...)
       {
         auto options = D(opts...);
         auto username = options.username;
@@ -179,8 +183,8 @@ namespace rmq
       public basic<S>
     {
       template <typename A, typename... O>
-      consumer(A const & api, unsigned short port, O &&... opts):
-        basic<S>(api, port, opts...)
+      consumer(A const & api, std::string const & host, unsigned short port, O &&... opts):
+        basic<S>(host, port, opts...)
       {
         auto options = D(opts...);
 
@@ -375,9 +379,9 @@ namespace rmq
 
   template <typename C, typename A, typename M, typename... O>
   auto
-  make_context(A const & api, M const & mf, unsigned short port, O &&... opts)
+  make_context(A const & api, M const & mf, std::string const & host, unsigned short port, O &&... opts)
   {
-    auto ctx = C(api, port, opts...);
+    auto ctx = C(api, host, port, opts...);
     auto m2 = std::tuple_cat(std::make_tuple(), mf);
 
     using service_t = service<utils::service, decltype(m2), utils::request*, utils::response*, C>;
@@ -388,16 +392,16 @@ namespace rmq
 
   template <typename S, typename A, typename M, typename... O>
   auto
-  consume(A const & api, M const & mf, unsigned short port, O &&... opts)
+  consume(A const & api, M const & mf, std::string const & host, unsigned short port, O &&... opts)
   {
-    return make_context<context::consumer<S>>(api, mf, port, opts...);
+    return make_context<context::consumer<S>>(api, mf, host, port, opts...);
   }
 
   template <typename S, typename A, typename... O>
   auto
-  consume(A const & api, unsigned short port, O &&... opts)
+  consume(A const & api, std::string const & host, unsigned short port, O &&... opts)
   {
-    return make_context<context::consumer<S>>(api, std::make_tuple(), port, opts...);
+    return make_context<context::consumer<S>>(api, std::make_tuple(), host, port, opts...);
   }
 }
 }

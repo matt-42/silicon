@@ -3,6 +3,8 @@
 #include <tuple>
 #include <boost/utility/string_ref.hpp>
 #include <iod/utils.hh>
+#include <iod/sio_utils.hh>
+#include <iod/tuple_utils.hh>
 
 namespace sl
 {
@@ -19,7 +21,7 @@ namespace sl
     return D(S1() = symbol_tuple_to_sio((std::tuple<S...>*)0, content));
   }
 
-  inline auto filter_symbols_from_tuple(std::tuple<> path)
+  inline auto filter_symbols_from_tuple(std::tuple<> /*path*/)
   {
     return std::tuple<>();
   }

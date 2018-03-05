@@ -359,3 +359,13 @@
 #define IOD_SYMBOL_prefetch_count
     iod_define_symbol(prefetch_count)
 #endif
+
+#ifndef IOD_SYMBOL_empty
+#define IOD_SYMBOL_empty
+    iod_define_symbol(empty)
+#endif
+
+#ifndef IOD_SYMBOL_direct
+#define IOD_SYMBOL_direct
+    iod_define_symbol(direct)
+#endif
