@@ -1,7 +1,12 @@
 #include <chrono>
 
 #include <silicon/api.hh>
+
+#include <silicon/middleware_factories.hh>
+#include <silicon/middlewares/sqlite_connection.hh>
+
 #include <silicon/clients/rmq_client.hh>
+
 #include "symbols.hh"
 #include "backend_testsuite.hh"
 
@@ -14,11 +19,16 @@ int main(int, char const * argv[])
 {
   std::vector<std::thread> workers;
   
+  auto f = sl::middleware_factories(
+    sl::sqlite_connection_factory("db.sqlite") // sqlite middleware.
+    );
+
   for (unsigned int i = 0; i < nworkers; ++i)
   {
     std::thread worker([&]()
     {
-      sl::rmq::consume<sl::rmq::utils::tcp_socket>(rmq_api, argv[1], atoi(argv[2]),
+      sl::rmq::consume<sl::rmq::utils::tcp_socket>(rmq_api, f,
+                                                   argv[1], atoi(argv[2]),
                                                    s::_username = std::string("guest"),
                                                    s::_password = std::string("guest"),
                                                    s::_durable = true,
