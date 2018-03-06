@@ -2,6 +2,8 @@
 
 # include <stdexcept>
 # include <iostream>
+# include <chrono>
+# include <thread>
 
 # include <amqp_tcp_socket.h>
 # include <amqp.h>
@@ -12,10 +14,26 @@
 # include <silicon/symbols.hh>
 # include <silicon/service.hh>
 
+using namespace std::chrono_literals;
+
 namespace sl
 {
 namespace rmq
 {
+  template <typename T>
+  bool retry(std::string const & n, std::function<bool()> f, size_t m, T t)
+  {
+    for (size_t i {0}; i < m; ++i)
+    {
+      if(f())
+        return true;
+
+      std::cerr << n << " failed: retry in " << std::chrono::milliseconds(t).count() << "ms\n";
+
+      std::this_thread::sleep_for(t);
+    }
+    return false;
+  }
   auto get_string = [] (auto const & b) { return std::string(static_cast<char const *>(b.bytes), b.len); };
 
   void
@@ -129,15 +147,21 @@ namespace rmq
       public socket
     {
       template <typename... O>
-      tcp_socket(std::string const & host, unsigned short port, O &&... )
+      tcp_socket(std::string const & host, unsigned short port, O &&... opts)
       {
+        auto options = D(opts...);
+
+        unsigned int r = options.get(s::_retry, 5);
+
         conn = amqp_new_connection();
         socket = amqp_tcp_socket_new(conn);
         if (!socket)
           throw std::runtime_error("amqp.tcp.socket.new");
 
-        auto status = amqp_socket_open(socket, host.c_str(), port);
-        if (status)
+        if (!retry("amqp.socket.open", [&]()
+                   {
+                     return amqp_socket_open(socket, host.c_str(), port) == 0;
+                   }, r, 1s))
           throw std::runtime_error("amqp.socket.open");
       }
 

@@ -369,3 +369,8 @@
 #define IOD_SYMBOL_direct
     iod_define_symbol(direct)
 #endif
+
+#ifndef IOD_SYMBOL_retry
+#define IOD_SYMBOL_retry
+    iod_define_symbol(retry)
+#endif
