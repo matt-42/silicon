@@ -62,6 +62,12 @@ matrix:
         - LOCAL_CXX=clang++-3.7
         - LOCAL_GCOV=llvm-cov-3.7
     - compiler: clang
+      addons:
+        apt:
+          sources:
+            - ubuntu-toolchain-r-test
+          packages:
+            - gcc-7 # just for the newer c++ headers
       env:
         - LOCAL_CXX=clang++
         - LOCAL_GCOV=llvm-cov
