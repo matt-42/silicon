@@ -50,7 +50,7 @@ message(STATUS ${WEBSOCKETS_LIBS})
 set(MIMOSA_LIBS mimosa-http mimosa-uri mimosa gnutls z pthread lzma)
 
 set(MHD_LIBS gnutls gcrypt pthread microhttpd)
-set(LWAN_LIBS -llwan curl z pthread dl ubsan luajit-5.1)
+# set(LWAN_LIBS -llwan curl z pthread dl ubsan luajit-5.1)
 
 set(RMQ_LIBS rabbitmq)
 
@@ -67,8 +67,8 @@ target_link_libraries(mysql_authentication mysqlclient ${MHD_LIBS} curl)
 add_executable(user_tracking user_tracking.cc)
 target_link_libraries(user_tracking  ${MHD_LIBS} curl)
 
-add_executable(user_tracking_lwan user_tracking_lwan.cc)
-target_link_libraries(user_tracking_lwan  ${LWAN_LIBS} curl)
+# add_executable(user_tracking_lwan user_tracking_lwan.cc)
+# target_link_libraries(user_tracking_lwan  ${LWAN_LIBS} curl)
 
 add_executable(user_tracking_mhd user_tracking_mhd.cc)
 target_link_libraries(user_tracking_mhd  ${MHD_LIBS} curl)
@@ -94,8 +94,8 @@ target_link_libraries(rmq_producer ${RMQ_LIBS})
 add_executable(rmq_test rmq_test.cc)
 target_link_libraries(rmq_test ${RMQ_LIBS} pthread)
 
-add_executable(lwan_hello_world lwan_hello_world.cc)
-target_link_libraries(lwan_hello_world ${LWAN_LIBS})
+# add_executable(lwan_hello_world lwan_hello_world.cc)
+# target_link_libraries(lwan_hello_world ${LWAN_LIBS})
 
 add_executable(sqlite sqlite.cc)
 target_link_libraries(sqlite ${MHD_LIBS} sqlite3)
@@ -119,14 +119,14 @@ target_link_libraries(rest sqlite3 ${MHD_LIBS} curl)
 add_executable(hashmap_session hashmap_session.cc)
 target_link_libraries(hashmap_session ${MHD_LIBS} curl)
 
-add_executable(lwan lwan.cc)
-target_link_libraries(lwan ${LWAN_LIBS} curl)
+# add_executable(lwan lwan.cc)
+# target_link_libraries(lwan ${LWAN_LIBS} curl)
 
 add_executable(mhd mhd.cc)
 target_link_libraries(mhd ${MHD_LIBS} curl)
 
-add_executable(crud_lwan crud_lwan.cc)
-target_link_libraries(crud_lwan sqlite3 ${LWAN_LIBS} curl)
+# add_executable(crud_lwan crud_lwan.cc)
+# target_link_libraries(crud_lwan sqlite3 ${LWAN_LIBS} curl)
 
 add_executable(global_middlewares global_middlewares.cc)
 target_link_libraries(global_middlewares ${MHD_LIBS} curl)
