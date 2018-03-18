@@ -5,6 +5,17 @@ language: cpp
 
 matrix:
   include:
+    - compiler: clang
+      addons:
+        apt:
+          sources:
+            - llvm-toolchain-trusty-5.0
+          packages:
+            - clang-5.0 # just for the newer c++ headers
+      env:
+        - LOCAL_CC=clang++-5.0
+        - LOCAL_CXX=clang++-5.0
+        - LOCAL_GCOV=llvm-cov
     - compiler: gcc
       addons:
         apt:
@@ -61,16 +72,6 @@ matrix:
       env:
         - LOCAL_CXX=clang++-3.7
         - LOCAL_GCOV=llvm-cov-3.7
-    - compiler: clang
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - gcc-7 # just for the newer c++ headers
-      env:
-        - LOCAL_CXX=clang++
-        - LOCAL_GCOV=llvm-cov
 
 before_install:
     - $LOCAL_CXX --version
