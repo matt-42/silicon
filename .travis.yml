@@ -35,16 +35,6 @@ matrix:
       env:
         - LOCAL_CXX=g++-7
         - LOCAL_GCOV=gcov-7
-    - compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-8
-      env:
-        - LOCAL_CXX=g++-8
-        - LOCAL_GCOV=gcov-8
     - compiler: clang
       addons:
         apt:
