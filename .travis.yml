@@ -10,8 +10,10 @@ matrix:
         apt:
           sources:
             - llvm-toolchain-trusty-5.0
+            - ubuntu-toolchain-r-test
           packages:
-            - clang-5.0 # just for the newer c++ headers
+            - clang-5.0
+            - g++-7
       env:
         - LOCAL_CC=clang++-5.0
         - LOCAL_CXX=clang++-5.0
