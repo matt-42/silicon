@@ -13,7 +13,7 @@ matrix:
             - ubuntu-toolchain-r-test
           packages:
             - clang-5.0
-            - g++-7
+            - libstdc++-6-dev
       env:
         - LOCAL_CC=clang++-5.0
         - LOCAL_CXX=clang++-5.0
