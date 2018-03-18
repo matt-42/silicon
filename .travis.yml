@@ -71,6 +71,10 @@ matrix:
       env:
         - LOCAL_CXX=clang++-3.7
         - LOCAL_GCOV=llvm-cov-3.7
+    - compiler: clang
+      env:
+        - LOCAL_CXX=clang++-5
+        - LOCAL_GCOV=llvm-cov-5
 
 before_install:
     - $LOCAL_CXX --version
