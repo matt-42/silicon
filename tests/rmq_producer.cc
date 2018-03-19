@@ -1,3 +1,8 @@
+#include <silicon/api.hh>
+
+#include <silicon/middleware_factories.hh>
+#include <silicon/middlewares/sqlite_connection.hh>
+
 #include <silicon/clients/rmq_client.hh>
 
 #include "symbols.hh"
