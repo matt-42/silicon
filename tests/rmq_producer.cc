@@ -1,6 +1,7 @@
 #include <silicon/clients/rmq_client.hh>
 
 #include "symbols.hh"
+#include "backend_testsuite.hh"
 
 int main(int /*argc*/, char* argv[])
 {
