@@ -6,8 +6,8 @@
 
 #include <silicon/clients/rmq_client.hh>
 
+#include "rmq_test_api.hh"
 #include "symbols.hh"
-#include "backend_testsuite.hh"
 
 int start_count = 0;
 int end_count = 0;
