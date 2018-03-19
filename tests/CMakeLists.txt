@@ -37,7 +37,7 @@ link_directories(${CMAKE_CURRENT_SOURCE_DIR}/../third_party/install/lib
 				$ENV{HOME}/local/lib/x86_64-linux-gnu)
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14 -ftemplate-depth=1024 -g -O0")
-#set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage") # enabling coverage
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} --coverage") # enabling coverage
 set(CPPNET_LIBS
     ${Boost_LIBRARIES}
     cppnetlib-uri cppnetlib-client-connections
@@ -160,7 +160,7 @@ add_test(mhd mhd)
 add_test(sqlite_authentication sqlite_authentication)
 #add_test(mysql_authentication mysql_authentication)
 #add_test(mysql mysql)
-add_test(optional optional)
+#add_test(optional optional)
 add_test(type_string type_string)
 add_test(prefix_path prefix_path)
 add_test(global_middlewares global_middlewares)
