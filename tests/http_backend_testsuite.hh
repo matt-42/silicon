@@ -2,12 +2,9 @@
 #include <thread>
 #include <iostream>
 
-#include <silicon/middlewares/sqlite_connection.hh>
 #include <silicon/middlewares/hashmap_session.hh>
 #include <silicon/api.hh>
 #include <silicon/clients/libcurl_client.hh>
-#include <silicon/backends/rabbitmq.hh>
-#include <silicon/clients/rmq_client.hh>
 
 #include "symbols.hh"
 
