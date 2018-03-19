@@ -80,7 +80,7 @@ before_install:
     - $LOCAL_GCOV --version
     - sudo apt-get update -qq
     # Install deps
-    - sudo apt-get install -qq libboost-all-dev libssl-dev lcov
+    - sudo apt-get install -qq libboost-all-dev libssl-dev lcov libsqlite3-dev
     # Create env
     - mkdir -p $HOME/build
     # Install Rabbitmq-c
