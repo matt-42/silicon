@@ -18,62 +18,62 @@ matrix:
         - LOCAL_CC=clang++-5.0
         - LOCAL_CXX=clang++-5.0
         - LOCAL_GCOV=llvm-cov
-    - compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-5
-      env:
-        - LOCAL_CXX=g++-5
-        - LOCAL_GCOV=gcov-5
-    - compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-6
-      env:
-        - LOCAL_CXX=g++-6
-        - LOCAL_GCOV=gcov-6
-    - compiler: gcc
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-          packages:
-            - g++-7
-      env:
-        - LOCAL_CXX=g++-7
-        - LOCAL_GCOV=gcov-7
-    - compiler: clang
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.6
-          packages:
-            - gcc-7 # just for the newer c++ headers
-            - clang-3.6
-            - llvm-3.6
-      env:
-        - LOCAL_CXX=clang++-3.6
-        - LOCAL_GCOV=llvm-cov-3.6
-    - compiler: clang
-      addons:
-        apt:
-          sources:
-            - ubuntu-toolchain-r-test
-            - llvm-toolchain-precise-3.7
-          packages:
-            - gcc-7 # just for the newer c++ headers
-            - clang-3.7
-            - llvm-3.7
-      env:
-        - LOCAL_CXX=clang++-3.7
-        - LOCAL_GCOV=llvm-cov-3.7
+    # - compiler: gcc
+    #   addons:
+    #     apt:
+    #       sources:
+    #         - ubuntu-toolchain-r-test
+    #       packages:
+    #         - g++-5
+    #   env:
+    #     - LOCAL_CXX=g++-5
+    #     - LOCAL_GCOV=gcov-5
+    # - compiler: gcc
+    #   addons:
+    #     apt:
+    #       sources:
+    #         - ubuntu-toolchain-r-test
+    #       packages:
+    #         - g++-6
+    #   env:
+    #     - LOCAL_CXX=g++-6
+    #     - LOCAL_GCOV=gcov-6
+    # - compiler: gcc
+    #   addons:
+    #     apt:
+    #       sources:
+    #         - ubuntu-toolchain-r-test
+    #       packages:
+    #         - g++-7
+    #   env:
+    #     - LOCAL_CXX=g++-7
+    #     - LOCAL_GCOV=gcov-7
+    # - compiler: clang
+    #   addons:
+    #     apt:
+    #       sources:
+    #         - ubuntu-toolchain-r-test
+    #         - llvm-toolchain-precise-3.6
+    #       packages:
+    #         - gcc-7 # just for the newer c++ headers
+    #         - clang-3.6
+    #         - llvm-3.6
+    #   env:
+    #     - LOCAL_CXX=clang++-3.6
+    #     - LOCAL_GCOV=llvm-cov-3.6
+    # - compiler: clang
+    #   addons:
+    #     apt:
+    #       sources:
+    #         - ubuntu-toolchain-r-test
+    #         - llvm-toolchain-precise-3.7
+    #       packages:
+    #         - gcc-7 # just for the newer c++ headers
+    #         - clang-3.7
+    #         - llvm-3.7
+    #   env:
+    #     - LOCAL_CXX=clang++-3.7
+    #     - LOCAL_GCOV=llvm-cov-3.7
 
 before_install:
     - $LOCAL_CXX --version
