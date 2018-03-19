@@ -8,7 +8,7 @@
 #include <silicon/clients/rmq_client.hh>
 
 #include "symbols.hh"
-#include "backend_testsuite.hh"
+#include "rmq_test_api.hh"
 
 using namespace std::chrono_literals;
 

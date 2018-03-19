@@ -5,7 +5,7 @@
 #include <silicon/api.hh>
 #include <silicon/clients/libcurl_client.hh>
 #include "symbols.hh"
-#include "backend_testsuite.hh"
+#include "http_backend_testsuite.hh"
 
 int main(int argc, char* argv[])
 {
