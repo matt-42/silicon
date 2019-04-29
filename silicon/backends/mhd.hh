@@ -544,7 +544,7 @@ namespace sl
       if (MHD_is_feature_supported(MHD_FEATURE_SSL) == MHD_NO)
         throw std::runtime_error("microhttpd has not been compiled with SSL support.");
         
-      if (flags != MHD_USE_THREAD_PER_CONNECTION)
+      if ((flags & MHD_USE_THREAD_PER_CONNECTION) != MHD_USE_THREAD_PER_CONNECTION)
         d = MHD_start_daemon(
                              flags,
                              port,
@@ -571,7 +571,7 @@ namespace sl
     }
     else // Without SSL
     {
-      if (flags != MHD_USE_THREAD_PER_CONNECTION)
+      if ((flags & MHD_USE_THREAD_PER_CONNECTION) != MHD_USE_THREAD_PER_CONNECTION)
         d = MHD_start_daemon(
                              flags,
                              port,
