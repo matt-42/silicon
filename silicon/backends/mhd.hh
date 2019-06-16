@@ -411,9 +411,10 @@ namespace sl
             std::cerr << "Failed to set cookie" << std::endl;
         }
 
-      MHD_add_response_header (response,
-                               MHD_HTTP_HEADER_SERVER,
-                               "silicon");
+      if (resp.headers.find(MHD_HTTP_HEADER_SERVER) == resp.headers.end())
+        MHD_add_response_header (response,
+                                 MHD_HTTP_HEADER_SERVER,
+                                 "silicon");
 
       ret = MHD_queue_response(connection,
                                resp.status,
