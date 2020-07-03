@@ -1,9 +1,12 @@
-The Silicon Web Framework
-=================================
 
 This project has been rewritten and moved inside the Lithium libraries:
+============================
 https://github.com/matt-42/lithium/tree/master/libraries/http_backend
+=============================
 
+
+The Silicon Web Framework
+=================================
 
 Documentation is hosted on http://siliconframework.org
 
